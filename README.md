@@ -4,7 +4,7 @@
 
 Eastman ADMS Server 是用于后续接入考勤设备、考勤平台和明道云/HAP 的服务端项目。
 
-Development Task 003 实现 ADMS 设备接入第一阶段：考勤机可以连接 Eastman ADMS Server，所有 `/iclock/cdata` 请求会完整保存到 `raw_request`，并自动登记或更新设备。
+Development Task 003 实现 ADMS 设备接入第一阶段：考勤机可以连接 Eastman ADMS Server，所有 `/iclock/cdata` 请求会完整保存到 `raw_request`，记录到 `device_event_log`，并自动登记或更新设备。
 
 本阶段只接收和保存原始请求，不包含打卡记录解析、用户同步、命令队列、明道云同步、SDK 功能或任何业务逻辑。
 
@@ -109,9 +109,10 @@ DT002 自动创建以下基础表：
 | `device` | 保存考勤设备信息 |
 | `attendance` | 保存后续解析后的考勤记录 |
 | `raw_request` | 保存 ADMS 原始请求和服务器响应快照 |
+| `device_event_log` | 保存设备连接事件历史 |
 | `sync_log` | 保存后续明道云同步记录 |
 
-DT003 为 `raw_request` 增加 `parsed`、`request_hash`、完整 URL、查询参数、客户端 IP、User-Agent、Content-Type、HTTP 响应内容和 HTTP 状态码等原始请求审计字段。
+DT003 为 `raw_request` 增加 `parsed`、`request_hash`、完整 URL、查询参数、客户端 IP、User-Agent、Content-Type、HTTP 响应内容、HTTP 状态码、请求大小和响应大小等原始请求审计字段。
 
 开发环境如需重建数据库，可执行：
 
@@ -136,7 +137,45 @@ POST /iclock/cdata
 
 本阶段所有合法请求统一返回 `HTTP 200` 和 `OK`。
 
-## 7. 后续开发阶段
+## 7. 设备配置说明
+
+设备端推荐配置：
+
+| 配置项 | 推荐值 |
+| --- | --- |
+| Server Address | 服务器公网 IP 或域名 |
+| Server Port | `4370` |
+| ADMS | 开启 |
+| Push | 开启 |
+| URL/Path | 如设备支持路径配置，填写 `/iclock/cdata` |
+
+如果设备只支持填写完整地址，使用：
+
+```text
+http://<Server Address>:4370/iclock/cdata
+```
+
+推荐先使用 HTTP 方式联调。DT003 不直接启用 HTTPS；如设备要求 HTTPS，后续可在服务器前增加 Nginx 或负载均衡并配置证书。
+
+连接成功判断：
+
+- API 容器日志出现 `Device Connected`
+- `device` 表新增或更新对应 `SN`
+- `raw_request` 表新增完整原始请求
+- `device_event_log` 表新增 `Connect` 事件
+- 设备请求收到 `HTTP 200` 和 `OK`
+
+常见故障排查：
+
+- 检查云服务器安全组是否放行 TCP `4370`
+- 检查服务器防火墙是否放行 TCP `4370`
+- 检查设备网络、网关和 DNS 是否正常
+- 检查设备 Server Address、Server Port、ADMS、Push 配置是否正确
+- 执行 `docker compose ps` 确认容器运行状态
+- 执行 `docker logs eastman-adms-api --tail 100` 查看连接日志
+- 访问 `http://<Server Address>:4370/api/v1/health` 确认服务正常
+
+## 8. 后续开发阶段
 
 DT004 预计根据真实设备数据开始协议解析。DT003 完成后等待 Review，不进入 DT004。
 
@@ -149,6 +188,6 @@ DT004 预计根据真实设备数据开始协议解析。DT003 完成后等待 R
 - 明道云同步
 - 考勤业务逻辑
 
-## 8. License
+## 9. License
 
 Reserved.

@@ -50,9 +50,35 @@ class RawRequest(Base):
     content_type: Mapped[str | None] = mapped_column(Text, nullable=True)
     response_body: Mapped[str] = mapped_column(Text, nullable=False)
     response_status_code: Mapped[int] = mapped_column(Integer, nullable=False)
+    request_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    response_size: Mapped[int] = mapped_column(Integer, nullable=False)
     parsed: Mapped[bool] = mapped_column(Boolean, server_default="0", nullable=False)
     request_hash: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
     received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class DeviceEventLog(Base):
+    __tablename__ = "device_event_log"
+    __table_args__ = (
+        Index("ix_device_event_log_device_sn", "device_sn"),
+        Index("ix_device_event_log_connect_time", "connect_time"),
+        Index("ix_device_event_log_request_hash", "request_hash"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    event_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    device_sn: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    device_id: Mapped[int | None] = mapped_column(ForeignKey("device.id"), nullable=True)
+    client_ip: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    connect_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    method: Mapped[str] = mapped_column(String(16), nullable=False)
+    url: Mapped[str] = mapped_column(Text, nullable=False)
+    status_code: Mapped[int] = mapped_column(Integer, nullable=False)
+    response: Mapped[str] = mapped_column(Text, nullable=False)
+    user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
+    request_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    remark: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
 class Attendance(Base):

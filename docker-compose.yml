@@ -34,7 +34,7 @@ services:
     environment:
       TZ: ${TZ}
     ports:
-      - "${APP_PORT}:8000"
+      - "4370:8000"
     volumes:
       - eastman-adms-logs:/app/logs
       - eastman-adms-backup:/app/backup

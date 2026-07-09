@@ -49,6 +49,8 @@ API_IMAGE=eastman-adms-server:latest
 
 如需更换镜像源，只修改 `.env` 中对应变量，不修改 `docker-compose.yml`。
 
+API 服务 Docker 外部端口固定为 `4370`，容器内部 FastAPI 端口保持 `8000`。
+
 ## 密码要求
 
 DT002 当前用于开发部署。如果 `.env` 中的 `MYSQL_PASSWORD` 仍使用默认占位密码，例如 `PLEASE_CHANGE_ME`、`changeme`、`password` 或 `123456`，安装脚本会输出警告并继续执行：
@@ -70,9 +72,9 @@ scripts/DT002_install_ubuntu.sh --reset-db
 ## 验证
 
 ```bash
-curl http://localhost:8080/health
-curl http://localhost:8080/ready
-curl http://localhost:8080/api/v1/health
+curl http://localhost:4370/health
+curl http://localhost:4370/ready
+curl http://localhost:4370/api/v1/health
 ```
 
 `/health` 和 `/ready` 预期返回：

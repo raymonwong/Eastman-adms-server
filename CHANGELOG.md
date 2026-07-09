@@ -17,9 +17,11 @@ DT003 ADMS Device Connection Phase 1
 - Added `GET /iclock/cdata` and `POST /iclock/cdata` for first-stage ADMS device connection.
 - Saved complete raw HTTP request snapshots to `raw_request`.
 - Added `parsed` and `request_hash` fields for future parsing and duplicate detection.
-- Added raw request fields for URL, query parameters, client IP, User-Agent, Content-Type, response body, and response status code.
+- Added raw request fields for URL, query parameters, client IP, User-Agent, Content-Type, response body, response status code, request size, and response size.
+- Added `device_event_log` for device connection event history.
 - Added automatic device registration and online timestamp updates from request `SN`.
 - Added concise connection logs for device connection verification.
+- Added device-side ADMS configuration and troubleshooting notes.
 - Kept the task limited to 100% receive and 0% parse.
 
 ## Version
