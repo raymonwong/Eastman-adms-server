@@ -90,8 +90,7 @@ validate_mysql_password() {
 
   case "${normalized}" in
     ""|changeme|changeit|changeplease|pleaseme|pleasechangeme|password|password123|123456|12345678|mysqlpassword|default|defaultpassword|apppassword|pleasechangeme|changemeapppassword|changeappassword|changemeappassword)
-      printf 'Please modify MYSQL_PASSWORD before deployment.\n' >&2
-      exit 1
+      printf '[DT002] WARNING: MYSQL_PASSWORD uses a default development placeholder. Please modify MYSQL_PASSWORD before production deployment.\n' >&2
       ;;
   esac
 }

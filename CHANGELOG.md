@@ -23,7 +23,7 @@ DT002 Database Foundation
 - Removed obsolete MySQL authentication override for MySQL 8.4.
 - Added explicit unique constraint for `device.device_sn`.
 - Added targeted indexes for future ADMS query paths on `attendance` and `raw_request`.
-- Added deployment guard that blocks default placeholder MySQL passwords.
+- Changed DT002 development deployment to warn, not stop, when MySQL password is still a placeholder.
 - Refactored DT002 deployment to run `docker compose build --pull` before `docker compose up -d`.
 - Added `SHOW TABLES;` verification for `device`, `attendance`, `raw_request`, and `sync_log`.
 - Added failure diagnostics for Compose status, Docker status, and recent MySQL/API logs.

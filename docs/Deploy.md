@@ -51,10 +51,10 @@ API_IMAGE=eastman-adms-server:latest
 
 ## 密码要求
 
-部署前必须修改 `.env` 中的 `MYSQL_PASSWORD`。如果仍使用默认占位密码，例如 `PLEASE_CHANGE_ME`、`changeme`、`password` 或 `123456`，DT002 安装脚本会停止并输出：
+DT002 当前用于开发部署。如果 `.env` 中的 `MYSQL_PASSWORD` 仍使用默认占位密码，例如 `PLEASE_CHANGE_ME`、`changeme`、`password` 或 `123456`，安装脚本会输出警告并继续执行：
 
 ```text
-Please modify MYSQL_PASSWORD before deployment.
+[DT002] WARNING: MYSQL_PASSWORD uses a default development placeholder. Please modify MYSQL_PASSWORD before production deployment.
 ```
 
 ## 开发重置模式
