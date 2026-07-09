@@ -2,7 +2,7 @@
 
 ## Current Development Task
 
-DT002
+DT003
 
 ## Status
 
@@ -10,34 +10,29 @@ Waiting for Review
 
 ## Summary
 
-DT002 establishes the database foundation for Eastman ADMS Server. The application checks MySQL connectivity during startup, creates required tables if they do not exist, and exposes the versioned health endpoint at `/api/v1/health`.
+DT003 implements ADMS device connection phase 1. The server accepts `GET` and `POST` requests at `/iclock/cdata`, saves complete raw HTTP request data, registers or updates the device by `SN`, and returns `OK`.
 
 ## Completed
 
-- Added SQLAlchemy ORM model definitions.
-- Added automatic table creation for `device`, `attendance`, `raw_request`, and `sync_log`.
-- Added automatic creation of DT002 unique constraints and indexes for brand-new databases.
-- Added database startup readiness logs.
-- Added `GET /api/v1/health` with version `0.0.2`.
-- Added `scripts/DT002_install_ubuntu.sh`.
-- Removed obsolete MySQL 8.4 authentication override from Docker Compose.
-- Added development deployment warning for default placeholder MySQL passwords.
-- Standardized DT002 deployment to rebuild project images with `docker compose build --pull`.
-- Added `SHOW TABLES;` verification for required DT002 tables.
-- Added deployment failure diagnostics with recent container logs.
-- Added optional `--reset-db` mode for development environments only.
-- Kept previous DT001 deployment scripts unchanged.
-- Updated README, CHANGELOG, and deployment documentation.
+- Added `GET /iclock/cdata` and `POST /iclock/cdata`.
+- Added complete raw HTTP request persistence in `raw_request`.
+- Added raw request fields for URL, query parameters, client IP, User-Agent, Content-Type, response body, response status code, parsed flag, and request hash.
+- Added automatic device registration and last-online updates from `SN`.
+- Added first-online and status tracking for devices.
+- Added concise connection logs.
+- Kept DT002 installation script unchanged.
+- Updated README, CHANGELOG, and project status documentation.
 
 ## Not Included
 
 - ADMS business logic
-- ADMS protocol
 - Attendance parsing
-- ADMS business endpoints
+- User synchronization
+- Device commands
+- Command Queue
 - Mingdao/HAP sync
-- Future DT003 features
+- Future DT004 features
 
 ## Next Development Task
 
-DT003
+DT004

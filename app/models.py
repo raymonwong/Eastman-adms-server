@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -17,7 +17,9 @@ class Device(Base):
     device_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
     ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
     firmware_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    first_online: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_online: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    status: Mapped[str | None] = mapped_column(String(32), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -37,10 +39,19 @@ class RawRequest(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     device_sn: Mapped[str | None] = mapped_column(String(64), nullable=True)
     request_method: Mapped[str] = mapped_column(String(16), nullable=False)
+    request_url: Mapped[str] = mapped_column(Text, nullable=False)
     request_path: Mapped[str] = mapped_column(String(255), nullable=False)
     query_string: Mapped[str | None] = mapped_column(Text, nullable=True)
+    query_params: Mapped[str | None] = mapped_column(Text, nullable=True)
     headers: Mapped[str | None] = mapped_column(Text, nullable=True)
     body: Mapped[str | None] = mapped_column(Text, nullable=True)
+    client_ip: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
+    content_type: Mapped[str | None] = mapped_column(Text, nullable=True)
+    response_body: Mapped[str] = mapped_column(Text, nullable=False)
+    response_status_code: Mapped[int] = mapped_column(Integer, nullable=False)
+    parsed: Mapped[bool] = mapped_column(Boolean, server_default="0", nullable=False)
+    request_hash: Mapped[str] = mapped_column(String(64), index=True, nullable=False)
     received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 

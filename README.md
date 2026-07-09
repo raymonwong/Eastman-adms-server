@@ -4,9 +4,9 @@
 
 Eastman ADMS Server 是用于后续接入考勤设备、考勤平台和明道云/HAP 的服务端项目。
 
-Development Task 002 建立数据库基础架构：应用启动时检查 MySQL 连接，并通过 SQLAlchemy ORM 自动创建初始化数据表。
+Development Task 003 实现 ADMS 设备接入第一阶段：考勤机可以连接 Eastman ADMS Server，所有 `/iclock/cdata` 请求会完整保存到 `raw_request`，并自动登记或更新设备。
 
-本阶段不包含 ADMS 协议、考勤解析、明道云同步或考勤业务逻辑。
+本阶段只接收和保存原始请求，不包含打卡记录解析、用户同步、命令队列、明道云同步、SDK 功能或任何业务逻辑。
 
 ## 2. 系统要求
 
@@ -108,10 +108,10 @@ DT002 自动创建以下基础表：
 | --- | --- |
 | `device` | 保存考勤设备信息 |
 | `attendance` | 保存后续解析后的考勤记录 |
-| `raw_request` | 保存后续 ADMS 原始请求 |
+| `raw_request` | 保存 ADMS 原始请求和服务器响应快照 |
 | `sync_log` | 保存后续明道云同步记录 |
 
-全新数据库部署时，SQLAlchemy 会自动创建 DT002 定义的唯一约束和索引，不需要手动执行 SQL。
+DT003 为 `raw_request` 增加 `parsed`、`request_hash`、完整 URL、查询参数、客户端 IP、User-Agent、Content-Type、HTTP 响应内容和 HTTP 状态码等原始请求审计字段。
 
 开发环境如需重建数据库，可执行：
 
@@ -127,14 +127,25 @@ scripts/DT002_install_ubuntu.sh --reset-db
 GET /api/v1/health
 ```
 
+ADMS 设备接入接口：
+
+```http
+GET /iclock/cdata
+POST /iclock/cdata
+```
+
+本阶段所有合法请求统一返回 `HTTP 200` 和 `OK`。
+
 ## 7. 后续开发阶段
 
-DT003 预计进入 ADMS 请求接收或设备连接验证。DT002 完成后等待 Review，不进入 DT003。
+DT004 预计根据真实设备数据开始协议解析。DT003 完成后等待 Review，不进入 DT004。
 
-明确禁止在 DT002 中加入：
+明确禁止在 DT003 中加入：
 
-- ADMS 协议实现
 - 考勤解析
+- 用户同步
+- 设备命令
+- Command Queue
 - 明道云同步
 - 考勤业务逻辑
 

@@ -3,11 +3,13 @@ from datetime import UTC, datetime
 
 from fastapi import FastAPI
 
-from app.database import check_database_connection, create_database_engine, create_database_tables
+from app.adms import router as adms_router
+from app.database import check_database_connection, configure_session_factory, create_database_engine, create_database_tables
 from app.settings import Settings
 
 settings = Settings.from_env()
 engine = create_database_engine(settings)
+configure_session_factory(engine)
 
 
 @asynccontextmanager
@@ -24,6 +26,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title=settings.app_name, version="0.0.2", lifespan=lifespan)
+app.include_router(adms_router)
 
 
 @app.get("/health")
