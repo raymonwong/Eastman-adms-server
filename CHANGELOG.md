@@ -2,6 +2,29 @@
 
 ## Version
 
+DT001.3
+
+## Date
+
+2026-07-09
+
+## Development Task
+
+DT001 Deployment Review Fix
+
+## Description
+
+- Added `scripts/DT001.3_install_ubuntu.sh` without overwriting previous deployment scripts.
+- Added Docker Hub reachability detection for China Mainland deployments.
+- Added Docker registry mirror configuration when Docker Hub is unreachable.
+- Added built-in mirror candidates for Aliyun, Docker Official China if available, Tencent, and USTC.
+- Added user-configurable `DOCKER_REGISTRY_MIRROR` in `.env.example`.
+- Added Docker restart after mirror configuration.
+- Added `docker compose pull` retry logic with at least 3 attempts.
+- Kept the fix limited to deployment reliability only.
+
+## Version
+
 DT001.2
 
 ## Date
@@ -17,7 +40,9 @@ DT001 Deployment Review Fix
 - Added `scripts/DT001.2_install_ubuntu.sh` without overwriting the previous DT001 installer.
 - Defined Alibaba Cloud Linux 3 as the primary deployment target.
 - Added compatibility support for Ubuntu 22.04+, Ubuntu 24.04+, and RHEL compatible distributions.
+- Added `/etc/os-release` based OS detection with `ID` and `ID_LIKE` handling.
 - Added package manager detection for `apt`, `dnf`, and `yum`.
+- Added Docker CE repository handling for Alibaba Cloud Linux 3 and RHEL compatible distributions.
 - Kept the fix limited to deployment compatibility only.
 
 ## Version

@@ -2,7 +2,7 @@
 
 ## Current Development Task
 
-DT001.2
+DT001.3
 
 ## Status
 
@@ -10,14 +10,17 @@ Waiting for Review
 
 ## Summary
 
-DT001.2 fixes deployment compatibility after DT001 failed on Alibaba Cloud Linux 3. Alibaba Cloud Linux 3 is now the primary deployment target. Ubuntu 22.04+, Ubuntu 24.04+, and RHEL compatible distributions are maintained as compatibility targets.
+DT001.3 fixes Docker image pull reliability for Alibaba Cloud Linux 3 servers in China Mainland. Alibaba Cloud Linux 3 remains the primary deployment target. Ubuntu 22.04+, Ubuntu 24.04+, and RHEL compatible distributions remain compatibility targets.
 
 ## Completed
 
-- Added `scripts/DT001.2_install_ubuntu.sh`.
-- Added OS detection through `/etc/os-release`.
-- Added package manager detection for `apt`, `dnf`, and `yum`.
-- Added Docker installation paths for Ubuntu and RHEL compatible distributions.
+- Added `scripts/DT001.3_install_ubuntu.sh`.
+- Added Docker Hub reachability detection.
+- Added Docker mirror auto-configuration when Docker Hub times out.
+- Added support for user-configurable `DOCKER_REGISTRY_MIRROR`.
+- Added Docker restart after mirror configuration.
+- Added `docker compose pull` retry logic.
+- Kept previous DT001 and DT001.2 scripts unchanged.
 - Updated deployment documentation.
 
 ## Not Included

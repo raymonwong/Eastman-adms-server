@@ -11,9 +11,13 @@ OS_VERSION_ID=""
 OS_VERSION_CODENAME=""
 OS_PRETTY_NAME=""
 SUDO=()
+DOCKER_DAEMON_JSON="/etc/docker/daemon.json"
+DOCKER_HUB_TEST_URL="https://registry-1.docker.io/v2/"
+DOCKER_HUB_TIMEOUT_SECONDS="${DOCKER_HUB_TIMEOUT_SECONDS:-8}"
+DOCKER_COMPOSE_PULL_RETRIES="${DOCKER_COMPOSE_PULL_RETRIES:-3}"
 
 log() {
-  printf '[DT001.2] %s\n' "$1"
+  printf '[DT001.3] %s\n' "$1" >&2
 }
 
 detect_os() {
@@ -108,6 +112,27 @@ detect_package_manager() {
 
   log "No supported package manager found. Expected apt, dnf, or yum."
   exit 1
+}
+
+ensure_network_tools() {
+  if command -v curl >/dev/null 2>&1; then
+    return
+  fi
+
+  log "Installing curl and CA certificates using ${PACKAGE_MANAGER}"
+  case "${PACKAGE_MANAGER}" in
+    apt)
+      "${SUDO[@]}" apt-get update
+      "${SUDO[@]}" apt-get install -y ca-certificates curl
+      ;;
+    dnf|yum)
+      "${SUDO[@]}" "${PACKAGE_MANAGER}" install -y ca-certificates curl
+      ;;
+    *)
+      log "Unsupported package manager: ${PACKAGE_MANAGER}"
+      exit 1
+      ;;
+  esac
 }
 
 ensure_project_dirs() {
@@ -289,14 +314,143 @@ ensure_docker_running() {
   exit 1
 }
 
+restart_docker() {
+  log "Restarting Docker..."
+  if command -v systemctl >/dev/null 2>&1; then
+    "${SUDO[@]}" systemctl restart docker
+    return
+  fi
+
+  if command -v service >/dev/null 2>&1; then
+    "${SUDO[@]}" service docker restart
+    return
+  fi
+
+  log "Cannot restart Docker automatically because systemctl/service is unavailable."
+  exit 1
+}
+
+docker_hub_reachable() {
+  log "Checking Docker Registry..."
+  # Docker Hub returns 401 for anonymous /v2/ access; that still proves network reachability.
+  local status
+  status="$(curl -L -sS -o /dev/null -w '%{http_code}' --connect-timeout "${DOCKER_HUB_TIMEOUT_SECONDS}" --max-time "${DOCKER_HUB_TIMEOUT_SECONDS}" "${DOCKER_HUB_TEST_URL}" || true)"
+
+  case "${status}" in
+    200|401)
+      log "Docker Hub reachable."
+      return 0
+      ;;
+    *)
+      log "Docker Hub unreachable or timed out. HTTP status: ${status:-none}"
+      return 1
+      ;;
+  esac
+}
+
+docker_mirror_candidates() {
+  if [ -n "${DOCKER_REGISTRY_MIRROR:-}" ]; then
+    printf '%s\n' "${DOCKER_REGISTRY_MIRROR}"
+    return
+  fi
+
+  # Default candidates for China Mainland deployments.
+  printf '%s\n' \
+    "https://registry.cn-hangzhou.aliyuncs.com" \
+    "https://registry.docker-cn.com" \
+    "https://mirror.ccs.tencentyun.com" \
+    "https://docker.mirrors.ustc.edu.cn"
+}
+
+select_reachable_mirror() {
+  local mirror
+  local status
+
+  while IFS= read -r mirror; do
+    [ -n "${mirror}" ] || continue
+    log "Testing Docker mirror: ${mirror}"
+    status="$(curl -L -sS -o /dev/null -w '%{http_code}' --connect-timeout 5 --max-time 8 "${mirror}/v2/" || true)"
+    case "${status}" in
+      200|401)
+        printf '%s' "${mirror}"
+        return 0
+        ;;
+      *)
+        log "Mirror not reachable: ${mirror} HTTP status: ${status:-none}"
+        ;;
+    esac
+  done < <(docker_mirror_candidates)
+
+  return 1
+}
+
+docker_mirror_already_exists() {
+  [ -f "${DOCKER_DAEMON_JSON}" ] && grep -q '"registry-mirrors"' "${DOCKER_DAEMON_JSON}"
+}
+
+configure_docker_mirror_if_needed() {
+  if docker_hub_reachable; then
+    return
+  fi
+
+  log "Switching to Mirror..."
+
+  if docker_mirror_already_exists; then
+    log "Docker registry mirror already exists. Keeping current Docker configuration."
+    return
+  fi
+
+  local mirror
+  if ! mirror="$(select_reachable_mirror)"; then
+    log "No reachable Docker mirror found. You can set DOCKER_REGISTRY_MIRROR in .env and re-run this script."
+    exit 1
+  fi
+
+  "${SUDO[@]}" mkdir -p /etc/docker
+
+  if [ -f "${DOCKER_DAEMON_JSON}" ]; then
+    local backup_file
+    backup_file="${DOCKER_DAEMON_JSON}.dt0013.$(date +%Y%m%d%H%M%S).bak"
+    "${SUDO[@]}" cp "${DOCKER_DAEMON_JSON}" "${backup_file}"
+    log "Backed up existing Docker daemon config to ${backup_file}"
+  fi
+
+  "${SUDO[@]}" tee "${DOCKER_DAEMON_JSON}" >/dev/null <<EOF
+{
+  "registry-mirrors": ["${mirror}"]
+}
+EOF
+
+  log "Configured Docker registry mirror: ${mirror}"
+  restart_docker
+}
+
 create_docker_volumes() {
   "${SUDO[@]}" docker volume create eastman-adms-mysql >/dev/null
   "${SUDO[@]}" docker volume create eastman-adms-logs >/dev/null
   "${SUDO[@]}" docker volume create eastman-adms-backup >/dev/null
 }
 
+compose_pull_with_retry() {
+  cd "${PROJECT_DIR}"
+  local attempt=1
+
+  while [ "${attempt}" -le "${DOCKER_COMPOSE_PULL_RETRIES}" ]; do
+    log "Retry Pull... attempt ${attempt}/${DOCKER_COMPOSE_PULL_RETRIES}"
+    if "${SUDO[@]}" docker compose --env-file "${ENV_FILE}" pull mysql; then
+      return 0
+    fi
+    attempt=$((attempt + 1))
+    sleep 5
+  done
+
+  log "docker compose pull failed after ${DOCKER_COMPOSE_PULL_RETRIES} attempts."
+  return 1
+}
+
 start_services() {
   cd "${PROJECT_DIR}"
+  compose_pull_with_retry
   "${SUDO[@]}" docker compose --env-file "${ENV_FILE}" up -d --build mysql
   "${SUDO[@]}" docker compose --env-file "${ENV_FILE}" up -d --build api
 }
@@ -346,12 +500,14 @@ main() {
   detect_package_manager
   log "Detected OS: ${OS_PRETTY_NAME}"
   log "Detected package manager: ${PACKAGE_MANAGER}"
+  ensure_network_tools
   ensure_project_dirs
   ensure_env_file
   load_env
   install_docker_if_missing
   install_compose_if_missing
   ensure_docker_running
+  configure_docker_mirror_if_needed
   create_docker_volumes
   start_services
   wait_for_mysql
