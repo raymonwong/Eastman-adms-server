@@ -2,6 +2,29 @@
 
 ## Version
 
+DT001.4
+
+## Date
+
+2026-07-09
+
+## Development Task
+
+DT001 Deployment Completion Fix
+
+## Description
+
+- Added `scripts/DT001.4_install_ubuntu.sh` without overwriting previous deployment scripts.
+- Changed Docker images to come from `.env` instead of hardcoded Compose values.
+- Added DaoCloud Proxy defaults for MySQL 8.4 and Python 3.12 images.
+- Added idempotent `.env` completion for DT001.4 image variables.
+- Removed Docker Registry Mirror configuration from the DT001.4 deployment flow.
+- Added explicit image pull failure output for MySQL and Python images.
+- Added runtime verification with `docker compose ps` and `docker ps`.
+- Kept the fix limited to DT001 deployment completion only.
+
+## Version
+
 DT001.3
 
 ## Date
