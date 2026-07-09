@@ -35,9 +35,11 @@ scripts/DT002_install_ubuntu.sh
 - 验证 Docker
 - 验证 Docker Compose
 - 拉取 `.env` 中配置的 Docker 镜像
-- 重建并重启容器
-- 检查数据库连接
+- 执行 `docker compose build --pull`
+- 执行 `docker compose up -d`
+- 使用 `SHOW TABLES;` 检查数据库表
 - 验证 `/api/v1/health`
+- 失败时输出容器状态和最近 100 行容器日志
 
 部署成功后会输出：
 
@@ -88,7 +90,7 @@ eastman-adms-server/
 | --- | --- |
 | `MYSQL_IMAGE` | `docker.m.daocloud.io/library/mysql:8.4` |
 | `PYTHON_IMAGE` | `docker.m.daocloud.io/library/python:3.12` |
-| `API_IMAGE` | `eastman-adms-server:dt002` |
+| `API_IMAGE` | `eastman-adms-server:latest` |
 
 Docker Volume：
 
@@ -110,6 +112,14 @@ DT002 自动创建以下基础表：
 | `sync_log` | 保存后续明道云同步记录 |
 
 全新数据库部署时，SQLAlchemy 会自动创建 DT002 定义的唯一约束和索引，不需要手动执行 SQL。
+
+开发环境如需重建数据库，可执行：
+
+```bash
+scripts/DT002_install_ubuntu.sh --reset-db
+```
+
+正常部署不会删除 Docker Volume 或已有数据。
 
 健康检查接口：
 

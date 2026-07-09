@@ -24,10 +24,12 @@ scripts/DT002_install_ubuntu.sh
 3. 验证 Docker Compose plugin 已安装并可访问。
 4. 拉取 `.env` 中配置的 MySQL 镜像。
 5. 拉取 `.env` 中配置的 Python 基础镜像。
-6. 重建 API 镜像。
-7. 重启容器。
-8. 检查数据库连接。
+6. 执行 `docker compose build --pull`。
+7. 执行 `docker compose up -d`。
+8. 等待 MySQL 健康。
 9. 验证 `/api/v1/health`。
+10. 执行 `SHOW TABLES;` 并确认 `device`、`attendance`、`raw_request`、`sync_log` 存在。
+11. 如部署失败，输出 `docker compose ps`、`docker ps`、MySQL 最近 100 行日志和 API 最近 100 行日志。
 
 全新数据库部署时，应用启动会自动创建 DT002 表结构、唯一约束和索引，不需要手动执行 SQL。DT002 未引入 Alembic，已存在的旧数据库结构变更需在后续 Review Fix 或迁移任务中明确处理。
 
@@ -42,7 +44,7 @@ DT001.4 不再自动配置 Docker Registry Mirror。所有镜像均通过 `.env`
 ```dotenv
 MYSQL_IMAGE=docker.m.daocloud.io/library/mysql:8.4
 PYTHON_IMAGE=docker.m.daocloud.io/library/python:3.12
-API_IMAGE=eastman-adms-server:dt002
+API_IMAGE=eastman-adms-server:latest
 ```
 
 如需更换镜像源，只修改 `.env` 中对应变量，不修改 `docker-compose.yml`。
@@ -52,8 +54,18 @@ API_IMAGE=eastman-adms-server:dt002
 部署前必须修改 `.env` 中的 `MYSQL_PASSWORD`。如果仍使用默认占位密码，例如 `PLEASE_CHANGE_ME`、`changeme`、`password` 或 `123456`，DT002 安装脚本会停止并输出：
 
 ```text
-Please change MYSQL_PASSWORD before deployment.
+Please modify MYSQL_PASSWORD before deployment.
 ```
+
+## 开发重置模式
+
+仅开发环境可使用：
+
+```bash
+scripts/DT002_install_ubuntu.sh --reset-db
+```
+
+该模式会执行 `docker compose down` 并删除 `eastman-adms-mysql` Volume，然后重新创建数据库。正常部署不会删除数据。
 
 ## 验证
 

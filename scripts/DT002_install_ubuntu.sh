@@ -4,6 +4,9 @@ set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV_FILE="${PROJECT_DIR}/.env"
 ENV_EXAMPLE="${PROJECT_DIR}/.env.example"
+RESET_DB=0
+DIAGNOSTICS_PRINTED=0
+REQUIRED_TABLES=("device" "attendance" "raw_request" "sync_log")
 
 log() {
   printf '[DT002] %s\n' "$1" >&2
@@ -11,7 +14,22 @@ log() {
 
 fail() {
   log "$1"
+  print_diagnostics
   exit 1
+}
+
+parse_args() {
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --reset-db)
+        RESET_DB=1
+        ;;
+      *)
+        fail "Unknown argument: $1"
+        ;;
+    esac
+    shift
+  done
 }
 
 ensure_env_file() {
@@ -50,13 +68,6 @@ ensure_env_defaults() {
   ensure_env_default API_IMAGE
 }
 
-upgrade_default_api_image() {
-  if grep -Fxq "API_IMAGE=eastman-adms-server:dt001" "${ENV_FILE}"; then
-    sed -i "s/^API_IMAGE=eastman-adms-server:dt001$/API_IMAGE=eastman-adms-server:dt002/" "${ENV_FILE}"
-    log "Updated API_IMAGE default from dt001 to dt002"
-  fi
-}
-
 load_env() {
   set -a
   # shellcheck disable=SC1090
@@ -78,8 +89,8 @@ validate_mysql_password() {
   normalized="$(printf '%s' "${MYSQL_PASSWORD:-}" | tr '[:upper:]' '[:lower:]' | tr -d ' _-')"
 
   case "${normalized}" in
-    ""|changeme|changeit|changeplease|pleaseme|pleasechangeme|password|password123|123456|12345678|mysqlpassword|default|defaultpassword|apppassword|changemeapppassword|changeappassword|changemeappassword)
-      printf 'Please change MYSQL_PASSWORD before deployment.\n' >&2
+    ""|changeme|changeit|changeplease|pleaseme|pleasechangeme|password|password123|123456|12345678|mysqlpassword|default|defaultpassword|apppassword|pleasechangeme|changemeapppassword|changeappassword|changemeappassword)
+      printf 'Please modify MYSQL_PASSWORD before deployment.\n' >&2
       exit 1
       ;;
   esac
@@ -109,13 +120,40 @@ verify_compose() {
   log "Docker Compose verified"
 }
 
+print_diagnostics() {
+  if [ "${DIAGNOSTICS_PRINTED}" -eq 1 ]; then
+    return
+  fi
+  DIAGNOSTICS_PRINTED=1
+
+  printf '\n[DT002] Deployment diagnostics\n' >&2
+
+  if command -v docker >/dev/null 2>&1; then
+    compose ps >&2 || true
+    docker ps >&2 || true
+    docker logs --tail 100 eastman-adms-mysql >&2 || true
+    docker logs --tail 100 eastman-adms-api >&2 || true
+  else
+    printf '[DT002] Docker command is not available.\n' >&2
+  fi
+}
+
+reset_database_if_requested() {
+  if [ "${RESET_DB}" -ne 1 ]; then
+    return
+  fi
+
+  log "Reset database mode enabled. This removes the MySQL Docker volume."
+  compose down
+  docker volume rm eastman-adms-mysql >/dev/null 2>&1 || true
+}
+
 pull_images() {
   log "Pulling MySQL image: ${MYSQL_IMAGE}"
   if ! compose pull mysql; then
     fail "docker compose pull failed for image: ${MYSQL_IMAGE}"
   fi
 
-  # The API image is built locally, so pull the Dockerfile base image before rebuild.
   log "Pulling Python base image: ${PYTHON_IMAGE}"
   if ! docker pull "${PYTHON_IMAGE}"; then
     fail "docker pull failed for image: ${PYTHON_IMAGE}"
@@ -123,27 +161,41 @@ pull_images() {
 }
 
 restart_containers() {
-  log "Building API image: ${API_IMAGE}"
-  compose build --pull api
+  log "Building project images with latest base images"
+  compose build --pull
 
   log "Restarting containers"
-  compose up -d --force-recreate
+  compose up -d
 }
 
-verify_database_connection() {
+wait_for_mysql() {
   local attempt
 
-  log "Verifying database connection"
+  log "Waiting for MySQL health"
   for attempt in $(seq 1 30); do
-    if compose exec -T api python -c "from app.database import check_database_connection, create_database_engine; from app.settings import Settings; check_database_connection(create_database_engine(Settings.from_env()))"; then
+    if [ "$(docker inspect -f '{{.State.Health.Status}}' eastman-adms-mysql 2>/dev/null || true)" = "healthy" ]; then
       return
     fi
 
-    log "Database not ready yet, retry ${attempt}/30"
+    log "MySQL not healthy yet, retry ${attempt}/30"
     sleep 2
   done
 
-  fail "Database connection verification failed."
+  fail "MySQL health verification failed."
+}
+
+verify_database_tables() {
+  local table
+  local tables
+
+  log "Verifying database tables with SHOW TABLES"
+  tables="$(compose exec -T mysql mysql -u"${MYSQL_USERNAME}" -p"${MYSQL_PASSWORD}" "${MYSQL_DATABASE}" -N -e "SHOW TABLES;" 2>/dev/null || true)"
+
+  for table in "${REQUIRED_TABLES[@]}"; do
+    if ! printf '%s\n' "${tables}" | grep -Fxq "${table}"; then
+      fail "Required database table is missing: ${table}"
+    fi
+  done
 }
 
 verify_health_api() {
@@ -162,26 +214,38 @@ verify_health_api() {
   fail "Health API verification failed."
 }
 
+on_error() {
+  local exit_code=$?
+  printf '\n[DT002] Deployment failed with exit code %s.\n' "${exit_code}" >&2
+  print_diagnostics
+  exit "${exit_code}"
+}
+
 main() {
+  trap on_error ERR
   cd "${PROJECT_DIR}"
 
+  parse_args "$@"
   ensure_env_file
   ensure_env_defaults
-  upgrade_default_api_image
   load_env
 
   require_env MYSQL_IMAGE
   require_env PYTHON_IMAGE
   require_env API_IMAGE
+  require_env MYSQL_USERNAME
   require_env MYSQL_PASSWORD
+  require_env MYSQL_DATABASE
   validate_mysql_password
 
   verify_docker
   verify_compose
+  reset_database_if_requested
   pull_images
   restart_containers
-  verify_database_connection
+  wait_for_mysql
   verify_health_api
+  verify_database_tables
 
   printf '\n'
   printf '========================================\n'

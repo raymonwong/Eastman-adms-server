@@ -19,11 +19,15 @@ DT002 Database Foundation
 - Added required startup log output for database readiness.
 - Added `GET /api/v1/health` returning project, version, status, database, and time.
 - Added `scripts/DT002_install_ubuntu.sh` without overwriting previous deployment scripts.
-- Updated default API image tag to `eastman-adms-server:dt002`.
+- Updated default API image tag to stable `eastman-adms-server:latest`.
 - Removed obsolete MySQL authentication override for MySQL 8.4.
 - Added explicit unique constraint for `device.device_sn`.
 - Added targeted indexes for future ADMS query paths on `attendance` and `raw_request`.
 - Added deployment guard that blocks default placeholder MySQL passwords.
+- Refactored DT002 deployment to run `docker compose build --pull` before `docker compose up -d`.
+- Added `SHOW TABLES;` verification for `device`, `attendance`, `raw_request`, and `sync_log`.
+- Added failure diagnostics for Compose status, Docker status, and recent MySQL/API logs.
+- Added optional `--reset-db` mode for development database recreation.
 - Kept the task limited to database architecture only.
 
 ## Version

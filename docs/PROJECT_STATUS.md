@@ -22,6 +22,10 @@ DT002 establishes the database foundation for Eastman ADMS Server. The applicati
 - Added `scripts/DT002_install_ubuntu.sh`.
 - Removed obsolete MySQL 8.4 authentication override from Docker Compose.
 - Added deployment guard for default placeholder MySQL passwords.
+- Standardized DT002 deployment to rebuild project images with `docker compose build --pull`.
+- Added `SHOW TABLES;` verification for required DT002 tables.
+- Added deployment failure diagnostics with recent container logs.
+- Added optional `--reset-db` mode for development environments only.
 - Kept previous DT001 deployment scripts unchanged.
 - Updated README, CHANGELOG, and deployment documentation.
 
