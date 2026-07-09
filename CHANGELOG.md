@@ -2,6 +2,26 @@
 
 ## Version
 
+DT001.2
+
+## Date
+
+2026-07-09
+
+## Development Task
+
+DT001 Deployment Review Fix
+
+## Description
+
+- Added `scripts/DT001.2_install_ubuntu.sh` without overwriting the previous DT001 installer.
+- Defined Alibaba Cloud Linux 3 as the primary deployment target.
+- Added compatibility support for Ubuntu 22.04+, Ubuntu 24.04+, and RHEL compatible distributions.
+- Added package manager detection for `apt`, `dnf`, and `yum`.
+- Kept the fix limited to deployment compatibility only.
+
+## Version
+
 DT001.1
 
 ## Date
