@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 
+from app.models import Base
 from app.settings import Settings
 
 
@@ -10,6 +11,11 @@ def create_database_engine(settings: Settings) -> Engine:
 
 
 def check_database_connection(engine: Engine) -> None:
-    # DT001 intentionally does not create tables; SELECT 1 only verifies MySQL connectivity.
+    # SELECT 1 keeps the startup check lightweight and database-agnostic.
     with engine.connect() as connection:
         connection.execute(text("SELECT 1"))
+
+
+def create_database_tables(engine: Engine) -> None:
+    # SQLAlchemy create_all is idempotent and only creates tables that do not exist.
+    Base.metadata.create_all(bind=engine)

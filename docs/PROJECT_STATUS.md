@@ -2,7 +2,7 @@
 
 ## Current Development Task
 
-DT001.4
+DT002
 
 ## Status
 
@@ -10,29 +10,30 @@ Waiting for Review
 
 ## Summary
 
-DT001.4 completes the DT001 deployment path for the verified production server. Alibaba Cloud Linux 3 remains the primary deployment target. Docker and Docker Compose are verified before deployment, and all Docker images are configured through `.env` with DaoCloud Proxy defaults.
+DT002 establishes the database foundation for Eastman ADMS Server. The application checks MySQL connectivity during startup, creates required tables if they do not exist, and exposes the versioned health endpoint at `/api/v1/health`.
 
 ## Completed
 
-- Added `scripts/DT001.4_install_ubuntu.sh`.
-- Changed MySQL image configuration to `MYSQL_IMAGE`.
-- Changed Python base image configuration to `PYTHON_IMAGE`.
-- Changed API image tag configuration to `API_IMAGE`.
-- Added DaoCloud Proxy defaults for production deployment.
-- Added idempotent `.env` completion for existing DT001 deployments.
-- Removed Docker Registry Mirror configuration from the DT001.4 install flow.
-- Added `docker compose ps` and `docker ps` verification output.
-- Kept previous DT001, DT001.2, and DT001.3 scripts unchanged.
+- Added SQLAlchemy ORM model definitions.
+- Added automatic table creation for `device`, `attendance`, `raw_request`, and `sync_log`.
+- Added automatic creation of DT002 unique constraints and indexes for brand-new databases.
+- Added database startup readiness logs.
+- Added `GET /api/v1/health` with version `0.0.2`.
+- Added `scripts/DT002_install_ubuntu.sh`.
+- Removed obsolete MySQL 8.4 authentication override from Docker Compose.
+- Added deployment guard for default placeholder MySQL passwords.
+- Kept previous DT001 deployment scripts unchanged.
 - Updated README, CHANGELOG, and deployment documentation.
 
 ## Not Included
 
 - ADMS business logic
-- API business endpoints
-- Database schema
+- ADMS protocol
+- Attendance parsing
+- ADMS business endpoints
 - Mingdao/HAP sync
-- Future DT002 features
+- Future DT003 features
 
 ## Next Development Task
 
-DT002
+DT003

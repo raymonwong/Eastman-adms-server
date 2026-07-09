@@ -2,6 +2,32 @@
 
 ## Version
 
+DT002
+
+## Date
+
+2026-07-09
+
+## Development Task
+
+DT002 Database Foundation
+
+## Description
+
+- Added SQLAlchemy ORM models for `device`, `attendance`, `raw_request`, and `sync_log`.
+- Added startup database connection check and idempotent table creation.
+- Added required startup log output for database readiness.
+- Added `GET /api/v1/health` returning project, version, status, database, and time.
+- Added `scripts/DT002_install_ubuntu.sh` without overwriting previous deployment scripts.
+- Updated default API image tag to `eastman-adms-server:dt002`.
+- Removed obsolete MySQL authentication override for MySQL 8.4.
+- Added explicit unique constraint for `device.device_sn`.
+- Added targeted indexes for future ADMS query paths on `attendance` and `raw_request`.
+- Added deployment guard that blocks default placeholder MySQL passwords.
+- Kept the task limited to database architecture only.
+
+## Version
+
 DT001.4
 
 ## Date

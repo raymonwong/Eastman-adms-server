@@ -1,0 +1,72 @@
+from datetime import datetime
+
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class Device(Base):
+    __tablename__ = "device"
+    __table_args__ = (UniqueConstraint("device_sn", name="uq_device_device_sn"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    device_sn: Mapped[str] = mapped_column(String(64), nullable=False)
+    device_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    firmware_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    last_online: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+
+class RawRequest(Base):
+    __tablename__ = "raw_request"
+    __table_args__ = (
+        Index("ix_raw_request_device_sn", "device_sn"),
+        Index("ix_raw_request_received_at", "received_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    device_sn: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    request_method: Mapped[str] = mapped_column(String(16), nullable=False)
+    request_path: Mapped[str] = mapped_column(String(255), nullable=False)
+    query_string: Mapped[str | None] = mapped_column(Text, nullable=True)
+    headers: Mapped[str | None] = mapped_column(Text, nullable=True)
+    body: Mapped[str | None] = mapped_column(Text, nullable=True)
+    received_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class Attendance(Base):
+    __tablename__ = "attendance"
+    __table_args__ = (
+        Index("ix_attendance_device_sn", "device_sn"),
+        Index("ix_attendance_employee_code", "employee_code"),
+        Index("ix_attendance_attendance_time", "attendance_time"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    device_sn: Mapped[str] = mapped_column(String(64), nullable=False)
+    employee_code: Mapped[str] = mapped_column(String(64), nullable=False)
+    verify_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    attendance_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    work_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    raw_request_id: Mapped[int | None] = mapped_column(ForeignKey("raw_request.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class SyncLog(Base):
+    __tablename__ = "sync_log"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    attendance_id: Mapped[int | None] = mapped_column(ForeignKey("attendance.id"), nullable=True)
+    sync_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    sync_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    sync_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
