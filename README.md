@@ -35,6 +35,7 @@ scripts/DT005_install_ubuntu.sh
 - 验证 Docker
 - 验证 Docker Compose
 - 拉取 `.env` 中配置的 Docker 镜像
+- 镜像源临时超时时，如本地已有缓存镜像则继续部署
 - 执行 `docker compose build --pull`
 - 执行 `docker compose up -d --force-recreate api`，确保 API 容器运行最新构建代码
 - 使用 `SHOW TABLES;` 检查数据库表

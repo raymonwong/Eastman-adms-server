@@ -150,18 +150,33 @@ reset_database_if_requested() {
 pull_images() {
   log "Pulling MySQL image: ${MYSQL_IMAGE}"
   if ! compose pull mysql; then
-    fail "docker compose pull failed for image: ${MYSQL_IMAGE}"
+    if docker image inspect "${MYSQL_IMAGE}" >/dev/null 2>&1; then
+      log "WARNING: MySQL image pull failed, using local cached image: ${MYSQL_IMAGE}"
+    else
+      fail "docker compose pull failed for image and no local cache exists: ${MYSQL_IMAGE}"
+    fi
   fi
 
   log "Pulling Python base image: ${PYTHON_IMAGE}"
   if ! docker pull "${PYTHON_IMAGE}"; then
-    fail "docker pull failed for image: ${PYTHON_IMAGE}"
+    if docker image inspect "${PYTHON_IMAGE}" >/dev/null 2>&1; then
+      log "WARNING: Python image pull failed, using local cached image: ${PYTHON_IMAGE}"
+    else
+      fail "docker pull failed for image and no local cache exists: ${PYTHON_IMAGE}"
+    fi
   fi
 }
 
 restart_containers() {
   log "Building project images with latest base images"
-  compose build --pull
+  if ! compose build --pull; then
+    if docker image inspect "${PYTHON_IMAGE}" >/dev/null 2>&1; then
+      log "WARNING: build --pull failed, rebuilding with local cached Python image"
+      compose build
+    else
+      fail "Project image build failed and Python base image cache is missing: ${PYTHON_IMAGE}"
+    fi
+  fi
 
   log "Restarting API container with rebuilt project image"
   compose up -d --force-recreate api
