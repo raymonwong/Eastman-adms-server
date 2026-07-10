@@ -22,6 +22,7 @@ DT005 implements ATTLOG receive and parse from the official ZKTeco PUSH protocol
 - Added `OK:n` response for ATTLOG uploads.
 - Added parse-failure logging while preserving the original `raw_request`.
 - Added `scripts/DT005_install_ubuntu.sh`.
+- Updated deployment restart behavior so rebuilt API images are applied with a forced API container recreation.
 - Kept DT004 initialization handshake, `getrequest`, `devicecmd`, `OPERLOG`, and `options` compatibility untouched.
 - Updated README, CHANGELOG, and project status documentation.
 

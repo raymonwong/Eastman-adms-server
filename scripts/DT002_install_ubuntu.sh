@@ -163,8 +163,8 @@ restart_containers() {
   log "Building project images with latest base images"
   compose build --pull
 
-  log "Restarting containers"
-  compose up -d
+  log "Restarting API container with rebuilt project image"
+  compose up -d --force-recreate api
 }
 
 wait_for_mysql() {

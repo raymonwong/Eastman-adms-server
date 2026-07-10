@@ -23,6 +23,7 @@ DT005 ATTLOG Receive and Parse
 - Kept `raw_request` persistence before parsing and updated the stored response to `OK:n`.
 - Added parse-failure logging without aborting later records in the same upload.
 - Added `scripts/DT005_install_ubuntu.sh` without overwriting previous deployment scripts.
+- Updated deployment restart behavior to force recreate the API container after rebuilding the project image.
 - Kept ERP logic, attendance result calculation, Mingdao sync, user sync, and command queue out of DT005.
 
 ## Version

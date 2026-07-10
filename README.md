@@ -36,7 +36,7 @@ scripts/DT005_install_ubuntu.sh
 - 验证 Docker Compose
 - 拉取 `.env` 中配置的 Docker 镜像
 - 执行 `docker compose build --pull`
-- 执行 `docker compose up -d`
+- 执行 `docker compose up -d --force-recreate api`，确保 API 容器运行最新构建代码
 - 使用 `SHOW TABLES;` 检查数据库表
 - 验证 `/api/v1/health`
 - 验证初始化握手响应构造
