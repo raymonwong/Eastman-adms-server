@@ -256,10 +256,11 @@ def _log_initialization_completed(
 
 def _parse_attlog_line(line: str, device_sn: str | None, receive_time: datetime, raw_request_id: int) -> AttendanceEvent:
     fields = line.split("\t")
-    if len(fields) < 7:
-        raise ValueError("ATTLOG record must contain at least 7 tab-separated fields")
+    if len(fields) < 6:
+        raise ValueError("ATTLOG record must contain at least 6 tab-separated fields")
 
-    pin, attendance_time_text, status, verify, work_code, reserved1, reserved2 = fields[:7]
+    pin, attendance_time_text, status, verify, work_code, reserved1 = fields[:6]
+    reserved2 = fields[6] if len(fields) > 6 else None
     mask_flag = fields[7] if len(fields) > 7 else None
     temperature = fields[8] if len(fields) > 8 else None
     conv_temperature = fields[9] if len(fields) > 9 else None

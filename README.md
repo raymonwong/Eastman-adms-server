@@ -160,7 +160,7 @@ ATTLOG 上传：
 POST /iclock/cdata?SN=<SN>&table=ATTLOG&Stamp=<STAMP>
 ```
 
-请求体按官方格式解析为多行记录，每行兼容 7 字段 `PIN<TAB>Time<TAB>Status<TAB>Verify<TAB>WorkCode<TAB>Reserved1<TAB>Reserved2` 和 V4.3 10 字段 `PIN<TAB>Time<TAB>Status<TAB>Verify<TAB>WorkCode<TAB>Reserved1<TAB>Reserved2<TAB>MaskFlag<TAB>Temperature<TAB>ConvTemperature`。服务器成功保存后返回 `OK:n`，其中 `n` 是成功解析并保存的记录数。
+请求体按官方格式解析为多行记录，最低要求 6 字段 `PIN<TAB>Time<TAB>Status<TAB>Verify<TAB>WorkCode<TAB>Reserved1`，并兼容可选字段 `Reserved2<TAB>MaskFlag<TAB>Temperature<TAB>ConvTemperature`。服务器成功保存后返回 `OK:n`，其中 `n` 是成功解析并保存的记录数。
 
 ## 7. 设备配置说明
 

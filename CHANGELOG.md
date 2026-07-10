@@ -18,6 +18,7 @@ DT005 ATTLOG Receive and Parse
 - Added ATTLOG parsing for `POST /iclock/cdata?table=ATTLOG` according to PUSH protocol V4.3 section 12.2.
 - Saved multi-line ATTLOG uploads as individual raw attendance events.
 - Added V4.3 ATTLOG fields `mask_flag`, `temperature`, and `conv_temperature` while keeping 7-field device compatibility.
+- Added variable-length ATTLOG compatibility for real devices that omit optional fields after `Reserved1`.
 - Added duplicate protection by device SN, PIN, attendance time, and verify type.
 - Kept `raw_request` persistence before parsing and updated the stored response to `OK:n`.
 - Added parse-failure logging without aborting later records in the same upload.

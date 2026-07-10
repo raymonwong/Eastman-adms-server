@@ -15,7 +15,7 @@ DT005 implements ATTLOG receive and parse from the official ZKTeco PUSH protocol
 ## Completed
 
 - Added `attendance_event` as the raw ATTLOG event table.
-- Added ATTLOG parser for both 7-field legacy records and 10-field V4.3 records.
+- Added ATTLOG parser for variable-length records with 6 required fields and optional `Reserved2`, `MaskFlag`, `Temperature`, and `ConvTemperature`.
 - Added V4.3 ATTLOG fields `mask_flag`, `temperature`, and `conv_temperature`.
 - Added multi-line ATTLOG upload support.
 - Added duplicate protection by device SN, PIN, attendance time, and verify type.
