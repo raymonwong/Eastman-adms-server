@@ -19,6 +19,11 @@ class Device(Base):
     firmware_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
     first_online: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_online: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_handshake_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    push_version: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    device_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    language: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    push_options: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str | None] = mapped_column(String(32), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(

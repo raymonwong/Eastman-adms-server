@@ -10,6 +10,17 @@ from app.models import Device, DeviceEventLog, RawRequest
 
 router = APIRouter()
 
+PUSH_PROTOCOL_VERSION = "2.4.2"
+DUBAI_TIMEZONE = "4"
+DEFAULT_STAMP = "9999"
+DEFAULT_DELAY = "10"
+DEFAULT_ERROR_DELAY = "30"
+DEFAULT_REALTIME = "1"
+DEFAULT_TRANS_INTERVAL = "1"
+DEFAULT_TRANS_TIMES = "00:00"
+DEFAULT_TRANS_FLAG = "TransData\tAttLog\tOpLog\tEnrollUser\tChgUser\tEnrollFP\tChgFP\tFACE\tUserPic"
+DEFAULT_PUSH_OPTIONS = "FingerFunOn,FaceFunOn,UserPicURLFunOn"
+
 
 def _json_dump(value: object) -> str:
     # Preserve non-ASCII device values while keeping a structured snapshot.
@@ -48,7 +59,17 @@ def _request_hash(
     return digest.hexdigest()
 
 
-def _upsert_device(device_sn: str | None, ip_address: str | None, received_at: datetime) -> int | None:
+def _upsert_device(
+    device_sn: str | None,
+    ip_address: str | None,
+    received_at: datetime,
+    *,
+    handshake: bool = False,
+    push_version: str | None = None,
+    device_type: str | None = None,
+    language: str | None = None,
+    push_options: str | None = None,
+) -> int | None:
     if not device_sn:
         return None
 
@@ -66,8 +87,42 @@ def _upsert_device(device_sn: str | None, ip_address: str | None, received_at: d
         else:
             device.ip_address = ip_address
             device.last_online = received_at
+        if handshake:
+            device.last_handshake_time = received_at
+            device.push_version = push_version
+            device.device_type = device_type
+            device.language = language
+            device.push_options = push_options
         session.commit()
         return device.id
+
+
+def _is_initialization_handshake(request: Request) -> bool:
+    return request.method == "GET" and request.query_params.get("options", "").lower() == "all"
+
+
+def _build_initialization_response(device_sn: str | None) -> str:
+    sn = device_sn or ""
+    lines = [
+        f"GET OPTION FROM: {sn}",
+        f"ATTLOGStamp={DEFAULT_STAMP}",
+        f"OPERLOGStamp={DEFAULT_STAMP}",
+        f"ATTPHOTOStamp={DEFAULT_STAMP}",
+        f"ERRORLOGStamp={DEFAULT_STAMP}",
+        f"Delay={DEFAULT_DELAY}",
+        f"ErrorDelay={DEFAULT_ERROR_DELAY}",
+        f"Realtime={DEFAULT_REALTIME}",
+        f"TransInterval={DEFAULT_TRANS_INTERVAL}",
+        f"TransTimes={DEFAULT_TRANS_TIMES}",
+        f"TransFlag={DEFAULT_TRANS_FLAG}",
+        f"TimeZone={DUBAI_TIMEZONE}",
+        "Encrypt=0",
+        f"PushProtVer={PUSH_PROTOCOL_VERSION}",
+        "PushOptionsFlag=1",
+        f"PushOptions={DEFAULT_PUSH_OPTIONS}",
+        f"ServerVer={PUSH_PROTOCOL_VERSION}",
+    ]
+    return "\n".join(lines)
 
 
 def _save_raw_request(request: Request, body: bytes, response_body: str, response_status_code: int) -> dict[str, object]:
@@ -161,9 +216,30 @@ def _log_device_connection(
     print("---------------------------------------", flush=True)
 
 
+def _log_initialization_completed(
+    device_sn: str | None,
+    push_version: str | None,
+    device_type: str | None,
+    language: str | None,
+) -> None:
+    print("---------------------------------------", flush=True)
+    print("Initialization Completed", flush=True)
+    print(f"SN: {device_sn or ''}", flush=True)
+    print(f"Push Version: {push_version or ''}", flush=True)
+    print(f"Device Type: {device_type or ''}", flush=True)
+    print(f"Language: {language or ''}", flush=True)
+    print(f"TimeZone: {DUBAI_TIMEZONE}", flush=True)
+    print(f"Realtime: {DEFAULT_REALTIME}", flush=True)
+    print(f"Delay: {DEFAULT_DELAY}", flush=True)
+    print(f"TransFlag: {DEFAULT_TRANS_FLAG}", flush=True)
+    print("---------------------------------------", flush=True)
+
+
 @router.api_route("/iclock/cdata", methods=["GET", "POST"])
 async def iclock_cdata(request: Request) -> PlainTextResponse:
-    response_body = "OK"
+    device_sn = request.query_params.get("SN") or request.query_params.get("sn")
+    is_handshake = _is_initialization_handshake(request)
+    response_body = _build_initialization_response(device_sn) if is_handshake else "OK"
     response_status_code = 200
     body = await request.body()
     context = _save_raw_request(request, body, response_body, response_status_code)
@@ -171,7 +247,16 @@ async def iclock_cdata(request: Request) -> PlainTextResponse:
     device_id = None
     remark = None
     try:
-        device_id = _upsert_device(context["device_sn"], context["client_ip"], context["received_at"])
+        device_id = _upsert_device(
+            context["device_sn"],
+            context["client_ip"],
+            context["received_at"],
+            handshake=is_handshake,
+            push_version=request.query_params.get("pushver"),
+            device_type=request.query_params.get("DeviceType"),
+            language=request.query_params.get("language"),
+            push_options=DEFAULT_PUSH_OPTIONS if is_handshake else None,
+        )
     except Exception as exc:
         remark = f"device_registration_failed: {exc}"
 
@@ -185,4 +270,29 @@ async def iclock_cdata(request: Request) -> PlainTextResponse:
         response_body,
         response_status_code,
     )
-    return PlainTextResponse(response_body, status_code=response_status_code)
+    if is_handshake:
+        _log_initialization_completed(
+            context["device_sn"],
+            request.query_params.get("pushver"),
+            request.query_params.get("DeviceType"),
+            request.query_params.get("language"),
+        )
+    return PlainTextResponse(response_body, status_code=response_status_code, media_type="text/plain")
+
+
+@router.get("/iclock/getrequest")
+async def iclock_getrequest(request: Request) -> PlainTextResponse:
+    response_body = "OK"
+    response_status_code = 200
+    body = await request.body()
+    _save_raw_request(request, body, response_body, response_status_code)
+    return PlainTextResponse(response_body, status_code=response_status_code, media_type="text/plain")
+
+
+@router.post("/iclock/devicecmd")
+async def iclock_devicecmd(request: Request) -> PlainTextResponse:
+    response_body = "OK"
+    response_status_code = 200
+    body = await request.body()
+    _save_raw_request(request, body, response_body, response_status_code)
+    return PlainTextResponse(response_body, status_code=response_status_code, media_type="text/plain")

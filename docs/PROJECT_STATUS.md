@@ -2,7 +2,7 @@
 
 ## Current Development Task
 
-DT003
+DT004
 
 ## Status
 
@@ -10,19 +10,18 @@ Waiting for Review
 
 ## Summary
 
-DT003 implements ADMS device connection phase 1. The server accepts `GET` and `POST` requests at `/iclock/cdata`, saves complete raw HTTP request data before any other processing, records a device connection event, registers or updates the device by `SN`, and returns `OK`.
+DT004 implements the ADMS initialization handshake from the official ZKTeco PUSH protocol V4.3 chapter 6. The server responds to `GET /iclock/cdata?options=all` with `GET OPTION FROM:` configuration data, stores the original request and response snapshot, and updates device handshake metadata.
 
 ## Completed
 
-- Added `GET /iclock/cdata` and `POST /iclock/cdata`.
-- Added complete raw HTTP request persistence in `raw_request`.
-- Added raw request fields for URL, query parameters, client IP, User-Agent, Content-Type, response body, response status code, request size, response size, parsed flag, and request hash.
-- Added `device_event_log` for device connection history.
-- Added automatic device registration and last-online updates from `SN`.
-- Added first-online and status tracking for devices.
-- Added concise connection logs.
-- Added device ADMS configuration and troubleshooting documentation.
-- Kept DT002 installation script unchanged.
+- Added official `GET OPTION FROM:` response for initialization handshake.
+- Added default `9999` stamps when no server-side stamp record exists.
+- Added `TimeZone=4`, `Realtime=1`, `Delay=10`, `ErrorDelay=30`, `TransInterval=1`, and `TransTimes=00:00`.
+- Added official TransFlag format two with `AttLog`, `OpLog`, `EnrollUser`, `ChgUser`, `EnrollFP`, `ChgFP`, `FACE`, and `UserPic`.
+- Added `PushProtVer=2.4.2`, `PushOptionsFlag=1`, and default push options.
+- Added `device` handshake metadata fields.
+- Added `scripts/DT004_install_ubuntu.sh`.
+- Kept DT003 request capture, ATTLOG upload compatibility, OPERLOG upload compatibility, `getrequest`, and `devicecmd` behavior untouched.
 - Updated README, CHANGELOG, and project status documentation.
 
 ## Not Included
@@ -33,8 +32,8 @@ DT003 implements ADMS device connection phase 1. The server accepts `GET` and `P
 - Device commands
 - Command Queue
 - Mingdao/HAP sync
-- Future DT004 features
+- Future DT005 features
 
 ## Next Development Task
 
-DT004
+DT005

@@ -28,6 +28,7 @@ def create_database_tables(engine: Engine) -> None:
     # SQLAlchemy create_all is idempotent and only creates tables that do not exist.
     Base.metadata.create_all(bind=engine)
     ensure_dt003_columns(engine)
+    ensure_dt004_columns(engine)
 
 
 def ensure_dt003_columns(engine: Engine) -> None:
@@ -83,5 +84,25 @@ def ensure_dt003_columns(engine: Engine) -> None:
                     or "duplicate key name" in error_text
                     or "already exists" in error_text
                 ):
+                    continue
+                raise
+
+
+def ensure_dt004_columns(engine: Engine) -> None:
+    # DT004 adds handshake metadata to device without introducing a migration tool yet.
+    statements = (
+        "ALTER TABLE device ADD COLUMN last_handshake_time DATETIME NULL",
+        "ALTER TABLE device ADD COLUMN push_version VARCHAR(32) NULL",
+        "ALTER TABLE device ADD COLUMN device_type VARCHAR(32) NULL",
+        "ALTER TABLE device ADD COLUMN language VARCHAR(32) NULL",
+        "ALTER TABLE device ADD COLUMN push_options TEXT NULL",
+    )
+
+    with engine.begin() as connection:
+        for statement in statements:
+            try:
+                connection.execute(text(statement))
+            except Exception as exc:
+                if "duplicate column" in str(exc).lower():
                     continue
                 raise

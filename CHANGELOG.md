@@ -2,6 +2,28 @@
 
 ## Version
 
+DT004
+
+## Date
+
+2026-07-10
+
+## Development Task
+
+DT004 Initialization Handshake
+
+## Description
+
+- Added official `GET OPTION FROM:` response for `GET /iclock/cdata?options=all`.
+- Added default initialization values for `ATTLOGStamp`, `OPERLOGStamp`, `ATTPHOTOStamp`, `ERRORLOGStamp`, `Delay`, `ErrorDelay`, `Realtime`, `TransInterval`, `TransTimes`, `TransFlag`, `TimeZone`, `PushProtVer`, `PushOptionsFlag`, `PushOptions`, and `ServerVer`.
+- Set Dubai timezone response to `TimeZone=4`.
+- Added device handshake metadata fields for push version, device type, language, push options, and last handshake time.
+- Added concise initialization completion logs.
+- Added `scripts/DT004_install_ubuntu.sh` without overwriting previous deployment scripts.
+- Kept ATTLOG parsing, user synchronization, and command queue out of DT004.
+
+## Version
+
 DT003
 
 ## Date
