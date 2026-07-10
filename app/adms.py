@@ -7,7 +7,7 @@ from fastapi.responses import PlainTextResponse
 from sqlalchemy.exc import IntegrityError
 
 from app.database import SessionLocal
-from app.models import AttendanceEvent, Device, DeviceEventLog, RawRequest
+from app.models import AttendanceEvent, Device, DeviceEventLog, OperationEvent, RawRequest
 
 router = APIRouter()
 
@@ -21,6 +21,9 @@ DEFAULT_TRANS_INTERVAL = "1"
 DEFAULT_TRANS_TIMES = "00:00"
 DEFAULT_TRANS_FLAG = "TransData\tAttLog\tOpLog\tEnrollUser\tChgUser\tEnrollFP\tChgFP\tFACE\tUserPic"
 DEFAULT_PUSH_OPTIONS = "FingerFunOn,FaceFunOn,UserPicURLFunOn"
+OPERATION_NAME_MAP = {
+    "82": "Modify Cloud Server Address",
+}
 
 
 def _json_dump(value: object) -> str:
@@ -104,6 +107,10 @@ def _is_initialization_handshake(request: Request) -> bool:
 
 def _is_attlog_upload(request: Request) -> bool:
     return request.method == "POST" and request.query_params.get("table", "").upper() == "ATTLOG"
+
+
+def _is_operlog_upload(request: Request) -> bool:
+    return request.method == "POST" and request.query_params.get("table", "").upper() == "OPERLOG"
 
 
 def _build_initialization_response(device_sn: str | None) -> str:
@@ -345,11 +352,87 @@ def _parse_and_save_attlog(context: dict[str, object], body: bytes) -> int:
     return saved_count
 
 
+def _operation_name(operation_code: str) -> str:
+    return OPERATION_NAME_MAP.get(operation_code, f"Operation {operation_code}")
+
+
+def _parse_operlog_line(line: str, device_sn: str | None, receive_time: datetime, raw_request_id: int) -> OperationEvent:
+    fields = line.split("\t")
+    if len(fields) < 8:
+        raise ValueError("OPERLOG record must contain OPLOG plus 7 tab-separated fields")
+    if fields[0].upper() != "OPLOG":
+        raise ValueError("OPERLOG record must start with OPLOG")
+
+    operation_code, operator, operation_time_text, operation_object, value1, value2, value3 = fields[1:8]
+    if not device_sn:
+        raise ValueError("OPERLOG record is missing device SN")
+    if not operation_code:
+        raise ValueError("OPERLOG record is missing operation code")
+
+    operation_time = datetime.strptime(operation_time_text, "%Y-%m-%d %H:%M:%S")
+    return OperationEvent(
+        device_sn=device_sn,
+        operation_code=operation_code,
+        operation_name=_operation_name(operation_code),
+        operator=operator,
+        operation_time=operation_time,
+        operation_object=operation_object,
+        value1=value1,
+        value2=value2,
+        value3=value3,
+        receive_time=receive_time,
+        raw_request_id=raw_request_id,
+    )
+
+
+def _save_operation_event(event: OperationEvent) -> None:
+    with SessionLocal() as session:
+        session.add(event)
+        session.commit()
+
+
+def _parse_and_save_operlog(context: dict[str, object], body: bytes) -> int:
+    body_text = _decode_body(body)
+    saved_count = 0
+
+    for line_number, line in enumerate(body_text.splitlines(), start=1):
+        if not line:
+            continue
+        try:
+            event = _parse_operlog_line(
+                line,
+                context["device_sn"],
+                context["received_at"],
+                context["raw_request_id"],
+            )
+            _save_operation_event(event)
+        except Exception as exc:
+            print("---------------------------------------", flush=True)
+            print("OPERLOG Parse Failed", flush=True)
+            print(f"Device SN: {context['device_sn'] or ''}", flush=True)
+            print(f"Line: {line_number}", flush=True)
+            print(f"Error: {exc}", flush=True)
+            print("---------------------------------------", flush=True)
+            continue
+
+        saved_count += 1
+        print("---------------------------------------", flush=True)
+        print("OPERLOG Parsed", flush=True)
+        print(f"Device SN: {event.device_sn}", flush=True)
+        print(f"Operation Code: {event.operation_code}", flush=True)
+        print(f"Operation Time: {event.operation_time}", flush=True)
+        print(f"Record Count: {saved_count}", flush=True)
+        print("---------------------------------------", flush=True)
+
+    return saved_count
+
+
 @router.api_route("/iclock/cdata", methods=["GET", "POST"])
 async def iclock_cdata(request: Request) -> PlainTextResponse:
     device_sn = request.query_params.get("SN") or request.query_params.get("sn")
     is_handshake = _is_initialization_handshake(request)
     is_attlog = _is_attlog_upload(request)
+    is_operlog = _is_operlog_upload(request)
     response_body = _build_initialization_response(device_sn) if is_handshake else "OK"
     response_status_code = 200
     body = await request.body()
@@ -357,6 +440,13 @@ async def iclock_cdata(request: Request) -> PlainTextResponse:
 
     if is_attlog:
         saved_count = _parse_and_save_attlog(context, body)
+        _mark_raw_request_parsed(context["raw_request_id"])
+        response_body = f"OK:{saved_count}"
+        context["response_body"] = response_body
+        _update_raw_request_response(context["raw_request_id"], response_body, response_status_code)
+
+    if is_operlog:
+        saved_count = _parse_and_save_operlog(context, body)
         _mark_raw_request_parsed(context["raw_request_id"])
         response_body = f"OK:{saved_count}"
         context["response_body"] = response_body

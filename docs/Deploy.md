@@ -14,7 +14,7 @@
 在项目根目录执行：
 
 ```bash
-scripts/DT005_install_ubuntu.sh
+scripts/DT006_install_ubuntu.sh
 ```
 
 脚本会自动：
@@ -25,18 +25,20 @@ scripts/DT005_install_ubuntu.sh
 4. 拉取 `.env` 中配置的 MySQL 镜像。
 5. 拉取 `.env` 中配置的 Python 基础镜像。
 6. 执行 `docker compose build --pull`。
-7. 执行 `docker compose up -d`。
+7. 执行 `docker compose up -d --force-recreate api`。
 8. 等待 MySQL 健康。
 9. 验证 `/api/v1/health`。
 10. 执行 `SHOW TABLES;` 并确认 `device`、`attendance`、`raw_request`、`sync_log` 存在。
 11. 验证 DT004 初始化握手响应包含 `GET OPTION FROM:`、`TimeZone=4`、`Realtime=1` 和 `PushProtVer=2.4.2`。
 12. 验证 DT005 `attendance_event` 表存在。
 13. 验证 ATTLOG 解析器可解析官方 7 字段记录。
-14. 如部署失败，输出 `docker compose ps`、`docker ps`、MySQL 最近 100 行日志和 API 最近 100 行日志。
+14. 验证 DT006 `operation_event` 表存在。
+15. 验证 OPERLOG 解析器可解析官方操作记录。
+16. 如部署失败，输出 `docker compose ps`、`docker ps`、MySQL 最近 100 行日志和 API 最近 100 行日志。
 
 全新数据库部署时，应用启动会自动创建 DT002 表结构、唯一约束和索引，不需要手动执行 SQL。DT002 未引入 Alembic，已存在的旧数据库结构变更需在后续 Review Fix 或迁移任务中明确处理。
 
-旧脚本 `scripts/DT001_install_ubuntu.sh`、`scripts/DT001.2_install_ubuntu.sh`、`scripts/DT001.3_install_ubuntu.sh`、`scripts/DT001.4_install_ubuntu.sh`、`scripts/DT002_install_ubuntu.sh` 和 `scripts/DT004_install_ubuntu.sh` 保留用于历史追溯。DT005 起推荐使用 `scripts/DT005_install_ubuntu.sh`。
+旧脚本 `scripts/DT001_install_ubuntu.sh`、`scripts/DT001.2_install_ubuntu.sh`、`scripts/DT001.3_install_ubuntu.sh`、`scripts/DT001.4_install_ubuntu.sh`、`scripts/DT002_install_ubuntu.sh`、`scripts/DT004_install_ubuntu.sh` 和 `scripts/DT005_install_ubuntu.sh` 保留用于历史追溯。DT006 起推荐使用 `scripts/DT006_install_ubuntu.sh`。
 
 ## Docker 镜像
 
@@ -80,6 +82,7 @@ curl http://localhost:4370/ready
 curl http://localhost:4370/api/v1/health
 curl 'http://localhost:4370/iclock/cdata?SN=DT004_TEST&options=all&pushver=2.4.2&DeviceType=att&language=83'
 curl -X POST 'http://localhost:4370/iclock/cdata?SN=DT005_TEST&table=ATTLOG&Stamp=9999' --data-binary $'1001\t2026-07-10 08:30:00\t0\t1\t0\t0\t0\n'
+curl -X POST 'http://localhost:4370/iclock/cdata?SN=DT006_TEST&table=OPERLOG&Stamp=9999' --data-binary $'OPLOG\t82\t1\t2026-07-10 08:30:00\tserver\tvalue1\tvalue2\tvalue3\n'
 ```
 
 `/health` 和 `/ready` 预期返回：
@@ -109,6 +112,12 @@ OPERLOGStamp=9999
 ```
 
 ATTLOG 测试接口预期返回：
+
+```text
+OK:1
+```
+
+OPERLOG 测试接口预期返回：
 
 ```text
 OK:1

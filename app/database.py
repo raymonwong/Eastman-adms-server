@@ -30,6 +30,7 @@ def create_database_tables(engine: Engine) -> None:
     ensure_dt003_columns(engine)
     ensure_dt004_columns(engine)
     ensure_dt005_tables(engine)
+    ensure_dt006_tables(engine)
 
 
 def ensure_dt003_columns(engine: Engine) -> None:
@@ -153,5 +154,43 @@ def ensure_dt005_tables(engine: Engine) -> None:
                     or "duplicate key name" in error_text
                     or "already exists" in error_text
                 ):
+                    continue
+                raise
+
+
+def ensure_dt006_tables(engine: Engine) -> None:
+    # DT006 introduces raw operation events uploaded through OPERLOG.
+    statements = (
+        """
+        CREATE TABLE IF NOT EXISTS operation_event (
+            id INT NOT NULL AUTO_INCREMENT,
+            device_sn VARCHAR(64) NOT NULL,
+            operation_code VARCHAR(32) NOT NULL,
+            operation_name VARCHAR(128) NULL,
+            operator VARCHAR(64) NULL,
+            operation_time DATETIME NOT NULL,
+            operation_object VARCHAR(128) NULL,
+            value1 TEXT NULL,
+            value2 TEXT NULL,
+            value3 TEXT NULL,
+            receive_time DATETIME NOT NULL,
+            raw_request_id INT NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            CONSTRAINT fk_operation_event_raw_request_id FOREIGN KEY (raw_request_id) REFERENCES raw_request(id)
+        )
+        """,
+        "CREATE INDEX ix_operation_event_device_sn ON operation_event (device_sn)",
+        "CREATE INDEX ix_operation_event_operation_code ON operation_event (operation_code)",
+        "CREATE INDEX ix_operation_event_operation_time ON operation_event (operation_time)",
+    )
+
+    with engine.begin() as connection:
+        for statement in statements:
+            try:
+                connection.execute(text(statement))
+            except Exception as exc:
+                error_text = str(exc).lower()
+                if "duplicate key name" in error_text or "already exists" in error_text:
                     continue
                 raise

@@ -1,5 +1,29 @@
 # Changelog
 
+## Version
+
+DT006
+
+## Date
+
+2026-07-10
+
+## Development Task
+
+DT006 OPERLOG Receive and Parse
+
+## Description
+
+- Added `operation_event` table for raw OPERLOG operation events.
+- Added OPERLOG parsing for `POST /iclock/cdata?table=OPERLOG` according to PUSH protocol V4.3 section 12.4.
+- Saved multi-line OPERLOG uploads as individual raw operation events.
+- Added `operation_code` and `operation_name` while preserving the original operation code.
+- Added `OK:n` response for OPERLOG uploads.
+- Kept `raw_request` persistence before parsing and updated the stored response to `OK:n`.
+- Added parse-failure logging without aborting later records in the same upload.
+- Added `scripts/DT006_install_ubuntu.sh` without overwriting previous deployment scripts.
+- Kept USER, FACE, FINGER, BIODATA, command queue, Mingdao sync, ERP logic, and attendance result calculation out of DT006.
+
 ## Eastman ADMS Server V1.0
 
 Completed:

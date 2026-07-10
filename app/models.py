@@ -136,6 +136,29 @@ class AttendanceEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
+class OperationEvent(Base):
+    __tablename__ = "operation_event"
+    __table_args__ = (
+        Index("ix_operation_event_device_sn", "device_sn"),
+        Index("ix_operation_event_operation_code", "operation_code"),
+        Index("ix_operation_event_operation_time", "operation_time"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    device_sn: Mapped[str] = mapped_column(String(64), nullable=False)
+    operation_code: Mapped[str] = mapped_column(String(32), nullable=False)
+    operation_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    operator: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    operation_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    operation_object: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    value1: Mapped[str | None] = mapped_column(Text, nullable=True)
+    value2: Mapped[str | None] = mapped_column(Text, nullable=True)
+    value3: Mapped[str | None] = mapped_column(Text, nullable=True)
+    receive_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    raw_request_id: Mapped[int] = mapped_column(ForeignKey("raw_request.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
 class SyncLog(Base):
     __tablename__ = "sync_log"
 
