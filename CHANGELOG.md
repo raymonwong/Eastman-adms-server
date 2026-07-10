@@ -2,6 +2,30 @@
 
 ## Version
 
+DT005
+
+## Date
+
+2026-07-10
+
+## Development Task
+
+DT005 ATTLOG Receive and Parse
+
+## Description
+
+- Added `attendance_event` table for raw ATTLOG attendance events.
+- Added ATTLOG parsing for `POST /iclock/cdata?table=ATTLOG` according to PUSH protocol V4.3 section 12.2.
+- Saved multi-line ATTLOG uploads as individual raw attendance events.
+- Added V4.3 ATTLOG fields `mask_flag`, `temperature`, and `conv_temperature` while keeping 7-field device compatibility.
+- Added duplicate protection by device SN, PIN, attendance time, and verify type.
+- Kept `raw_request` persistence before parsing and updated the stored response to `OK:n`.
+- Added parse-failure logging without aborting later records in the same upload.
+- Added `scripts/DT005_install_ubuntu.sh` without overwriting previous deployment scripts.
+- Kept ERP logic, attendance result calculation, Mingdao sync, user sync, and command queue out of DT005.
+
+## Version
+
 DT004
 
 ## Date

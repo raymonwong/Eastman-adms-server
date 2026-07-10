@@ -4,9 +4,10 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, Request
 from fastapi.responses import PlainTextResponse
+from sqlalchemy.exc import IntegrityError
 
 from app.database import SessionLocal
-from app.models import Device, DeviceEventLog, RawRequest
+from app.models import AttendanceEvent, Device, DeviceEventLog, RawRequest
 
 router = APIRouter()
 
@@ -101,6 +102,10 @@ def _is_initialization_handshake(request: Request) -> bool:
     return request.method == "GET" and request.query_params.get("options", "").lower() == "all"
 
 
+def _is_attlog_upload(request: Request) -> bool:
+    return request.method == "POST" and request.query_params.get("table", "").upper() == "ATTLOG"
+
+
 def _build_initialization_response(device_sn: str | None) -> str:
     sn = device_sn or ""
     lines = [
@@ -159,9 +164,12 @@ def _save_raw_request(request: Request, body: bytes, response_body: str, respons
 
     with SessionLocal() as session:
         session.add(raw_request)
+        session.flush()
+        raw_request_id = raw_request.id
         session.commit()
 
     return {
+        "raw_request_id": raw_request_id,
         "device_sn": device_sn,
         "client_ip": client_ip,
         "received_at": received_at,
@@ -172,6 +180,17 @@ def _save_raw_request(request: Request, body: bytes, response_body: str, respons
         "user_agent": request.headers.get("user-agent"),
         "request_hash": request_hash,
     }
+
+
+def _update_raw_request_response(raw_request_id: int, response_body: str, response_status_code: int) -> None:
+    with SessionLocal() as session:
+        raw_request = session.get(RawRequest, raw_request_id)
+        if raw_request is None:
+            return
+        raw_request.response_body = response_body
+        raw_request.response_status_code = response_status_code
+        raw_request.response_size = len(response_body.encode("utf-8"))
+        session.commit()
 
 
 def _save_device_event(context: dict[str, object], device_id: int | None, remark: str | None) -> None:
@@ -235,14 +254,102 @@ def _log_initialization_completed(
     print("---------------------------------------", flush=True)
 
 
+def _parse_attlog_line(line: str, device_sn: str | None, receive_time: datetime, raw_request_id: int) -> AttendanceEvent:
+    fields = line.split("\t")
+    if len(fields) < 7:
+        raise ValueError("ATTLOG record must contain at least 7 tab-separated fields")
+
+    pin, attendance_time_text, status, verify, work_code, reserved1, reserved2 = fields[:7]
+    mask_flag = fields[7] if len(fields) > 7 else None
+    temperature = fields[8] if len(fields) > 8 else None
+    conv_temperature = fields[9] if len(fields) > 9 else None
+    if not device_sn:
+        raise ValueError("ATTLOG record is missing device SN")
+    if not pin:
+        raise ValueError("ATTLOG record is missing PIN")
+
+    attendance_time = datetime.strptime(attendance_time_text, "%Y-%m-%d %H:%M:%S")
+    return AttendanceEvent(
+        device_sn=device_sn,
+        pin=pin,
+        attendance_time=attendance_time,
+        status=status,
+        verify=verify,
+        work_code=work_code,
+        reserved1=reserved1,
+        reserved2=reserved2,
+        mask_flag=mask_flag,
+        temperature=temperature,
+        conv_temperature=conv_temperature,
+        receive_time=receive_time,
+        raw_request_id=raw_request_id,
+    )
+
+
+def _save_attendance_event(event: AttendanceEvent) -> bool:
+    with SessionLocal() as session:
+        session.add(event)
+        try:
+            session.commit()
+        except IntegrityError:
+            session.rollback()
+            return False
+    return True
+
+
+def _parse_and_save_attlog(context: dict[str, object], body: bytes) -> int:
+    body_text = _decode_body(body)
+    saved_count = 0
+
+    for line_number, line in enumerate(body_text.splitlines(), start=1):
+        if not line:
+            continue
+        try:
+            event = _parse_attlog_line(
+                line,
+                context["device_sn"],
+                context["received_at"],
+                context["raw_request_id"],
+            )
+        except Exception as exc:
+            print("---------------------------------------", flush=True)
+            print("ATTLOG Parse Failed", flush=True)
+            print(f"Device SN: {context['device_sn'] or ''}", flush=True)
+            print(f"Line: {line_number}", flush=True)
+            print(f"Error: {exc}", flush=True)
+            print("---------------------------------------", flush=True)
+            continue
+
+        if not _save_attendance_event(event):
+            continue
+
+        saved_count += 1
+        print("---------------------------------------", flush=True)
+        print("ATTLOG Parsed", flush=True)
+        print(f"Device SN: {event.device_sn}", flush=True)
+        print(f"Record Count: {saved_count}", flush=True)
+        print(f"PIN: {event.pin}", flush=True)
+        print(f"Attendance Time: {event.attendance_time}", flush=True)
+        print("---------------------------------------", flush=True)
+
+    return saved_count
+
+
 @router.api_route("/iclock/cdata", methods=["GET", "POST"])
 async def iclock_cdata(request: Request) -> PlainTextResponse:
     device_sn = request.query_params.get("SN") or request.query_params.get("sn")
     is_handshake = _is_initialization_handshake(request)
+    is_attlog = _is_attlog_upload(request)
     response_body = _build_initialization_response(device_sn) if is_handshake else "OK"
     response_status_code = 200
     body = await request.body()
     context = _save_raw_request(request, body, response_body, response_status_code)
+
+    if is_attlog:
+        saved_count = _parse_and_save_attlog(context, body)
+        response_body = f"OK:{saved_count}"
+        context["response_body"] = response_body
+        _update_raw_request_response(context["raw_request_id"], response_body, response_status_code)
 
     device_id = None
     remark = None

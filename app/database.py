@@ -6,7 +6,7 @@ from app.models import Base
 from app.settings import Settings
 
 
-SessionLocal = sessionmaker(autoflush=False, autocommit=False)
+SessionLocal = sessionmaker(autoflush=False, autocommit=False, expire_on_commit=False)
 
 
 def create_database_engine(settings: Settings) -> Engine:
@@ -29,6 +29,7 @@ def create_database_tables(engine: Engine) -> None:
     Base.metadata.create_all(bind=engine)
     ensure_dt003_columns(engine)
     ensure_dt004_columns(engine)
+    ensure_dt005_tables(engine)
 
 
 def ensure_dt003_columns(engine: Engine) -> None:
@@ -104,5 +105,53 @@ def ensure_dt004_columns(engine: Engine) -> None:
                 connection.execute(text(statement))
             except Exception as exc:
                 if "duplicate column" in str(exc).lower():
+                    continue
+                raise
+
+
+def ensure_dt005_tables(engine: Engine) -> None:
+    # DT005 introduces raw attendance events, separate from future attendance results.
+    statements = (
+        """
+        CREATE TABLE IF NOT EXISTS attendance_event (
+            id INT NOT NULL AUTO_INCREMENT,
+            device_sn VARCHAR(64) NOT NULL,
+            pin VARCHAR(64) NOT NULL,
+            attendance_time DATETIME NOT NULL,
+            status VARCHAR(32) NULL,
+            verify VARCHAR(32) NOT NULL,
+            work_code VARCHAR(64) NULL,
+            reserved1 VARCHAR(255) NULL,
+            reserved2 VARCHAR(255) NULL,
+            mask_flag VARCHAR(32) NULL,
+            temperature VARCHAR(32) NULL,
+            conv_temperature VARCHAR(32) NULL,
+            receive_time DATETIME NOT NULL,
+            raw_request_id INT NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            CONSTRAINT fk_attendance_event_raw_request_id FOREIGN KEY (raw_request_id) REFERENCES raw_request(id),
+            CONSTRAINT uq_attendance_event_device_pin_time_verify UNIQUE (device_sn, pin, attendance_time, verify)
+        )
+        """,
+        "ALTER TABLE attendance_event ADD COLUMN mask_flag VARCHAR(32) NULL",
+        "ALTER TABLE attendance_event ADD COLUMN temperature VARCHAR(32) NULL",
+        "ALTER TABLE attendance_event ADD COLUMN conv_temperature VARCHAR(32) NULL",
+        "CREATE INDEX ix_attendance_event_device_sn ON attendance_event (device_sn)",
+        "CREATE INDEX ix_attendance_event_pin ON attendance_event (pin)",
+        "CREATE INDEX ix_attendance_event_attendance_time ON attendance_event (attendance_time)",
+    )
+
+    with engine.begin() as connection:
+        for statement in statements:
+            try:
+                connection.execute(text(statement))
+            except Exception as exc:
+                error_text = str(exc).lower()
+                if (
+                    "duplicate column" in error_text
+                    or "duplicate key name" in error_text
+                    or "already exists" in error_text
+                ):
                     continue
                 raise

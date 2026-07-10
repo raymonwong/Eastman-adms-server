@@ -104,6 +104,38 @@ class Attendance(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
+class AttendanceEvent(Base):
+    __tablename__ = "attendance_event"
+    __table_args__ = (
+        UniqueConstraint(
+            "device_sn",
+            "pin",
+            "attendance_time",
+            "verify",
+            name="uq_attendance_event_device_pin_time_verify",
+        ),
+        Index("ix_attendance_event_device_sn", "device_sn"),
+        Index("ix_attendance_event_pin", "pin"),
+        Index("ix_attendance_event_attendance_time", "attendance_time"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    device_sn: Mapped[str] = mapped_column(String(64), nullable=False)
+    pin: Mapped[str] = mapped_column(String(64), nullable=False)
+    attendance_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    verify: Mapped[str] = mapped_column(String(32), nullable=False)
+    work_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    reserved1: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    reserved2: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    mask_flag: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    temperature: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    conv_temperature: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    receive_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    raw_request_id: Mapped[int] = mapped_column(ForeignKey("raw_request.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
 class SyncLog(Base):
     __tablename__ = "sync_log"
 

@@ -4,9 +4,9 @@
 
 Eastman ADMS Server 是用于后续接入考勤设备、考勤平台和明道云/HAP 的服务端项目。
 
-Development Task 004 实现 ADMS 初始化信息交互：设备访问 `GET /iclock/cdata?options=all` 时，服务器按《考勤 PUSH 通讯协议 V4.3》第 6 章返回 `GET OPTION FROM:` 配置信息，并记录设备握手参数。
+Development Task 005 实现 ATTLOG 数据接收与解析：设备通过 `POST /iclock/cdata?table=ATTLOG` 上传考勤记录时，服务器按《考勤 PUSH 通讯协议 V4.3》第 12.2 章解析并保存到 `attendance_event`。
 
-本阶段不包含打卡记录解析、用户同步、命令队列、明道云同步、SDK 功能或任何业务逻辑。
+本阶段只保存设备上传的原始考勤事件，不包含排班、迟到、早退、加班、请假、补卡、薪资、统计、用户同步、命令队列、明道云同步或任何 ERP 业务逻辑。
 
 ## 2. 系统要求
 
@@ -26,7 +26,7 @@ Development Task 004 实现 ADMS 初始化信息交互：设备访问 `GET /iclo
 在项目根目录执行：
 
 ```bash
-scripts/DT004_install_ubuntu.sh
+scripts/DT005_install_ubuntu.sh
 ```
 
 安装脚本会自动完成：
@@ -40,13 +40,14 @@ scripts/DT004_install_ubuntu.sh
 - 使用 `SHOW TABLES;` 检查数据库表
 - 验证 `/api/v1/health`
 - 验证初始化握手响应构造
+- 验证 `attendance_event` 表和 ATTLOG 解析器
 - 失败时输出容器状态和最近 100 行容器日志
 
 部署成功后会输出：
 
 ```text
 ========================================
-Initialization Handshake Ready
+ATTLOG Parser Ready
 Application Ready
 ========================================
 ```
@@ -66,7 +67,8 @@ eastman-adms-server/
 │   ├── DT001.3_install_ubuntu.sh
 │   ├── DT001.4_install_ubuntu.sh
 │   ├── DT002_install_ubuntu.sh
-│   └── DT004_install_ubuntu.sh
+│   ├── DT004_install_ubuntu.sh
+│   └── DT005_install_ubuntu.sh
 ├── docs/
 │   ├── Architecture.md
 │   ├── Deploy.md
@@ -110,6 +112,7 @@ DT002 自动创建以下基础表：
 | --- | --- |
 | `device` | 保存考勤设备信息 |
 | `attendance` | 保存后续解析后的考勤记录 |
+| `attendance_event` | 保存设备上传的原始 ATTLOG 考勤事件 |
 | `raw_request` | 保存 ADMS 原始请求和服务器响应快照 |
 | `device_event_log` | 保存设备连接事件历史 |
 | `sync_log` | 保存后续明道云同步记录 |
@@ -117,6 +120,8 @@ DT002 自动创建以下基础表：
 DT003 为 `raw_request` 增加 `parsed`、`request_hash`、完整 URL、查询参数、客户端 IP、User-Agent、Content-Type、HTTP 响应内容、HTTP 状态码、请求大小和响应大小等原始请求审计字段。
 
 DT004 为 `device` 增加初始化握手字段：`last_handshake_time`、`push_version`、`device_type`、`language`、`push_options`。
+
+DT005 增加 `attendance_event`，保存设备序列号、PIN、考勤时间、状态、验证方式、工作代码、保留字段、口罩标识、温度、转换温度、接收时间和对应 `raw_request`。
 
 开发环境如需重建数据库，可执行：
 
@@ -148,6 +153,14 @@ GET /iclock/cdata?SN=<SN>&options=all&pushver=<VERSION>&DeviceType=<TYPE>&langua
 ```
 
 响应内容按官方协议返回 `GET OPTION FROM: <SN>`，并包含 `ATTLOGStamp=9999`、`OPERLOGStamp=9999`、`ATTPHOTOStamp=9999`、`ERRORLOGStamp=9999`、`TimeZone=4`、`Realtime=1`、`Delay=10`、`ErrorDelay=30`、`TransFlag=TransData	AttLog	OpLog	EnrollUser	ChgUser	EnrollFP	ChgFP	FACE	UserPic`、`PushProtVer=2.4.2` 等配置。
+
+ATTLOG 上传：
+
+```http
+POST /iclock/cdata?SN=<SN>&table=ATTLOG&Stamp=<STAMP>
+```
+
+请求体按官方格式解析为多行记录，每行兼容 7 字段 `PIN<TAB>Time<TAB>Status<TAB>Verify<TAB>WorkCode<TAB>Reserved1<TAB>Reserved2` 和 V4.3 10 字段 `PIN<TAB>Time<TAB>Status<TAB>Verify<TAB>WorkCode<TAB>Reserved1<TAB>Reserved2<TAB>MaskFlag<TAB>Temperature<TAB>ConvTemperature`。服务器成功保存后返回 `OK:n`，其中 `n` 是成功解析并保存的记录数。
 
 ## 7. 设备配置说明
 
@@ -189,11 +202,16 @@ http://<Server Address>:4370/iclock/cdata
 
 ## 8. 后续开发阶段
 
-DT005 预计根据真实设备数据开始 ATTLOG 解析。DT004 完成后等待 Review，不进入 DT005。
+DT006 预计根据真实设备数据继续处理下一类协议数据。DT005 完成后等待 Review，不进入 DT006。
 
-明确禁止在 DT004 中加入：
+明确禁止在 DT005 中加入：
 
-- 考勤解析
+- 考勤结果计算
+- 排班
+- 迟到/早退/加班判断
+- 请假/补卡
+- 薪资
+- 统计
 - 用户同步
 - 设备命令
 - Command Queue

@@ -2,7 +2,7 @@
 
 ## Current Development Task
 
-DT004
+DT005
 
 ## Status
 
@@ -10,30 +10,35 @@ Waiting for Review
 
 ## Summary
 
-DT004 implements the ADMS initialization handshake from the official ZKTeco PUSH protocol V4.3 chapter 6. The server responds to `GET /iclock/cdata?options=all` with `GET OPTION FROM:` configuration data, stores the original request and response snapshot, and updates device handshake metadata.
+DT005 implements ATTLOG receive and parse from the official ZKTeco PUSH protocol V4.3 section 12.2. The server receives `POST /iclock/cdata?table=ATTLOG`, keeps the raw request, parses tab-separated attendance records, saves raw attendance events to `attendance_event`, and returns `OK:n`.
 
 ## Completed
 
-- Added official `GET OPTION FROM:` response for initialization handshake.
-- Added default `9999` stamps when no server-side stamp record exists.
-- Added `TimeZone=4`, `Realtime=1`, `Delay=10`, `ErrorDelay=30`, `TransInterval=1`, and `TransTimes=00:00`.
-- Added official TransFlag format two with `AttLog`, `OpLog`, `EnrollUser`, `ChgUser`, `EnrollFP`, `ChgFP`, `FACE`, and `UserPic`.
-- Added `PushProtVer=2.4.2`, `PushOptionsFlag=1`, and default push options.
-- Added `device` handshake metadata fields.
-- Added `scripts/DT004_install_ubuntu.sh`.
-- Kept DT003 request capture, ATTLOG upload compatibility, OPERLOG upload compatibility, `getrequest`, and `devicecmd` behavior untouched.
+- Added `attendance_event` as the raw ATTLOG event table.
+- Added ATTLOG parser for both 7-field legacy records and 10-field V4.3 records.
+- Added V4.3 ATTLOG fields `mask_flag`, `temperature`, and `conv_temperature`.
+- Added multi-line ATTLOG upload support.
+- Added duplicate protection by device SN, PIN, attendance time, and verify type.
+- Added `OK:n` response for ATTLOG uploads.
+- Added parse-failure logging while preserving the original `raw_request`.
+- Added `scripts/DT005_install_ubuntu.sh`.
+- Kept DT004 initialization handshake, `getrequest`, `devicecmd`, `OPERLOG`, and `options` compatibility untouched.
 - Updated README, CHANGELOG, and project status documentation.
 
 ## Not Included
 
 - ADMS business logic
-- Attendance parsing
+- Attendance result calculation
+- Scheduling
+- Late/early/overtime/leave/makeup-card logic
+- Payroll
+- Statistics
 - User synchronization
 - Device commands
 - Command Queue
 - Mingdao/HAP sync
-- Future DT005 features
+- Future DT006 features
 
 ## Next Development Task
 
-DT005
+DT006
