@@ -6,7 +6,7 @@ DT005
 
 ## Status
 
-Waiting for Review
+Completed - Real Device Verified
 
 ## Summary
 
@@ -24,6 +24,7 @@ DT005 implements ATTLOG receive and parse from the official ZKTeco PUSH protocol
 - Added `scripts/DT005_install_ubuntu.sh`.
 - Updated deployment restart behavior so rebuilt API images are applied with a forced API container recreation.
 - Added cached-image fallback for temporary Docker registry timeout during deployment.
+- Verified with real device `UCE6262000016`: `raw_request.parsed=1`, response `OK:1`, and `attendance_event` records created.
 - Kept DT004 initialization handshake, `getrequest`, `devicecmd`, `OPERLOG`, and `options` compatibility untouched.
 - Updated README, CHANGELOG, and project status documentation.
 

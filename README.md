@@ -163,6 +163,8 @@ POST /iclock/cdata?SN=<SN>&table=ATTLOG&Stamp=<STAMP>
 
 请求体按官方格式解析为多行记录，最低要求 6 字段 `PIN<TAB>Time<TAB>Status<TAB>Verify<TAB>WorkCode<TAB>Reserved1`，并兼容可选字段 `Reserved2<TAB>MaskFlag<TAB>Temperature<TAB>ConvTemperature`。服务器成功保存后返回 `OK:n`，其中 `n` 是成功解析并保存的记录数。
 
+DT005 已通过真实设备 `UCE6262000016` 验证：`raw_request.parsed=1`、服务器响应 `OK:1`、`attendance_event` 正常生成并关联 `raw_request_id`。
+
 ## 7. 设备配置说明
 
 设备端推荐配置：
@@ -203,7 +205,7 @@ http://<Server Address>:4370/iclock/cdata
 
 ## 8. 后续开发阶段
 
-DT006 预计根据真实设备数据继续处理下一类协议数据。DT005 完成后等待 Review，不进入 DT006。
+DT006 预计根据真实设备数据继续处理下一类协议数据。DT005 已完成真实设备验证，不进入 DT006。
 
 明确禁止在 DT005 中加入：
 

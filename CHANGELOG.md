@@ -25,6 +25,8 @@ DT005 ATTLOG Receive and Parse
 - Added `scripts/DT005_install_ubuntu.sh` without overwriting previous deployment scripts.
 - Updated deployment restart behavior to force recreate the API container after rebuilding the project image.
 - Added cached-image fallback when registry pulls time out but required Docker images already exist locally.
+- Verified real device ATTLOG upload with `raw_request.parsed=1`, `OK:1` response, and `attendance_event` insertion.
+- Removed temporary ATTLOG debug instrumentation after real-device verification.
 - Kept ERP logic, attendance result calculation, Mingdao sync, user sync, and command queue out of DT005.
 
 ## Version

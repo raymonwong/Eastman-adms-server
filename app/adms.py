@@ -1,6 +1,5 @@
 import hashlib
 import json
-import traceback
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Request
@@ -195,16 +194,12 @@ def _update_raw_request_response(raw_request_id: int, response_body: str, respon
 
 
 def _mark_raw_request_parsed(raw_request_id: int) -> None:
-    print("ATTLOG Debug: Set parsed=1", flush=True)
-    print(f"ATTLOG Debug: raw_request_id={raw_request_id}", flush=True)
     with SessionLocal() as session:
         raw_request = session.get(RawRequest, raw_request_id)
         if raw_request is None:
-            print("ATTLOG Debug: raw_request not found while setting parsed=1", flush=True)
             return
         raw_request.parsed = True
         session.commit()
-    print("ATTLOG Debug: Database commit completed for parsed=1", flush=True)
 
 
 def _save_device_event(context: dict[str, object], device_id: int | None, remark: str | None) -> None:
@@ -270,7 +265,6 @@ def _log_initialization_completed(
 
 def _parse_attlog_line(line: str, device_sn: str | None, receive_time: datetime, raw_request_id: int) -> AttendanceEvent:
     fields = line.split("\t")
-    print(f"ATTLOG Debug: Field count={len(fields)}", flush=True)
     if len(fields) < 6:
         raise ValueError("ATTLOG record must contain at least 6 tab-separated fields")
 
@@ -285,18 +279,6 @@ def _parse_attlog_line(line: str, device_sn: str | None, receive_time: datetime,
         raise ValueError("ATTLOG record is missing PIN")
 
     attendance_time = datetime.strptime(attendance_time_text, "%Y-%m-%d %H:%M:%S")
-    print("ATTLOG Debug: Parsed values", flush=True)
-    print(f"ATTLOG Debug: device_sn={device_sn}", flush=True)
-    print(f"ATTLOG Debug: pin={pin}", flush=True)
-    print(f"ATTLOG Debug: attendance_time={attendance_time}", flush=True)
-    print(f"ATTLOG Debug: status={status}", flush=True)
-    print(f"ATTLOG Debug: verify={verify}", flush=True)
-    print(f"ATTLOG Debug: work_code={work_code}", flush=True)
-    print(f"ATTLOG Debug: reserved1={reserved1}", flush=True)
-    print(f"ATTLOG Debug: reserved2={reserved2}", flush=True)
-    print(f"ATTLOG Debug: mask_flag={mask_flag}", flush=True)
-    print(f"ATTLOG Debug: temperature={temperature}", flush=True)
-    print(f"ATTLOG Debug: conv_temperature={conv_temperature}", flush=True)
     return AttendanceEvent(
         device_sn=device_sn,
         pin=pin,
@@ -315,36 +297,23 @@ def _parse_attlog_line(line: str, device_sn: str | None, receive_time: datetime,
 
 
 def _save_attendance_event(event: AttendanceEvent) -> bool:
-    print("ATTLOG Debug: Before attendance_event insert", flush=True)
-    print(f"ATTLOG Debug: device_sn={event.device_sn}", flush=True)
-    print(f"ATTLOG Debug: pin={event.pin}", flush=True)
-    print(f"ATTLOG Debug: attendance_time={event.attendance_time}", flush=True)
     with SessionLocal() as session:
         session.add(event)
         try:
             session.commit()
         except IntegrityError:
-            print("ATTLOG Debug: attendance_event insert failed with IntegrityError", flush=True)
-            traceback.print_exc()
             session.rollback()
             return False
-        print("ATTLOG Debug: After attendance_event insert", flush=True)
-        print(f"ATTLOG Debug: attendance_event_id={event.id}", flush=True)
-        print("ATTLOG Debug: Database commit completed for attendance_event", flush=True)
     return True
 
 
 def _parse_and_save_attlog(context: dict[str, object], body: bytes) -> int:
-    print("ATTLOG Debug: ATTLOG parser entered", flush=True)
     body_text = _decode_body(body)
-    print("ATTLOG Debug: Raw body", flush=True)
-    print(body_text, flush=True)
     saved_count = 0
 
     for line_number, line in enumerate(body_text.splitlines(), start=1):
         if not line:
             continue
-        print(f"ATTLOG Debug: Parsed line {line_number}: {line}", flush=True)
         try:
             event = _parse_attlog_line(
                 line,
@@ -358,7 +327,6 @@ def _parse_and_save_attlog(context: dict[str, object], body: bytes) -> int:
             print(f"Device SN: {context['device_sn'] or ''}", flush=True)
             print(f"Line: {line_number}", flush=True)
             print(f"Error: {exc}", flush=True)
-            traceback.print_exc()
             print("---------------------------------------", flush=True)
             continue
 
