@@ -1,5 +1,23 @@
 # Changelog
 
+## Eastman ADMS Server V1.0
+
+Completed:
+
+- DT001 Environment
+- DT002 Database
+- DT003 Device Connection
+- DT004 Initialization Handshake
+- DT005 ATTLOG Protocol Parser
+
+Verified:
+
+- Official Push Protocol V2.4.2
+- Real Device Connected
+- ATTLOG Parsing
+- attendance_event
+- raw_request
+
 ## Version
 
 DT005
