@@ -408,19 +408,41 @@ def _operation_name(operation_code: str) -> str:
 
 
 def _parse_operlog_line(line: str, device_sn: str | None, receive_time: datetime, raw_request_id: int) -> OperationEvent:
-    fields = line.split("\t")
-    if len(fields) < 8:
-        raise ValueError("OPERLOG record must contain OPLOG plus 7 tab-separated fields")
+    uses_tabs = "\t" in line
+    fields = line.split("\t") if uses_tabs else line.split()
+    if not fields:
+        raise ValueError("OPERLOG record is empty")
     if fields[0].upper() != "OPLOG":
         raise ValueError("OPERLOG record must start with OPLOG")
 
-    operation_code, operator, operation_time_text, operation_object, value1, value2, value3 = fields[1:8]
+    payload = fields[1:]
+    if len(payload) < 3:
+        raise ValueError("OPERLOG record is missing required fields")
+
     if not device_sn:
         raise ValueError("OPERLOG record is missing device SN")
+
+    operation_code = payload[0]
     if not operation_code:
         raise ValueError("OPERLOG record is missing operation code")
 
+    operator = payload[1] if len(payload) > 1 else None
+    if uses_tabs:
+        operation_time_text = payload[2]
+        optional_fields = payload[3:]
+    else:
+        if len(payload) < 4:
+            raise ValueError("OPERLOG record is missing operation time")
+        # Real devices may separate fields by spaces, which splits the timestamp into date and time tokens.
+        operation_time_text = f"{payload[2]} {payload[3]}"
+        optional_fields = payload[4:]
+
     operation_time = datetime.strptime(operation_time_text, "%Y-%m-%d %H:%M:%S")
+    operation_object = optional_fields[0] if len(optional_fields) > 0 else None
+    value1 = optional_fields[1] if len(optional_fields) > 1 else None
+    value2 = optional_fields[2] if len(optional_fields) > 2 else None
+    value3 = optional_fields[3] if len(optional_fields) > 3 else None
+
     return OperationEvent(
         device_sn=device_sn,
         operation_code=operation_code,

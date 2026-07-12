@@ -2,6 +2,26 @@
 
 ## Version
 
+DT006 Review Fix
+
+## Date
+
+2026-07-12
+
+## Development Task
+
+DT006 OPERLOG Real Device Parser Compatibility
+
+## Description
+
+- Updated OPERLOG parser to accept real device records that start with `OPLOG` and use space-separated fields.
+- Kept tab-separated PUSH protocol records compatible.
+- Added variable-length optional field handling so one valid OPLOG line creates one `operation_event` record.
+- Updated DT006 deployment parser verification to use the verified real device format.
+- Kept `raw_request`, ATTLOG, device sync state, Command Queue, Mingdao sync, ERP logic, and future business logic unchanged.
+
+## Version
+
 DT007
 
 ## Date

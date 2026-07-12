@@ -14,6 +14,7 @@ DT007 implements device sync state recording. The server keeps fixed initializat
 
 ## Completed
 
+- Applied DT006 Review Fix for real device OPERLOG records such as `OPLOG 4 0 2026-07-10 19:32:34 0 0 0 0`.
 - Added `device_sync_state` table.
 - Added unique sync state key by `device_sn` and `data_type`.
 - Added supported data types: `ATTLOG`, `OPERLOG`, `USER`, `FINGER`, `FACE`, and `PHOTO`.

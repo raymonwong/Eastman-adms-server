@@ -31,7 +31,7 @@ verify_operation_event_table() {
 
 verify_operlog_parser() {
   log "Verifying OPERLOG parser"
-  compose exec -T api python -c "from datetime import datetime; from app.adms import _parse_operlog_line; event=_parse_operlog_line('OPLOG\t82\t1\t2026-07-10 08:30:00\tserver\tvalue1\tvalue2\tvalue3', 'DT006_CHECK', datetime.now(), 1); assert event.operation_code == '82'; assert event.operation_name == 'Modify Cloud Server Address'; assert event.operator == '1'"
+  compose exec -T api python -c "from datetime import datetime; from app.adms import _parse_operlog_line; event=_parse_operlog_line('OPLOG 4 0 2026-07-10 19:32:34 0 0 0 0', 'DT006_CHECK', datetime.now(), 1); assert event.operation_code == '4'; assert event.operator == '0'; assert str(event.operation_time) == '2026-07-10 19:32:34'; assert event.operation_object == '0'; assert event.value1 == '0'; assert event.value2 == '0'; assert event.value3 == '0'"
 }
 
 main() {

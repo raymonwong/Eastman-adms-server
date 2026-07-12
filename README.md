@@ -181,7 +181,7 @@ OPERLOG 上传：
 POST /iclock/cdata?SN=<SN>&table=OPERLOG&Stamp=<STAMP>
 ```
 
-请求体按官方格式解析为多行操作记录：`OPLOG<TAB>OpType<TAB>Operator<TAB>OpTime<TAB>OpWho<TAB>Value1<TAB>Value2<TAB>Value3`。服务器成功保存后返回 `OK:n`，其中 `n` 是成功解析并保存的记录数。
+请求体按官方格式解析为多行操作记录：`OPLOG<TAB>OpType<TAB>Operator<TAB>OpTime<TAB>OpWho<TAB>Value1<TAB>Value2<TAB>Value3`。同时兼容真实设备上传的空格分隔格式，例如 `OPLOG 4 0 2026-07-10 19:32:34 0 0 0 0`。服务器成功保存后返回 `OK:n`，其中 `n` 是成功解析并保存的记录数。
 
 设备同步状态：
 
