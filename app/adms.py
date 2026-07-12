@@ -7,7 +7,7 @@ from fastapi.responses import PlainTextResponse
 from sqlalchemy.exc import IntegrityError
 
 from app.database import SessionLocal
-from app.models import AttendanceEvent, Device, DeviceEventLog, DeviceSyncState, OperationEvent, RawRequest
+from app.models import AttendanceEvent, Device, DeviceEventLog, DeviceSyncState, DeviceUser, OperationEvent, RawRequest
 
 router = APIRouter()
 
@@ -115,7 +115,7 @@ def _is_operlog_upload(request: Request) -> bool:
 
 
 def _request_stamp(request: Request) -> str | None:
-    return request.query_params.get("Stamp") or request.query_params.get("stamp")
+    return request.query_params.get("Stamp") or request.query_params.get("stamp") or request.query_params.get("OpStamp")
 
 
 def _build_initialization_response(device_sn: str | None) -> str:
@@ -370,7 +370,7 @@ def _parse_and_save_attlog(context: dict[str, object], body: bytes) -> int:
     saved_count = 0
 
     for line_number, line in enumerate(body_text.splitlines(), start=1):
-        if not line:
+        if not line.strip():
             continue
         try:
             event = _parse_attlog_line(
@@ -464,21 +464,115 @@ def _save_operation_event(event: OperationEvent) -> None:
         session.commit()
 
 
+def _parse_key_value_fields(fields: list[str]) -> dict[str, str]:
+    values: dict[str, str] = {}
+    for field in fields:
+        if "=" not in field:
+            continue
+        key, value = field.split("=", 1)
+        if key:
+            values[key.lower()] = value
+    return values
+
+
+def _parse_user_line(line: str, device_sn: str | None, receive_time: datetime, raw_request_id: int) -> DeviceUser:
+    fields = line.split()
+    if not fields or fields[0].upper() != "USER":
+        raise ValueError("USER record must start with USER")
+    if not device_sn:
+        raise ValueError("USER record is missing device SN")
+
+    values = _parse_key_value_fields(fields[1:])
+    pin = values.get("pin")
+    if not pin:
+        raise ValueError("USER record is missing PIN")
+
+    return DeviceUser(
+        device_sn=device_sn,
+        pin=pin,
+        name=values.get("name"),
+        privilege=values.get("pri"),
+        password=values.get("passwd"),
+        card=values.get("card"),
+        group_no=values.get("grp"),
+        timezone=values.get("tz"),
+        verify_mode=values.get("verify"),
+        vice_card=values.get("vicecard"),
+        start_datetime=values.get("startdatetime"),
+        end_datetime=values.get("enddatetime"),
+        raw_request_id=raw_request_id,
+        receive_time=receive_time,
+    )
+
+
+def _save_device_user(user: DeviceUser) -> None:
+    with SessionLocal() as session:
+        existing_user = (
+            session.query(DeviceUser)
+            .filter(DeviceUser.device_sn == user.device_sn, DeviceUser.pin == user.pin)
+            .one_or_none()
+        )
+        if existing_user is None:
+            session.add(user)
+        else:
+            existing_user.name = user.name
+            existing_user.privilege = user.privilege
+            existing_user.password = user.password
+            existing_user.card = user.card
+            existing_user.group_no = user.group_no
+            existing_user.timezone = user.timezone
+            existing_user.verify_mode = user.verify_mode
+            existing_user.vice_card = user.vice_card
+            existing_user.start_datetime = user.start_datetime
+            existing_user.end_datetime = user.end_datetime
+            existing_user.raw_request_id = user.raw_request_id
+            existing_user.receive_time = user.receive_time
+        session.commit()
+
+
 def _parse_and_save_operlog(context: dict[str, object], body: bytes) -> int:
     body_text = _decode_body(body)
     saved_count = 0
 
     for line_number, line in enumerate(body_text.splitlines(), start=1):
-        if not line:
+        if not line.strip():
             continue
         try:
-            event = _parse_operlog_line(
-                line,
-                context["device_sn"],
-                context["received_at"],
-                context["raw_request_id"],
-            )
-            _save_operation_event(event)
+            record_type = line.split(None, 1)[0].upper()
+            if record_type == "OPLOG":
+                event = _parse_operlog_line(
+                    line,
+                    context["device_sn"],
+                    context["received_at"],
+                    context["raw_request_id"],
+                )
+                _save_operation_event(event)
+                saved_count += 1
+                print("---------------------------------------", flush=True)
+                print("OPERLOG Parsed", flush=True)
+                print(f"Device SN: {event.device_sn}", flush=True)
+                print(f"Operation Code: {event.operation_code}", flush=True)
+                print(f"Operation Time: {event.operation_time}", flush=True)
+                print(f"Record Count: {saved_count}", flush=True)
+                print("---------------------------------------", flush=True)
+            elif record_type == "USER":
+                user = _parse_user_line(
+                    line,
+                    context["device_sn"],
+                    context["received_at"],
+                    context["raw_request_id"],
+                )
+                _save_device_user(user)
+                saved_count += 1
+                print("---------------------------------------", flush=True)
+                print("USER Parsed", flush=True)
+                print(f"Device SN: {user.device_sn}", flush=True)
+                print(f"PIN: {user.pin}", flush=True)
+                print(f"Name: {user.name or ''}", flush=True)
+                print(f"Raw Request ID: {user.raw_request_id}", flush=True)
+                print("---------------------------------------", flush=True)
+            else:
+                raise ValueError(f"unsupported OPERLOG record type: {record_type}")
         except Exception as exc:
             print("---------------------------------------", flush=True)
             print("OPERLOG Parse Failed", flush=True)
@@ -487,15 +581,6 @@ def _parse_and_save_operlog(context: dict[str, object], body: bytes) -> int:
             print(f"Error: {exc}", flush=True)
             print("---------------------------------------", flush=True)
             continue
-
-        saved_count += 1
-        print("---------------------------------------", flush=True)
-        print("OPERLOG Parsed", flush=True)
-        print(f"Device SN: {event.device_sn}", flush=True)
-        print(f"Operation Code: {event.operation_code}", flush=True)
-        print(f"Operation Time: {event.operation_time}", flush=True)
-        print(f"Record Count: {saved_count}", flush=True)
-        print("---------------------------------------", flush=True)
 
     return saved_count
 

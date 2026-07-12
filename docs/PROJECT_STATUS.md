@@ -2,7 +2,7 @@
 
 ## Current Development Task
 
-DT007
+DT008
 
 ## Status
 
@@ -10,36 +10,35 @@ Waiting for Review
 
 ## Summary
 
-DT007 implements device sync state recording. The server keeps fixed initialization Stamp values for current device compatibility, while recording successful ATTLOG and OPERLOG processing state in `device_sync_state`.
+DT008 extends the OPERLOG parser for real device USER uploads. Real devices upload new user data inside `POST /iclock/cdata?table=OPERLOG`, so the server now parses `USER` body records and stores them in `device_user`.
 
 ## Completed
 
-- Applied DT006 Review Fix for real device OPERLOG records such as `OPLOG 4 0 2026-07-10 19:32:34 0 0 0 0`.
-- Added `device_sync_state` table.
-- Added unique sync state key by `device_sn` and `data_type`.
-- Added supported data types: `ATTLOG`, `OPERLOG`, `USER`, `FINGER`, `FACE`, and `PHOTO`.
-- Added sync state updates after successful ATTLOG parsing.
-- Added sync state updates after successful OPERLOG parsing.
-- Added sync state logs for device SN, data type, device stamp, and raw request ID.
-- Added `scripts/DT007_install_ubuntu.sh`.
-- Kept initialization response values fixed at `ATTLOGStamp=9999` and `OPERLOGStamp=9999`.
-- Kept DT001 through DT006 compatibility intact.
-- Updated README, CHANGELOG, Deploy, and project status documentation.
+- Added `device_user` table.
+- Added unique user key by `device_sn` and `pin`.
+- Added USER parser for `PIN`, `Name`, `Pri`, `Passwd`, `Card`, `Grp`, `TZ`, `Verify`, `ViceCard`, `StartDatetime`, and `EndDatetime`.
+- Added upsert behavior for repeated USER uploads from the same device and PIN.
+- Extended OPERLOG parser dispatch so `OPLOG` continues to save `operation_event` and `USER` saves `device_user`.
+- Kept `raw_request` persistence unchanged.
+- Kept ATTLOG and OPLOG behavior compatible.
+- Added `scripts/DT008_install_ubuntu.sh`.
+- Updated README, CHANGELOG, and project status documentation.
 
 ## Not Included
 
 - Dynamic ATTLOGStamp response
 - Dynamic OPERLOGStamp response
-- USER parsing
 - FACE parsing
 - FINGER parsing
 - Command Queue
 - Device command processing
+- User downlink
+- Personnel synchronization
 - Mingdao/HAP sync
 - ERP business logic
 - Attendance result calculation
-- Future DT008 features
+- Future DT009 features
 
 ## Next Development Task
 
-DT008
+DT009

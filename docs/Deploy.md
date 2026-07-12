@@ -14,7 +14,7 @@
 在项目根目录执行：
 
 ```bash
-scripts/DT007_install_ubuntu.sh
+scripts/DT008_install_ubuntu.sh
 ```
 
 脚本会自动：
@@ -36,11 +36,13 @@ scripts/DT007_install_ubuntu.sh
 15. 验证 OPERLOG 解析器可解析官方操作记录。
 16. 验证 DT007 `device_sync_state` 表存在。
 17. 验证同步状态更新逻辑。
-18. 如部署失败，输出 `docker compose ps`、`docker ps`、MySQL 最近 100 行日志和 API 最近 100 行日志。
+18. 验证 DT008 `device_user` 表存在。
+19. 验证 USER 解析器可解析真实设备上传的 USER 记录。
+20. 如部署失败，输出 `docker compose ps`、`docker ps`、MySQL 最近 100 行日志和 API 最近 100 行日志。
 
 全新数据库部署时，应用启动会自动创建 DT002 表结构、唯一约束和索引，不需要手动执行 SQL。DT002 未引入 Alembic，已存在的旧数据库结构变更需在后续 Review Fix 或迁移任务中明确处理。
 
-旧脚本 `scripts/DT001_install_ubuntu.sh`、`scripts/DT001.2_install_ubuntu.sh`、`scripts/DT001.3_install_ubuntu.sh`、`scripts/DT001.4_install_ubuntu.sh`、`scripts/DT002_install_ubuntu.sh`、`scripts/DT004_install_ubuntu.sh`、`scripts/DT005_install_ubuntu.sh` 和 `scripts/DT006_install_ubuntu.sh` 保留用于历史追溯。DT007 起推荐使用 `scripts/DT007_install_ubuntu.sh`。
+旧脚本 `scripts/DT001_install_ubuntu.sh`、`scripts/DT001.2_install_ubuntu.sh`、`scripts/DT001.3_install_ubuntu.sh`、`scripts/DT001.4_install_ubuntu.sh`、`scripts/DT002_install_ubuntu.sh`、`scripts/DT004_install_ubuntu.sh`、`scripts/DT005_install_ubuntu.sh`、`scripts/DT006_install_ubuntu.sh` 和 `scripts/DT007_install_ubuntu.sh` 保留用于历史追溯。DT008 起推荐使用 `scripts/DT008_install_ubuntu.sh`。
 
 ## Docker 镜像
 
@@ -85,6 +87,7 @@ curl http://localhost:4370/api/v1/health
 curl 'http://localhost:4370/iclock/cdata?SN=DT004_TEST&options=all&pushver=2.4.2&DeviceType=att&language=83'
 curl -X POST 'http://localhost:4370/iclock/cdata?SN=DT005_TEST&table=ATTLOG&Stamp=9999' --data-binary $'1001\t2026-07-10 08:30:00\t0\t1\t0\t0\t0\n'
 curl -X POST 'http://localhost:4370/iclock/cdata?SN=DT006_TEST&table=OPERLOG&Stamp=9999' --data-binary $'OPLOG\t82\t1\t2026-07-10 08:30:00\tserver\tvalue1\tvalue2\tvalue3\n'
+curl -X POST 'http://localhost:4370/iclock/cdata?SN=DT008_TEST&table=OPERLOG&OpStamp=9999' --data-binary $'USER PIN=1 Name=raymon Pri=0 Passwd= Card= Grp=1 TZ=0000000100000000 Verify=1 ViceCard= StartDatetime=0 EndDatetime=0\n'
 ```
 
 `/health` 和 `/ready` 预期返回：
@@ -125,9 +128,17 @@ OPERLOG 测试接口预期返回：
 OK:1
 ```
 
+USER 测试接口预期返回：
+
+```text
+OK:1
+```
+
 DT007 部署后，成功解析 ATTLOG 或 OPERLOG 会更新 `device_sync_state`。当前初始化握手仍固定返回：
 
 ```text
 ATTLOGStamp=9999
 OPERLOGStamp=9999
 ```
+
+DT008 部署后，真实设备通过 OPERLOG Body 上传的 `USER` 记录会保存到 `device_user`。

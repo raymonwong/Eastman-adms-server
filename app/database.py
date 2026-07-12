@@ -32,6 +32,7 @@ def create_database_tables(engine: Engine) -> None:
     ensure_dt005_tables(engine)
     ensure_dt006_tables(engine)
     ensure_dt007_tables(engine)
+    ensure_dt008_tables(engine)
 
 
 def ensure_dt003_columns(engine: Engine) -> None:
@@ -217,6 +218,48 @@ def ensure_dt007_tables(engine: Engine) -> None:
         """,
         "CREATE INDEX ix_device_sync_state_device_sn ON device_sync_state (device_sn)",
         "CREATE INDEX ix_device_sync_state_data_type ON device_sync_state (data_type)",
+    )
+
+    with engine.begin() as connection:
+        for statement in statements:
+            try:
+                connection.execute(text(statement))
+            except Exception as exc:
+                error_text = str(exc).lower()
+                if "duplicate key name" in error_text or "already exists" in error_text:
+                    continue
+                raise
+
+
+def ensure_dt008_tables(engine: Engine) -> None:
+    # DT008 stores USER records that real devices upload inside OPERLOG bodies.
+    statements = (
+        """
+        CREATE TABLE IF NOT EXISTS device_user (
+            id INT NOT NULL AUTO_INCREMENT,
+            device_sn VARCHAR(64) NOT NULL,
+            pin VARCHAR(64) NOT NULL,
+            name VARCHAR(255) NULL,
+            privilege VARCHAR(32) NULL,
+            password VARCHAR(255) NULL,
+            card VARCHAR(64) NULL,
+            group_no VARCHAR(32) NULL,
+            timezone VARCHAR(255) NULL,
+            verify_mode VARCHAR(32) NULL,
+            vice_card VARCHAR(64) NULL,
+            start_datetime VARCHAR(64) NULL,
+            end_datetime VARCHAR(64) NULL,
+            raw_request_id INT NOT NULL,
+            receive_time DATETIME NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            CONSTRAINT fk_device_user_raw_request_id FOREIGN KEY (raw_request_id) REFERENCES raw_request(id),
+            CONSTRAINT uq_device_user_device_pin UNIQUE (device_sn, pin)
+        )
+        """,
+        "CREATE INDEX ix_device_user_device_sn ON device_user (device_sn)",
+        "CREATE INDEX ix_device_user_pin ON device_user (pin)",
     )
 
     with engine.begin() as connection:

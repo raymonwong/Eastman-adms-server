@@ -2,6 +2,29 @@
 
 ## Version
 
+DT008
+
+## Date
+
+2026-07-12
+
+## Development Task
+
+DT008 USER Receive and Parse as OPERLOG Extension
+
+## Description
+
+- Added `device_user` table for USER records uploaded inside `table=OPERLOG` request bodies.
+- Added unique constraint on `device_sn` and `pin`.
+- Added USER parser for fields `PIN`, `Name`, `Pri`, `Passwd`, `Card`, `Grp`, `TZ`, `Verify`, `ViceCard`, `StartDatetime`, and `EndDatetime`.
+- Added device-user upsert behavior when the same device uploads the same PIN again.
+- Extended OPERLOG parser dispatch so `OPLOG` continues to save `operation_event` and `USER` saves `device_user`.
+- Added `OK:n` response support for USER records inside OPERLOG uploads.
+- Added `scripts/DT008_install_ubuntu.sh` without overwriting previous deployment scripts.
+- Kept raw request persistence, ATTLOG, OPLOG, device sync state, user downlink, Command Queue, Mingdao sync, ERP logic, and attendance result calculation unchanged.
+
+## Version
+
 DT006 Review Fix
 
 ## Date

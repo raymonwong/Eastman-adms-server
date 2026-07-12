@@ -182,6 +182,38 @@ class DeviceSyncState(Base):
     )
 
 
+class DeviceUser(Base):
+    __tablename__ = "device_user"
+    __table_args__ = (
+        UniqueConstraint("device_sn", "pin", name="uq_device_user_device_pin"),
+        Index("ix_device_user_device_sn", "device_sn"),
+        Index("ix_device_user_pin", "pin"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    device_sn: Mapped[str] = mapped_column(String(64), nullable=False)
+    pin: Mapped[str] = mapped_column(String(64), nullable=False)
+    name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    privilege: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    password: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    card: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    group_no: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    timezone: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    verify_mode: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    vice_card: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    start_datetime: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    end_datetime: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    raw_request_id: Mapped[int] = mapped_column(ForeignKey("raw_request.id"), nullable=False)
+    receive_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+
 class SyncLog(Base):
     __tablename__ = "sync_log"
 
