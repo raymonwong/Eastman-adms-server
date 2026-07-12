@@ -14,7 +14,7 @@
 在项目根目录执行：
 
 ```bash
-scripts/DT006_install_ubuntu.sh
+scripts/DT007_install_ubuntu.sh
 ```
 
 脚本会自动：
@@ -34,11 +34,13 @@ scripts/DT006_install_ubuntu.sh
 13. 验证 ATTLOG 解析器可解析官方 7 字段记录。
 14. 验证 DT006 `operation_event` 表存在。
 15. 验证 OPERLOG 解析器可解析官方操作记录。
-16. 如部署失败，输出 `docker compose ps`、`docker ps`、MySQL 最近 100 行日志和 API 最近 100 行日志。
+16. 验证 DT007 `device_sync_state` 表存在。
+17. 验证同步状态更新逻辑。
+18. 如部署失败，输出 `docker compose ps`、`docker ps`、MySQL 最近 100 行日志和 API 最近 100 行日志。
 
 全新数据库部署时，应用启动会自动创建 DT002 表结构、唯一约束和索引，不需要手动执行 SQL。DT002 未引入 Alembic，已存在的旧数据库结构变更需在后续 Review Fix 或迁移任务中明确处理。
 
-旧脚本 `scripts/DT001_install_ubuntu.sh`、`scripts/DT001.2_install_ubuntu.sh`、`scripts/DT001.3_install_ubuntu.sh`、`scripts/DT001.4_install_ubuntu.sh`、`scripts/DT002_install_ubuntu.sh`、`scripts/DT004_install_ubuntu.sh` 和 `scripts/DT005_install_ubuntu.sh` 保留用于历史追溯。DT006 起推荐使用 `scripts/DT006_install_ubuntu.sh`。
+旧脚本 `scripts/DT001_install_ubuntu.sh`、`scripts/DT001.2_install_ubuntu.sh`、`scripts/DT001.3_install_ubuntu.sh`、`scripts/DT001.4_install_ubuntu.sh`、`scripts/DT002_install_ubuntu.sh`、`scripts/DT004_install_ubuntu.sh`、`scripts/DT005_install_ubuntu.sh` 和 `scripts/DT006_install_ubuntu.sh` 保留用于历史追溯。DT007 起推荐使用 `scripts/DT007_install_ubuntu.sh`。
 
 ## Docker 镜像
 
@@ -121,4 +123,11 @@ OPERLOG 测试接口预期返回：
 
 ```text
 OK:1
+```
+
+DT007 部署后，成功解析 ATTLOG 或 OPERLOG 会更新 `device_sync_state`。当前初始化握手仍固定返回：
+
+```text
+ATTLOGStamp=9999
+OPERLOGStamp=9999
 ```

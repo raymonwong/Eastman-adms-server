@@ -31,6 +31,7 @@ def create_database_tables(engine: Engine) -> None:
     ensure_dt004_columns(engine)
     ensure_dt005_tables(engine)
     ensure_dt006_tables(engine)
+    ensure_dt007_tables(engine)
 
 
 def ensure_dt003_columns(engine: Engine) -> None:
@@ -183,6 +184,39 @@ def ensure_dt006_tables(engine: Engine) -> None:
         "CREATE INDEX ix_operation_event_device_sn ON operation_event (device_sn)",
         "CREATE INDEX ix_operation_event_operation_code ON operation_event (operation_code)",
         "CREATE INDEX ix_operation_event_operation_time ON operation_event (operation_time)",
+    )
+
+    with engine.begin() as connection:
+        for statement in statements:
+            try:
+                connection.execute(text(statement))
+            except Exception as exc:
+                error_text = str(exc).lower()
+                if "duplicate key name" in error_text or "already exists" in error_text:
+                    continue
+                raise
+
+
+def ensure_dt007_tables(engine: Engine) -> None:
+    # DT007 records per-device sync state without changing returned Stamp behavior yet.
+    statements = (
+        """
+        CREATE TABLE IF NOT EXISTS device_sync_state (
+            id INT NOT NULL AUTO_INCREMENT,
+            device_sn VARCHAR(64) NOT NULL,
+            data_type VARCHAR(32) NOT NULL,
+            device_stamp VARCHAR(64) NULL,
+            last_success_time DATETIME NULL,
+            last_raw_request_id INT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            CONSTRAINT fk_device_sync_state_raw_request_id FOREIGN KEY (last_raw_request_id) REFERENCES raw_request(id),
+            CONSTRAINT uq_device_sync_state_device_type UNIQUE (device_sn, data_type)
+        )
+        """,
+        "CREATE INDEX ix_device_sync_state_device_sn ON device_sync_state (device_sn)",
+        "CREATE INDEX ix_device_sync_state_data_type ON device_sync_state (data_type)",
     )
 
     with engine.begin() as connection:

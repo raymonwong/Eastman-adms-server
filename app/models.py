@@ -159,6 +159,29 @@ class OperationEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
+class DeviceSyncState(Base):
+    __tablename__ = "device_sync_state"
+    __table_args__ = (
+        UniqueConstraint("device_sn", "data_type", name="uq_device_sync_state_device_type"),
+        Index("ix_device_sync_state_device_sn", "device_sn"),
+        Index("ix_device_sync_state_data_type", "data_type"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    device_sn: Mapped[str] = mapped_column(String(64), nullable=False)
+    data_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    device_stamp: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    last_success_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_raw_request_id: Mapped[int | None] = mapped_column(ForeignKey("raw_request.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+
 class SyncLog(Base):
     __tablename__ = "sync_log"
 

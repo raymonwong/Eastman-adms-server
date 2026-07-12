@@ -2,6 +2,30 @@
 
 ## Version
 
+DT007
+
+## Date
+
+2026-07-12
+
+## Development Task
+
+DT007 Device Sync State
+
+## Description
+
+- Added `device_sync_state` table for per-device data sync state.
+- Added unique constraint on `device_sn` and `data_type`.
+- Added supported sync data types for `ATTLOG`, `OPERLOG`, `USER`, `FINGER`, `FACE`, and `PHOTO`.
+- Added sync state update after successful ATTLOG parsing.
+- Added sync state update after successful OPERLOG parsing.
+- Added sync state update logs with device SN, data type, device stamp, and raw request ID.
+- Kept initialization response fixed at `ATTLOGStamp=9999` and `OPERLOGStamp=9999`.
+- Added `scripts/DT007_install_ubuntu.sh` without overwriting previous deployment scripts.
+- Kept dynamic Stamp responses, USER, FACE, FINGER, Command Queue, Mingdao sync, ERP logic, and attendance result calculation out of DT007.
+
+## Version
+
 DT006
 
 ## Date

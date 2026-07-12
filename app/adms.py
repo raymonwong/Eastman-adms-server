@@ -7,7 +7,7 @@ from fastapi.responses import PlainTextResponse
 from sqlalchemy.exc import IntegrityError
 
 from app.database import SessionLocal
-from app.models import AttendanceEvent, Device, DeviceEventLog, OperationEvent, RawRequest
+from app.models import AttendanceEvent, Device, DeviceEventLog, DeviceSyncState, OperationEvent, RawRequest
 
 router = APIRouter()
 
@@ -24,6 +24,7 @@ DEFAULT_PUSH_OPTIONS = "FingerFunOn,FaceFunOn,UserPicURLFunOn"
 OPERATION_NAME_MAP = {
     "82": "Modify Cloud Server Address",
 }
+SYNC_DATA_TYPES = ("ATTLOG", "OPERLOG", "USER", "FINGER", "FACE", "PHOTO")
 
 
 def _json_dump(value: object) -> str:
@@ -113,7 +114,13 @@ def _is_operlog_upload(request: Request) -> bool:
     return request.method == "POST" and request.query_params.get("table", "").upper() == "OPERLOG"
 
 
+def _request_stamp(request: Request) -> str | None:
+    return request.query_params.get("Stamp") or request.query_params.get("stamp")
+
+
 def _build_initialization_response(device_sn: str | None) -> str:
+    # DT007 reads sync state for future Stamp management but keeps fixed Stamp output.
+    _get_device_sync_states(device_sn)
     sn = device_sn or ""
     lines = [
         f"GET OPTION FROM: {sn}",
@@ -207,6 +214,50 @@ def _mark_raw_request_parsed(raw_request_id: int) -> None:
             return
         raw_request.parsed = True
         session.commit()
+
+
+def _get_device_sync_states(device_sn: str | None) -> dict[str, str | None]:
+    if not device_sn:
+        return {}
+    if SessionLocal.kw.get("bind") is None:
+        return {}
+
+    with SessionLocal() as session:
+        states = session.query(DeviceSyncState).filter(DeviceSyncState.device_sn == device_sn).all()
+        return {state.data_type: state.device_stamp for state in states}
+
+
+def _update_device_sync_state(context: dict[str, object], data_type: str, device_stamp: str | None) -> None:
+    device_sn = context["device_sn"]
+    if not device_sn:
+        return
+
+    normalized_type = data_type.upper()
+    if normalized_type not in SYNC_DATA_TYPES:
+        return
+
+    with SessionLocal() as session:
+        state = (
+            session.query(DeviceSyncState)
+            .filter(DeviceSyncState.device_sn == device_sn, DeviceSyncState.data_type == normalized_type)
+            .one_or_none()
+        )
+        if state is None:
+            state = DeviceSyncState(device_sn=device_sn, data_type=normalized_type)
+            session.add(state)
+
+        state.device_stamp = device_stamp
+        state.last_success_time = context["received_at"]
+        state.last_raw_request_id = context["raw_request_id"]
+        session.commit()
+
+    print("---------------------------------------", flush=True)
+    print("Sync State Updated", flush=True)
+    print(f"Device SN: {device_sn}", flush=True)
+    print(f"Data Type: {normalized_type}", flush=True)
+    print(f"Device Stamp: {device_stamp or ''}", flush=True)
+    print(f"Raw Request ID: {context['raw_request_id']}", flush=True)
+    print("---------------------------------------", flush=True)
 
 
 def _save_device_event(context: dict[str, object], device_id: int | None, remark: str | None) -> None:
@@ -441,6 +492,8 @@ async def iclock_cdata(request: Request) -> PlainTextResponse:
     if is_attlog:
         saved_count = _parse_and_save_attlog(context, body)
         _mark_raw_request_parsed(context["raw_request_id"])
+        if saved_count > 0:
+            _update_device_sync_state(context, "ATTLOG", _request_stamp(request))
         response_body = f"OK:{saved_count}"
         context["response_body"] = response_body
         _update_raw_request_response(context["raw_request_id"], response_body, response_status_code)
@@ -448,6 +501,8 @@ async def iclock_cdata(request: Request) -> PlainTextResponse:
     if is_operlog:
         saved_count = _parse_and_save_operlog(context, body)
         _mark_raw_request_parsed(context["raw_request_id"])
+        if saved_count > 0:
+            _update_device_sync_state(context, "OPERLOG", _request_stamp(request))
         response_body = f"OK:{saved_count}"
         context["response_body"] = response_body
         _update_raw_request_response(context["raw_request_id"], response_body, response_status_code)
