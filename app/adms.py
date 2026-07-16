@@ -27,6 +27,20 @@ OPERATION_NAME_MAP = {
 SYNC_DATA_TYPES = ("ATTLOG", "OPERLOG", "USER", "FINGER", "FACE", "PHOTO")
 
 
+def _debug_log(event_type: str, fields: dict[str, object | None]) -> None:
+    # Keep ADMS development logs readable in `docker logs -f eastman-adms-api`.
+    print("==================================================", flush=True)
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]", flush=True)
+    print(event_type, flush=True)
+    print("", flush=True)
+    for label, value in fields.items():
+        print(f"{label}:", flush=True)
+        print("" if value is None else str(value), flush=True)
+        print("", flush=True)
+    print("==================================================", flush=True)
+    print("", flush=True)
+
+
 def _json_dump(value: object) -> str:
     # Preserve non-ASCII device values while keeping a structured snapshot.
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
@@ -251,13 +265,15 @@ def _update_device_sync_state(context: dict[str, object], data_type: str, device
         state.last_raw_request_id = context["raw_request_id"]
         session.commit()
 
-    print("---------------------------------------", flush=True)
-    print("Sync State Updated", flush=True)
-    print(f"Device SN: {device_sn}", flush=True)
-    print(f"Data Type: {normalized_type}", flush=True)
-    print(f"Device Stamp: {device_stamp or ''}", flush=True)
-    print(f"Raw Request ID: {context['raw_request_id']}", flush=True)
-    print("---------------------------------------", flush=True)
+    _debug_log(
+        "SYNC STATE UPDATED",
+        {
+            "Device": device_sn,
+            "Data Type": normalized_type,
+            "Device Stamp": device_stamp or "",
+            "Raw Request ID": context["raw_request_id"],
+        },
+    )
 
 
 def _save_device_event(context: dict[str, object], device_id: int | None, remark: str | None) -> None:
@@ -290,35 +306,34 @@ def _log_device_connection(
     response_body: str,
     response_status_code: int,
 ) -> None:
-    print("---------------------------------------", flush=True)
-    print("Device Connected", flush=True)
-    print(f"Time: {received_at.isoformat()}", flush=True)
-    print(f"SN: {device_sn or ''}", flush=True)
-    print(f"IP: {client_ip or ''}", flush=True)
-    print(f"Method: {method}", flush=True)
-    print(f"URL: {url}", flush=True)
-    print(f"Response: {response_body}", flush=True)
-    print(f"Status: {response_status_code}", flush=True)
-    print("---------------------------------------", flush=True)
+    _debug_log(
+        "DEVICE CONNECTED",
+        {
+            "Device": device_sn or "",
+            "Client IP": client_ip or "",
+            "Method": method,
+            "URL": url,
+            "Response": response_body,
+            "Status": response_status_code,
+        },
+    )
 
 
 def _log_initialization_completed(
     device_sn: str | None,
+    client_ip: str | None,
     push_version: str | None,
-    device_type: str | None,
-    language: str | None,
+    response_body: str,
 ) -> None:
-    print("---------------------------------------", flush=True)
-    print("Initialization Completed", flush=True)
-    print(f"SN: {device_sn or ''}", flush=True)
-    print(f"Push Version: {push_version or ''}", flush=True)
-    print(f"Device Type: {device_type or ''}", flush=True)
-    print(f"Language: {language or ''}", flush=True)
-    print(f"TimeZone: {DUBAI_TIMEZONE}", flush=True)
-    print(f"Realtime: {DEFAULT_REALTIME}", flush=True)
-    print(f"Delay: {DEFAULT_DELAY}", flush=True)
-    print(f"TransFlag: {DEFAULT_TRANS_FLAG}", flush=True)
-    print("---------------------------------------", flush=True)
+    _debug_log(
+        "HANDSHAKE",
+        {
+            "Device": device_sn or "",
+            "Client IP": client_ip or "",
+            "Push Version": push_version or "",
+            "Response": response_body,
+        },
+    )
 
 
 def _parse_attlog_line(line: str, device_sn: str | None, receive_time: datetime, raw_request_id: int) -> AttendanceEvent:
@@ -380,25 +395,36 @@ def _parse_and_save_attlog(context: dict[str, object], body: bytes) -> int:
                 context["raw_request_id"],
             )
         except Exception as exc:
-            print("---------------------------------------", flush=True)
-            print("ATTLOG Parse Failed", flush=True)
-            print(f"Device SN: {context['device_sn'] or ''}", flush=True)
-            print(f"Line: {line_number}", flush=True)
-            print(f"Error: {exc}", flush=True)
-            print("---------------------------------------", flush=True)
+            _debug_log(
+                "ERROR",
+                {
+                    "Device": context["device_sn"] or "",
+                    "Module": "ATTLOG",
+                    "Reason": f"Line {line_number}: {exc}",
+                },
+            )
             continue
+
+        _debug_log(
+            "ATTLOG RECEIVED",
+            {
+                "Device": event.device_sn,
+                "PIN": event.pin,
+                "Attendance Time": event.attendance_time,
+            },
+        )
 
         if not _save_attendance_event(event):
             continue
 
         saved_count += 1
-        print("---------------------------------------", flush=True)
-        print("ATTLOG Parsed", flush=True)
-        print(f"Device SN: {event.device_sn}", flush=True)
-        print(f"Record Count: {saved_count}", flush=True)
-        print(f"PIN: {event.pin}", flush=True)
-        print(f"Attendance Time: {event.attendance_time}", flush=True)
-        print("---------------------------------------", flush=True)
+        _debug_log(
+            "ATTLOG SAVED",
+            {
+                "Attendance ID": event.id,
+                "Raw Request ID": event.raw_request_id,
+            },
+        )
 
     return saved_count
 
@@ -458,10 +484,11 @@ def _parse_operlog_line(line: str, device_sn: str | None, receive_time: datetime
     )
 
 
-def _save_operation_event(event: OperationEvent) -> None:
+def _save_operation_event(event: OperationEvent) -> int:
     with SessionLocal() as session:
         session.add(event)
         session.commit()
+        return event.id
 
 
 def _parse_key_value_fields(fields: list[str]) -> dict[str, str]:
@@ -505,7 +532,7 @@ def _parse_user_line(line: str, device_sn: str | None, receive_time: datetime, r
     )
 
 
-def _save_device_user(user: DeviceUser) -> None:
+def _save_device_user(user: DeviceUser) -> int:
     with SessionLocal() as session:
         existing_user = (
             session.query(DeviceUser)
@@ -528,6 +555,7 @@ def _save_device_user(user: DeviceUser) -> None:
             existing_user.raw_request_id = user.raw_request_id
             existing_user.receive_time = user.receive_time
         session.commit()
+        return existing_user.id if existing_user is not None else user.id
 
 
 def _parse_and_save_operlog(context: dict[str, object], body: bytes) -> int:
@@ -546,15 +574,22 @@ def _parse_and_save_operlog(context: dict[str, object], body: bytes) -> int:
                     context["received_at"],
                     context["raw_request_id"],
                 )
-                _save_operation_event(event)
+                _debug_log(
+                    "OPERLOG RECEIVED",
+                    {
+                        "Device": event.device_sn,
+                        "Operation": event.operation_code,
+                        "Operation Time": event.operation_time,
+                    },
+                )
+                operation_id = _save_operation_event(event)
                 saved_count += 1
-                print("---------------------------------------", flush=True)
-                print("OPERLOG Parsed", flush=True)
-                print(f"Device SN: {event.device_sn}", flush=True)
-                print(f"Operation Code: {event.operation_code}", flush=True)
-                print(f"Operation Time: {event.operation_time}", flush=True)
-                print(f"Record Count: {saved_count}", flush=True)
-                print("---------------------------------------", flush=True)
+                _debug_log(
+                    "OPERLOG SAVED",
+                    {
+                        "Operation ID": operation_id,
+                    },
+                )
             elif record_type == "USER":
                 user = _parse_user_line(
                     line,
@@ -562,24 +597,34 @@ def _parse_and_save_operlog(context: dict[str, object], body: bytes) -> int:
                     context["received_at"],
                     context["raw_request_id"],
                 )
-                _save_device_user(user)
+                _debug_log(
+                    "USER RECEIVED",
+                    {
+                        "Device": user.device_sn,
+                        "PIN": user.pin,
+                        "User Name": user.name or "",
+                    },
+                )
+                user_id = _save_device_user(user)
                 saved_count += 1
-                print("---------------------------------------", flush=True)
-                print("USER Parsed", flush=True)
-                print(f"Device SN: {user.device_sn}", flush=True)
-                print(f"PIN: {user.pin}", flush=True)
-                print(f"Name: {user.name or ''}", flush=True)
-                print(f"Raw Request ID: {user.raw_request_id}", flush=True)
-                print("---------------------------------------", flush=True)
+                _debug_log(
+                    "USER SAVED",
+                    {
+                        "User ID": user_id,
+                    },
+                )
             else:
                 raise ValueError(f"unsupported OPERLOG record type: {record_type}")
         except Exception as exc:
-            print("---------------------------------------", flush=True)
-            print("OPERLOG Parse Failed", flush=True)
-            print(f"Device SN: {context['device_sn'] or ''}", flush=True)
-            print(f"Line: {line_number}", flush=True)
-            print(f"Error: {exc}", flush=True)
-            print("---------------------------------------", flush=True)
+            module = record_type if "record_type" in locals() else "OPERLOG"
+            _debug_log(
+                "ERROR",
+                {
+                    "Device": context["device_sn"] or "",
+                    "Module": "USER" if module == "USER" else "OPERLOG",
+                    "Reason": f"Line {line_number}: {exc}",
+                },
+            )
             continue
 
     return saved_count
@@ -643,9 +688,9 @@ async def iclock_cdata(request: Request) -> PlainTextResponse:
     if is_handshake:
         _log_initialization_completed(
             context["device_sn"],
+            context["client_ip"],
             request.query_params.get("pushver"),
-            request.query_params.get("DeviceType"),
-            request.query_params.get("language"),
+            response_body,
         )
     return PlainTextResponse(response_body, status_code=response_status_code, media_type="text/plain")
 
@@ -655,7 +700,14 @@ async def iclock_getrequest(request: Request) -> PlainTextResponse:
     response_body = "OK"
     response_status_code = 200
     body = await request.body()
-    _save_raw_request(request, body, response_body, response_status_code)
+    context = _save_raw_request(request, body, response_body, response_status_code)
+    _debug_log(
+        "HEARTBEAT",
+        {
+            "Device": context["device_sn"] or "",
+            "Client IP": context["client_ip"] or "",
+        },
+    )
     return PlainTextResponse(response_body, status_code=response_status_code, media_type="text/plain")
 
 

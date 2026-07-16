@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="zh-CN" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Eastman ADMS Server Console</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: #0b0f14;
+      color: #d7e2ee;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+    .console-shell {
+      max-width: 1440px;
+    }
+    .status-banner {
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 22px 24px;
+      background: #111821;
+    }
+    .status-headline {
+      font-size: clamp(28px, 4vw, 52px);
+      line-height: 1;
+      font-weight: 900;
+    }
+    .status-subline {
+      font-size: 15px;
+      color: #a8bad0;
+    }
+    .status-online {
+      border-color: rgba(36, 214, 133, 0.5);
+      box-shadow: 0 0 0 1px rgba(36, 214, 133, 0.12), 0 0 34px rgba(36, 214, 133, 0.08);
+    }
+    .status-warning {
+      border-color: rgba(255, 193, 7, 0.55);
+      box-shadow: 0 0 0 1px rgba(255, 193, 7, 0.12), 0 0 34px rgba(255, 193, 7, 0.08);
+    }
+    .status-offline {
+      border-color: rgba(255, 77, 79, 0.58);
+      box-shadow: 0 0 0 1px rgba(255, 77, 79, 0.12), 0 0 34px rgba(255, 77, 79, 0.08);
+    }
+    .panel {
+      background: #111821;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      min-height: 100%;
+    }
+    .panel-header {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 14px 16px;
+      color: #8fb3d9;
+      letter-spacing: 0;
+      font-weight: 700;
+    }
+    .panel-body {
+      padding: 16px;
+    }
+    .metric {
+      background: #0d131b;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .primary-metric {
+      min-height: 118px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-color: rgba(143, 179, 217, 0.22);
+    }
+    .metric-label {
+      color: #7f93aa;
+      font-size: 12px;
+    }
+    .metric-value {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .primary-metric .metric-value {
+      font-size: 24px;
+    }
+    .state-board {
+      background: #0d131b;
+      border: 1px solid rgba(143, 179, 217, 0.22);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .state-row {
+      display: grid;
+      grid-template-columns: minmax(160px, 0.45fr) 1fr;
+      gap: 16px;
+      align-items: center;
+      padding: 14px 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .state-row:first-child {
+      border-top: 0;
+    }
+    .state-label {
+      color: #7f93aa;
+      font-size: 13px;
+    }
+    .state-value {
+      color: #f2f7ff;
+      font-size: clamp(18px, 2vw, 26px);
+      font-weight: 800;
+      text-align: right;
+      overflow-wrap: anywhere;
+    }
+    .device-card {
+      background: #0d131b;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .event-log {
+      max-height: 360px;
+      overflow: auto;
+    }
+    .event-item {
+      border-left: 3px solid #335a86;
+      background: #0d131b;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+      border-radius: 0 8px 8px 0;
+    }
+    .event-title {
+      color: #f2f7ff;
+      font-weight: 800;
+    }
+    .muted {
+      color: #8394a8;
+    }
+    .dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      margin-right: 8px;
+    }
+    .dot-online { background: #24d685; }
+    .dot-warning { background: #ffc107; }
+    .dot-offline { background: #ff4d4f; }
+    .btn-console {
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <main class="container-fluid console-shell py-4">
+    <div id="headline" class="status-banner mb-4"></div>
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <div>
+        <h1 class="h4 mb-1">Eastman ADMS Server Console / ADMS 服务器控制台</h1>
+        <div class="muted">State-first development console / 状态优先开发控制台 · Auto refresh every 2 seconds / 每 2 秒自动刷新</div>
+      </div>
+      <div class="d-flex gap-2">
+        <button id="refreshBtn" type="button" class="btn btn-outline-info btn-console">Refresh / 刷新</button>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <section class="col-12">
+        <div class="panel">
+          <div class="panel-header">① Current State / 当前状态</div>
+          <div class="panel-body">
+            <div id="primaryStatus" class="row g-3"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="col-12">
+        <div class="panel">
+          <div class="panel-header">② Device Status / 设备状态</div>
+          <div class="panel-body">
+            <div id="deviceStatus" class="row g-3"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="col-12 col-xl-4">
+        <div class="panel">
+          <div class="panel-header">③ Server Status / 服务器状态</div>
+          <div class="panel-body">
+            <div id="serverStatus" class="row g-2"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="col-12 col-xl-4">
+        <div class="panel">
+          <div class="panel-header">④ Statistics / 今日统计</div>
+          <div class="panel-body">
+            <div id="statistics" class="row g-2"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="col-12 col-xl-4">
+        <div class="panel">
+          <div class="panel-header">⑤ Latest Activity / 最近活动</div>
+          <div class="panel-body" id="latestActivity"></div>
+        </div>
+      </section>
+
+      <section class="col-12">
+        <div class="panel">
+          <div class="panel-header d-flex justify-content-between align-items-center">
+            <span>⑥ Realtime Event Log / 实时事件日志</span>
+            <button id="clearBtn" type="button" class="btn btn-sm btn-outline-secondary btn-console">Clear Event Log / 清空页面日志</button>
+          </div>
+          <div class="panel-body">
+            <div id="eventLog" class="event-log"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    let eventLogCleared = false;
+
+    function esc(value) {
+      return String(value ?? '').replace(/[&<>"']/g, function (char) {
+        return ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[char];
+      });
+    }
+
+    function statusDot(status) {
+      const normalized = String(status || '').toLowerCase();
+      if (normalized === 'online' || normalized === 'running' || normalized === 'connected' || normalized === 'normal') {
+        return '<span class="dot dot-online"></span>';
+      }
+      if (normalized === 'warning') {
+        return '<span class="dot dot-warning"></span>';
+      }
+      return '<span class="dot dot-offline"></span>';
+    }
+
+    const statusText = {
+      ONLINE: 'ONLINE / 在线',
+      OFFLINE: 'OFFLINE / 离线',
+      WARNING: 'WARNING / 警告',
+      Running: 'Running / 运行中',
+      Connected: 'Connected / 已连接',
+      Normal: 'Normal / 正常',
+    };
+
+    const labelText = {
+      Server: 'Server / 服务器',
+      Device: 'Device / 设备',
+      'Last Seen': 'Last Seen / 最近通信',
+      'Last Heartbeat': 'Last Heartbeat / 最后心跳',
+      'Last Data Upload': 'Last Data Upload / 最后数据上传',
+      'Last Raw Request': 'Last Raw Request / 最后请求编号',
+      'Last Raw Request ID': 'Last Raw Request ID / 最后请求编号',
+      'Last Request': 'Last Request / 最后请求类型',
+      Database: 'Database / 数据库',
+      API: 'API / 接口状态',
+      'Server Time': 'Server Time / 服务器时间',
+      'Device SN': 'Device SN / 设备序列号',
+      'Last ATTLOG': 'Last ATTLOG / 最后考勤上传',
+      'Last OPERLOG': 'Last OPERLOG / 最后操作日志',
+      'Last USER Sync': 'Last USER Sync / 最后用户同步',
+      'Client IP': 'Client IP / 客户端 IP',
+      'Push Version': 'Push Version / Push 协议版本',
+      Heartbeat: 'Heartbeat / 心跳',
+      ATTLOG: 'ATTLOG / 考勤上传',
+      OPERLOG: 'OPERLOG / 操作日志',
+      USER: 'USER / 用户同步',
+      'Latest Attendance': 'Latest Attendance / 最近考勤',
+      'Employee PIN': 'Employee PIN / 员工编号',
+      'Attendance Time': 'Attendance Time / 考勤时间',
+      'Receive Time': 'Receive Time / 接收时间',
+      Status: 'Status / 状态',
+      'Client IP': 'Client IP / 客户端 IP',
+      PIN: 'PIN / 员工编号',
+      'User Name': 'User Name / 用户姓名',
+      'Attendance ID': 'Attendance ID / 考勤记录编号',
+      'Raw Request ID': 'Raw Request ID / 原始请求编号',
+      'Operation ID': 'Operation ID / 操作记录编号',
+      Operation: 'Operation / 操作',
+      Body: 'Body / 请求内容',
+      Module: 'Module / 模块',
+      Reason: 'Reason / 原因',
+    };
+
+    const eventText = {
+      HANDSHAKE: 'HANDSHAKE / 初始化握手',
+      HEARTBEAT: 'HEARTBEAT / 心跳',
+      'ATTLOG RECEIVED': 'ATTLOG RECEIVED / 收到考勤数据',
+      'ATTLOG SAVED': 'ATTLOG SAVED / 考勤数据已保存',
+      'OPERLOG RECEIVED': 'OPERLOG RECEIVED / 收到操作日志',
+      'OPERLOG SAVED': 'OPERLOG SAVED / 操作日志已保存',
+      'USER RECEIVED': 'USER RECEIVED / 收到用户数据',
+      'USER SAVED': 'USER SAVED / 用户数据已保存',
+      ERROR: 'ERROR / 错误',
+    };
+
+    const requestTypeText = {
+      GETREQUEST: 'GETREQUEST / 心跳请求',
+      HANDSHAKE: 'HANDSHAKE / 初始化握手',
+      ATTLOG: 'ATTLOG / 考勤上传',
+      OPERLOG: 'OPERLOG / 操作日志',
+      USER: 'USER / 用户上传',
+      DEVICECMD: 'DEVICECMD / 设备命令回执',
+      CDATA: 'CDATA / 设备数据',
+      UNKNOWN: 'UNKNOWN / 未知请求',
+      '-': '-',
+    };
+
+    function label(value) {
+      return labelText[value] || value;
+    }
+
+    function displayStatus(value) {
+      return statusText[value] || value;
+    }
+
+    function displayRequestType(value) {
+      return requestTypeText[value] || value;
+    }
+
+    function displayEventType(value) {
+      return eventText[value] || value;
+    }
+
+    function displayValue(labelName, value) {
+      if (labelName === 'Device' || labelName === 'Server' || labelName === 'Database' || labelName === 'API' || labelName === 'Status') {
+        return displayStatus(value);
+      }
+      if (labelName === 'Last Request') {
+        return displayRequestType(value);
+      }
+      return value;
+    }
+
+    function renderHeadline(headline) {
+      const element = document.getElementById('headline');
+      const status = String(headline.status || 'OFFLINE').toLowerCase();
+      element.className = `status-banner mb-4 status-${status}`;
+      element.innerHTML = `
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div>
+            <div class="status-headline">${statusDot(headline.status)}${esc(displayStatus(headline.status))}</div>
+            <div class="status-subline mt-2">Last Seen / 最近通信: ${esc(headline.last_seen)}</div>
+          </div>
+          <div class="text-end muted">
+            <div>Unique entry / 唯一入口</div>
+            <div class="fw-bold text-light">/console</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPrimaryStatus(data) {
+      const summary = data.summary || {};
+      const rows = [
+        ['Server', summary.server || '-'],
+        ['Device', summary.device || '-'],
+        ['Last Seen', summary.last_seen || '-'],
+        ['Last Heartbeat', summary.last_heartbeat || '-'],
+        ['Last Data Upload', summary.last_data_upload || '-'],
+        ['Last Raw Request', summary.last_raw_request || '-'],
+        ['Last Request', summary.last_request || '-'],
+      ];
+      document.getElementById('primaryStatus').innerHTML = `
+        <div class="col-12">
+          <div class="state-board">
+            ${rows.map(([label, value]) => `
+              <div class="state-row">
+                <div class="state-label">${esc(window.label(label))}</div>
+                <div class="state-value">${label === 'Device' || label === 'Server' ? statusDot(value) : ''}${esc(displayValue(label, value))}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderServer(server) {
+      const items = [
+        ['Server', server.server],
+        ['Database', server.database],
+        ['API', server.api],
+        ['Server Time', server.server_time],
+      ];
+      document.getElementById('serverStatus').innerHTML = items.map(([label, value]) => `
+        <div class="col-12 col-sm-6">
+          <div class="metric">
+            <div class="metric-label">${esc(window.label(label))}</div>
+            <div class="metric-value">${statusDot(value)}${esc(displayValue(label, value))}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderDevices(devices) {
+      const container = document.getElementById('deviceStatus');
+      if (!devices.length) {
+        container.innerHTML = '<div class="col-12 muted">No device has connected yet. / 暂无设备连接记录。</div>';
+        return;
+      }
+      container.innerHTML = devices.map(device => `
+        <div class="col-12 col-lg-6">
+          <div class="device-card">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <div>
+                <div class="metric-label">Device SN / 设备序列号</div>
+                <div class="fw-bold">${esc(device.device_sn)}</div>
+              </div>
+              <div class="fw-bold fs-5">${statusDot(device.status)}${esc(displayStatus(device.status))}</div>
+            </div>
+            <div class="row g-2 small">
+              <div class="col-6 muted">${esc(label('Last Seen'))}</div><div class="col-6 text-end">${esc(device.last_seen)}</div>
+              <div class="col-6 muted">${esc(label('Last Heartbeat'))}</div><div class="col-6 text-end">${esc(device.last_heartbeat)}</div>
+              <div class="col-6 muted">${esc(label('Last Data Upload'))}</div><div class="col-6 text-end">${esc(device.last_data_upload)}</div>
+              <div class="col-6 muted">${esc(label('Last Request'))}</div><div class="col-6 text-end">${esc(displayRequestType(device.last_request))}</div>
+              <div class="col-6 muted">${esc(label('Last Raw Request ID'))}</div><div class="col-6 text-end">${esc(device.last_raw_request_id)}</div>
+              <div class="col-6 muted">${esc(label('Last ATTLOG'))}</div><div class="col-6 text-end">${esc(device.last_attlog)}</div>
+              <div class="col-6 muted">${esc(label('Last OPERLOG'))}</div><div class="col-6 text-end">${esc(device.last_operlog)}</div>
+              <div class="col-6 muted">${esc(label('Last USER Sync'))}</div><div class="col-6 text-end">${esc(device.last_user)}</div>
+              <div class="col-6 muted">${esc(label('Client IP'))}</div><div class="col-6 text-end">${esc(device.client_ip)}</div>
+              <div class="col-6 muted">${esc(label('Push Version'))}</div><div class="col-6 text-end">${esc(device.push_version)}</div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderEvents(events) {
+      const container = document.getElementById('eventLog');
+      if (eventLogCleared) {
+        container.innerHTML = '<div class="muted">Event log cleared in browser cache. Refresh will load events again. / 页面日志已清空，点击刷新会重新加载事件。</div>';
+        return;
+      }
+      if (!events.length) {
+        container.innerHTML = '<div class="muted">No ADMS events yet. / 暂无 ADMS 事件。</div>';
+        return;
+      }
+      container.innerHTML = events.map(event => {
+        const details = Object.entries(event.details || {}).map(([key, value]) => `
+          <div><span class="muted">${esc(label(key))}:</span> ${esc(value)}</div>
+        `).join('');
+        return `
+          <div class="event-item">
+            <div class="d-flex justify-content-between">
+              <div class="event-title">${esc(displayEventType(event.type))}</div>
+              <div class="muted">${esc(event.time)}</div>
+            </div>
+            <div class="muted mb-1">Device / 设备: ${esc(event.device_sn)}</div>
+            ${details}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderStatistics(statistics) {
+      const items = [
+        ['Heartbeat', statistics.heartbeat],
+        ['ATTLOG', statistics.attlog],
+        ['OPERLOG', statistics.operlog],
+        ['USER', statistics.user],
+      ];
+      document.getElementById('statistics').innerHTML = items.map(([label, value]) => `
+        <div class="col-6">
+          <div class="metric">
+            <div class="metric-label">${esc(window.label(label))}</div>
+            <div class="metric-value">${esc(value)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderLatestActivity(latestActivity) {
+      const latest = latestActivity.latest_attendance;
+      if (!latest) {
+        document.getElementById('latestActivity').innerHTML = '<div class="muted">No attendance event yet. / 暂无考勤记录。</div>';
+        return;
+      }
+      document.getElementById('latestActivity').innerHTML = `
+        <div class="metric">
+          <div class="metric-label mb-2">Latest Attendance / 最近考勤</div>
+          <div class="row g-2">
+            <div class="col-6 muted">${esc(label('Employee PIN'))}</div><div class="col-6 text-end">${esc(latest.pin)}</div>
+            <div class="col-6 muted">${esc(label('Attendance Time'))}</div><div class="col-6 text-end">${esc(latest.attendance_time)}</div>
+            <div class="col-6 muted">${esc(label('Receive Time'))}</div><div class="col-6 text-end">${esc(latest.receive_time)}</div>
+            <div class="col-6 muted">${esc(label('Status'))}</div><div class="col-6 text-end">${esc(latest.status)}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function refreshConsole() {
+      const response = await fetch('/console?format=json', { cache: 'no-store' });
+      const data = await response.json();
+      renderHeadline(data.headline);
+      renderPrimaryStatus(data);
+      renderServer(data.server);
+      renderDevices(data.devices);
+      renderEvents(data.events);
+      renderStatistics(data.statistics);
+      renderLatestActivity(data.latest_activity);
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', function () {
+      eventLogCleared = false;
+      refreshConsole();
+    });
+    document.getElementById('clearBtn').addEventListener('click', function () {
+      eventLogCleared = true;
+      renderEvents([]);
+    });
+
+    refreshConsole();
+    setInterval(refreshConsole, 2000);
+  </script>
+</body>
+</html>

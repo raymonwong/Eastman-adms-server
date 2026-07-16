@@ -2,6 +2,57 @@
 
 ## Version
 
+DT009.5
+
+## Date
+
+2026-07-16
+
+## Development Task
+
+DT009.5 ADMS Server Console
+
+## Description
+
+- Added `/console` as the single ADMS Server development console entry.
+- Added dark-theme Jinja2 and Bootstrap console page with Chinese and English labels.
+- Added server status, database status, API status, and server time display.
+- Added multi-device status cards with Online and Offline states based on Last Seen.
+- Added Last Seen, Last Heartbeat, Last Data Upload, Last Raw Request ID, Last Request Type, last ATTLOG, last OPERLOG, last USER sync, client IP, and push version display.
+- Set Console Online/Offline display to use the latest device request within a 60-second window instead of heartbeat-only checks.
+- Added realtime event log based on existing raw request and parser result tables.
+- Added today's Heartbeat, ATTLOG, OPERLOG, and USER counters.
+- Added latest attendance activity panel.
+- Added 2-second auto refresh, manual Refresh, and browser-only Clear Event Log.
+- Added `scripts/DT009.5_install_ubuntu.sh` without overwriting previous deployment scripts.
+- Kept database schema, ADMS protocol, API response bodies, HTTP status codes, ATTLOG parser, OPERLOG parser, USER parser, Mingdao sync, ERP logic, and attendance result calculation unchanged.
+
+## Version
+
+DT009
+
+## Date
+
+2026-07-16
+
+## Development Task
+
+DT009 ADMS Debug Log
+
+## Description
+
+- Added unified ADMS debug log output for development troubleshooting.
+- Added `HANDSHAKE` logs for initialization requests.
+- Added `HEARTBEAT` logs for every `GET /iclock/getrequest`.
+- Added `ATTLOG RECEIVED` and `ATTLOG SAVED` logs.
+- Added `OPERLOG RECEIVED` and `OPERLOG SAVED` logs.
+- Added `USER RECEIVED` and `USER SAVED` logs.
+- Standardized parser exception logs as `ERROR`.
+- Added `scripts/DT009_install_ubuntu.sh` without overwriting previous deployment scripts.
+- Kept database schema, API routes, HTTP status codes, response bodies, parsers, raw request persistence, Mingdao sync, ERP logic, and attendance result calculation unchanged.
+
+## Version
+
 DT008
 
 ## Date

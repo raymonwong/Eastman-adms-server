@@ -4,9 +4,9 @@
 
 Eastman ADMS Server 是用于后续接入考勤设备、考勤平台和明道云/HAP 的服务端项目。
 
-Development Task 008 扩展 OPERLOG Parser：服务器识别真实设备在 `table=OPERLOG` Body 中上传的 `USER` 记录，并保存到 `device_user`。
+Development Task 009.5 增加 ADMS Server Console：开发人员打开 `/console` 后，无需 SSH、MySQL、tcpdump 或 docker logs，即可查看服务器状态、设备 Online/Offline、Last Seen、Last Heartbeat、Last Data Upload、Last Raw Request、Last Request、实时事件和今日统计。Console 采用中英文双语界面，以最近一次设备通信 Last Seen 判断在线状态，60 秒内为 Online，超过 60 秒为 Offline。
 
-本阶段只接收、解析、保存设备用户原始资料，不包含用户下发、人员同步、FACE、FINGER、Command Queue、明道云同步或任何 ERP 业务逻辑。
+本阶段不修改数据库结构、ADMS 协议、HTTP 返回、Parser 行为或任何 ERP 业务逻辑。
 
 ## 2. 系统要求
 
@@ -26,7 +26,7 @@ Development Task 008 扩展 OPERLOG Parser：服务器识别真实设备在 `tab
 在项目根目录执行：
 
 ```bash
-scripts/DT008_install_ubuntu.sh
+scripts/DT009.5_install_ubuntu.sh
 ```
 
 安装脚本会自动完成：
@@ -45,13 +45,17 @@ scripts/DT008_install_ubuntu.sh
 - 验证 `operation_event` 表和 OPERLOG 解析器
 - 验证 `device_sync_state` 表和同步状态更新逻辑
 - 验证 `device_user` 表和 USER 解析器
+- 验证 ADMS debug log helper 可用
+- 验证 `/console` 页面
+- 验证 `/console?format=json` 数据
 - 失败时输出容器状态和最近 100 行容器日志
 
 部署成功后会输出：
 
 ```text
 ========================================
-USER Parser Ready
+ADMS Server Console Ready
+Console URL: http://SERVER_IP:4370/console
 Application Ready
 ========================================
 ```
@@ -75,7 +79,9 @@ eastman-adms-server/
 │   ├── DT005_install_ubuntu.sh
 │   ├── DT006_install_ubuntu.sh
 │   ├── DT007_install_ubuntu.sh
-│   └── DT008_install_ubuntu.sh
+│   ├── DT008_install_ubuntu.sh
+│   ├── DT009_install_ubuntu.sh
+│   └── DT009.5_install_ubuntu.sh
 ├── docs/
 │   ├── Architecture.md
 │   ├── Deploy.md
@@ -193,6 +199,44 @@ POST /iclock/cdata?SN=<SN>&table=OPERLOG&Stamp=<STAMP>
 
 服务器成功保存后返回 `OK:n`，其中 `n` 是成功解析并保存的记录数。
 
+开发调试日志：
+
+```bash
+docker logs -f eastman-adms-api
+```
+
+DT009 输出统一格式日志，覆盖：
+
+- `HANDSHAKE`
+- `HEARTBEAT`
+- `ATTLOG RECEIVED`
+- `ATTLOG SAVED`
+- `OPERLOG RECEIVED`
+- `OPERLOG SAVED`
+- `USER RECEIVED`
+- `USER SAVED`
+- `ERROR`
+
+DT009 只增强日志，不改变 ADMS 返回内容、数据库结构、Parser 规则或业务逻辑。
+
+ADMS Server Console:
+
+```http
+GET /console
+```
+
+Console 是开发阶段唯一控制台入口，包含：
+
+- Server Status / 服务器状态
+- Device Status / 设备状态
+- Realtime Event Log / 实时事件日志
+- Statistics / 今日统计
+- Latest Activity / 最近活动
+
+Device Status 使用 Last Seen 判断在线状态。Last Seen 表示设备最近一次通信时间，包括 HANDSHAKE、GETREQUEST、ATTLOG、OPERLOG、USER 或其它已保存的设备请求。60 秒内显示 Online，超过 60 秒显示 Offline。页面同时显示 Last Data Upload、Last Raw Request ID 和 Last Request Type，便于快速判断是否有新的请求进入服务器。
+
+页面每 2 秒自动刷新。页面内数据通过同一路径 `GET /console?format=json` 读取，不新增 `/monitor`、`/dashboard`、`/status`、`/events` 或 `/statistics` 页面。
+
 设备同步状态：
 
 ```text
@@ -241,9 +285,9 @@ http://<Server Address>:4370/iclock/cdata
 
 ## 8. 后续开发阶段
 
-DT009 预计根据真实设备数据继续处理下一类协议数据。DT008 完成后等待 Review，不进入 DT009。
+DT010 预计根据真实设备数据继续处理下一类协议数据。DT009.5 完成后等待 Review，不进入 DT010。
 
-明确禁止在 DT008 中加入：
+明确禁止在 DT009.5 中加入：
 
 - 考勤结果计算
 - 排班
