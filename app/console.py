@@ -15,7 +15,7 @@ templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "tem
 
 DUBAI_TZ = ZoneInfo("Asia/Dubai")
 ALL_DEVICES_FILTER = "all"
-OFFLINE_AFTER_SECONDS = 30
+OFFLINE_AFTER_SECONDS = 60
 
 
 def _utc_now_naive() -> datetime:
@@ -255,6 +255,21 @@ def _dashboard(session, devices: list[Device]) -> dict[str, int]:
     }
 
 
+def _exception_overview(device_summary: list[dict[str, object]], latest_activity: list[dict[str, object]]) -> dict[str, object]:
+    offline_devices = [row for row in device_summary if row.get("status") == "OFFLINE"]
+    latest_offline_time = "-"
+    offline_times = [row.get("last_heartbeat") for row in offline_devices if row.get("last_heartbeat") and row.get("last_heartbeat") != "-"]
+    if offline_times:
+        latest_offline_time = max(str(value) for value in offline_times)
+
+    return {
+        "offline_devices": len(offline_devices),
+        "heartbeat_timeout_devices": len(offline_devices),
+        "last_exception_time": latest_offline_time,
+        "last_normal_attendance_time": latest_activity[0]["attendance_time"] if latest_activity else "-",
+    }
+
+
 def _heartbeat_summary(session, devices: list[Device]) -> dict[str, object]:
     device_sns = _device_sns(devices)
     query = session.query(RawRequest).filter(RawRequest.request_path == "/iclock/getrequest")
@@ -282,7 +297,7 @@ def _latest_activities(session, devices: list[Device]) -> list[dict[str, object]
     attendance_events = (
         _attendance_filter(session.query(AttendanceEvent), device_sns)
         .order_by(AttendanceEvent.attendance_time.desc(), AttendanceEvent.id.desc())
-        .limit(5)
+        .limit(7)
         .all()
     )
     user_names = {
@@ -421,9 +436,12 @@ def _device_summary(session, devices: list[Device]) -> list[dict[str, object]]:
                 "location": device.location or "-",
                 "status": _classify_device(last_heartbeat),
                 "last_heartbeat": _format_dubai(last_heartbeat),
+                "last_heartbeat_sort": _format_dubai(last_heartbeat),
                 "last_attendance": _format_dubai(last_attendance),
+                "last_attendance_sort": _format_dubai(last_attendance),
                 "today_attendance": today_attendance,
                 "record_attendance": bool(device.record_attendance),
+                "show_in_console": bool(device.show_in_console),
             }
         )
 
@@ -444,6 +462,7 @@ def _console_data(selected_filter: str | None = None) -> dict[str, object]:
             heartbeat_summary = _heartbeat_summary(session, filtered_devices)
             latest_activity = _latest_activities(session, filtered_devices)
             device_summary = _device_summary(session, filtered_devices)
+            exception_overview = _exception_overview(device_summary, latest_activity)
     except Exception as exc:
         database_status = f"Error: {exc}"
         active_filter = ALL_DEVICES_FILTER
@@ -453,6 +472,7 @@ def _console_data(selected_filter: str | None = None) -> dict[str, object]:
         events = [_event("ERROR", _utc_now_naive(), None, "", {"Module": "CONSOLE", "Reason": str(exc)})]
         latest_activity = []
         device_summary = []
+        exception_overview = {"offline_devices": 0, "heartbeat_timeout_devices": 0, "last_exception_time": "-", "last_normal_attendance_time": "-"}
 
     return {
         "server": {
@@ -466,6 +486,7 @@ def _console_data(selected_filter: str | None = None) -> dict[str, object]:
             "options": filters,
         },
         "dashboard": dashboard,
+        "exception_overview": exception_overview,
         "heartbeat_summary": heartbeat_summary,
         "latest_activity": latest_activity,
         "events": events,

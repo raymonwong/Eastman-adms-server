@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Eastman ADMS Server Console</title>
+  <title>Operation Monitor - Eastman ADMS Server</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     :root {
@@ -202,6 +202,12 @@
       gap: var(--space-md);
     }
 
+    .exception-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: var(--space-md);
+    }
+
     .metric {
       min-height: 108px;
       display: grid;
@@ -291,6 +297,14 @@
     .btn-console {
       padding: 4px 10px;
       white-space: nowrap;
+    }
+
+    .summary-toolbar {
+      display: grid;
+      grid-template-columns: minmax(150px, 0.8fr) minmax(190px, 1.2fr) minmax(170px, 0.9fr) auto;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
     }
 
     .event-toolbar {
@@ -391,6 +405,20 @@
       white-space: nowrap;
     }
 
+    .console-table tbody td.full-time {
+      overflow: visible;
+      text-overflow: clip;
+      white-space: normal;
+      word-break: keep-all;
+    }
+
+    .console-table tbody td.wrap-text {
+      overflow: visible;
+      text-overflow: clip;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
     .console-table tbody tr:hover td {
       background: rgba(143, 179, 217, 0.06);
     }
@@ -486,19 +514,21 @@
       .brand-subtitle, .sidebar-version { display: none; }
       .nav-link-console { flex: 0 0 auto; margin-bottom: 0; }
       .console-shell { padding: 14px 18px 18px; }
-      .server-grid, .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .server-grid, .stats-grid, .exception-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .split-grid { grid-template-columns: 1fr; }
       .event-toolbar { grid-template-columns: 1fr 1fr; }
+      .summary-toolbar { grid-template-columns: 1fr 1fr; }
     }
 
     @media (max-width: 767.98px) {
       .console-shell { padding: 10px 12px 16px; }
       .page-title { font-size: 19px; }
-      .server-grid, .stats-grid { grid-template-columns: 1fr; }
+      .server-grid, .stats-grid, .exception-grid { grid-template-columns: 1fr; }
       .device-filter-row { align-items: stretch; flex-direction: column; }
       .filter-box, .btn-console { width: 100%; }
       .metric { min-height: 92px; }
       .event-toolbar { grid-template-columns: 1fr; }
+      .summary-toolbar { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -509,10 +539,10 @@
         <div class="brand-title">ADMS CONSOLE</div>
         <div class="brand-subtitle">Attendance Data<br>Management Server</div>
       </div>
-      <a class="nav-link-console active" href="/console"><i data-lucide="layout-dashboard" class="icon"></i><span>Dashboard<br><span class="zh-sub">监控</span></span></a>
-      <a class="nav-link-console" href="/console"><i data-lucide="square-terminal" class="icon"></i><span>Console<br><span class="zh-sub">控制台</span></span></a>
+      <a class="nav-link-console active" href="/console"><i data-lucide="layout-dashboard" class="icon"></i><span>Operation Monitor<br><span class="zh-sub">运行监控</span></span></a>
       <a class="nav-link-console" href="/dms"><i data-lucide="monitor-cog" class="icon"></i><span>Device Management<br><span class="zh-sub">设备管理</span></span></a>
-      <span class="nav-link-console"><i data-lucide="settings" class="icon"></i><span>Settings<br><span class="zh-sub">设置</span></span></span>
+      <span class="nav-link-console"><i data-lucide="square-terminal" class="icon"></i><span>Protocol Console<br><span class="zh-sub">协议控制台 · 开发中</span></span></span>
+      <span class="nav-link-console"><i data-lucide="settings" class="icon"></i><span>System Settings<br><span class="zh-sub">系统设置 · 开发中</span></span></span>
       <div class="sidebar-version">v1.0.0</div>
     </aside>
 
@@ -547,18 +577,27 @@
           </div>
         </section>
 
-        <section class="split-grid">
-          <div class="panel fixed-table-panel">
+        <section class="panel">
+          <div class="panel-header">
+            <span class="section-title"><i data-lucide="triangle-alert" class="icon"></i> Exception Priority <span class="zh-sub">/ 异常优先</span></span>
+          </div>
+          <div class="panel-body">
+            <div id="exceptionOverview" class="exception-grid"></div>
+          </div>
+        </section>
+
+        <div class="split-grid">
+          <section class="panel fixed-table-panel">
             <div class="panel-header">
               <span class="section-title"><i data-lucide="clipboard-check" class="icon"></i> Latest Activity <span class="zh-sub">/ 最近考勤活动</span></span>
-              <span id="latestScopeNote" class="section-note">Last 5 for current filter <span class="zh-sub">/ 当前筛选最近5条</span></span>
+              <span id="latestScopeNote" class="section-note">Last 7 for current filter <span class="zh-sub">/ 当前筛选最近7条</span></span>
             </div>
             <div class="panel-body">
               <div id="latestActivity" class="table-scroll"></div>
             </div>
-          </div>
+          </section>
 
-          <div class="panel fixed-table-panel">
+          <section class="panel fixed-table-panel">
             <div class="panel-header">
               <span class="section-title"><i data-lucide="file-text" class="icon"></i> Realtime Event Log <span class="zh-sub">/ 实时事件日志</span></span>
               <button id="clearBtn" type="button" class="btn btn-sm btn-outline-secondary btn-console"><i data-lucide="trash-2" class="icon"></i> Clear Current Log <span class="zh-sub">/ 清空当前日志</span></button>
@@ -586,14 +625,29 @@
               <div id="heartbeatSummary" class="heartbeat-summary"></div>
               <div id="eventLog" class="table-scroll"></div>
             </div>
-          </div>
-        </section>
+          </section>
+        </div>
 
         <section class="panel">
           <div class="panel-header">
             <span class="section-title"><i data-lucide="monitor-check" class="icon"></i> Device Summary <span class="zh-sub">/ 设备状态总览</span></span>
           </div>
           <div class="panel-body">
+            <div class="summary-toolbar">
+              <select id="summaryStatusFilter" class="form-select filter-select" aria-label="Device Status Filter">
+                <option value="all">All Status / 全部状态</option>
+                <option value="ONLINE">Online / 在线</option>
+                <option value="OFFLINE">Offline / 离线</option>
+              </select>
+              <input id="summarySearch" class="form-control filter-select" placeholder="Search device name, SN, location / 搜索设备名称、编号、位置">
+              <select id="summarySort" class="form-select filter-select" aria-label="Device Summary Sort">
+                <option value="last_heartbeat_desc">Last Heartbeat DESC / 最后心跳倒序</option>
+                <option value="last_heartbeat_asc">Last Heartbeat ASC / 最后心跳正序</option>
+                <option value="today_attendance_desc">Today Attendance DESC / 今日考勤倒序</option>
+                <option value="today_attendance_asc">Today Attendance ASC / 今日考勤正序</option>
+              </select>
+              <button id="summaryClearBtn" type="button" class="btn btn-sm btn-outline-secondary btn-console">Clear <span class="zh-sub">/ 清除</span></button>
+            </div>
             <div id="deviceSummary" class="summary-scroll"></div>
           </div>
         </section>
@@ -612,6 +666,7 @@
     let latestHeartbeatSummary = null;
     let previousActivityKeys = new Set();
     let previousEventKeys = new Set();
+    let latestDeviceSummary = [];
 
     function esc(value) {
       return String(value ?? '').replace(/[&<>"']/g, function (char) {
@@ -706,6 +761,7 @@
     function showInitialLoading() {
       document.getElementById('serverStatus').innerHTML = loadingState();
       document.getElementById('dashboard').innerHTML = loadingState();
+      document.getElementById('exceptionOverview').innerHTML = loadingState();
       document.getElementById('latestActivity').innerHTML = loadingState();
       document.getElementById('eventLog').innerHTML = loadingState();
       document.getElementById('deviceSummary').innerHTML = loadingState();
@@ -715,6 +771,7 @@
       const message = error && error.message ? error.message : 'Unknown error';
       document.getElementById('serverStatus').innerHTML = errorState(message);
       document.getElementById('dashboard').innerHTML = errorState(message);
+      document.getElementById('exceptionOverview').innerHTML = errorState(message);
       document.getElementById('latestActivity').innerHTML = errorState(message);
       document.getElementById('eventLog').innerHTML = errorState(message);
       document.getElementById('deviceSummary').innerHTML = errorState(message);
@@ -786,6 +843,17 @@
       refreshIcons();
     }
 
+    function renderExceptionOverview(overview) {
+      document.getElementById('exceptionOverview').innerHTML = [
+        metricCard('monitor-off', 'Offline Devices', '当前离线设备', `<button type="button" class="btn btn-sm btn-outline-danger btn-console" data-summary-status="OFFLINE">${esc(overview.offline_devices ?? 0)}</button>`),
+        metricCard('clock-3', 'Heartbeat Timeout', '超时未心跳设备', `<button type="button" class="btn btn-sm btn-outline-warning btn-console" data-summary-status="OFFLINE">${esc(overview.heartbeat_timeout_devices ?? 0)}</button>`),
+        metricCard('triangle-alert', 'Latest Exception', '最近一次异常', esc(overview.last_exception_time || '-'), 'small'),
+        metricCard('clipboard-check', 'Latest Normal Attendance', '最近一次正常考勤', esc(overview.last_normal_attendance_time || '-'), 'small'),
+        metricCard('search', 'Find Exception Devices', '查看异常设备', '<button type="button" class="btn btn-sm btn-outline-info btn-console" data-summary-status="OFFLINE">View / 查看</button>', 'small'),
+      ].join('');
+      refreshIcons();
+    }
+
     function compactTable(columns, rows, emptyText) {
       if (!rows.length) {
         return `<div class="empty-state">${emptyText}</div>`;
@@ -806,25 +874,43 @@
       return [event.type, event.device_sn, event.time_full, eventDetailsText(event.details)].join('|');
     }
 
+    function relativeTime(value) {
+      if (!value || value === '-') return '-';
+      const parsed = new Date(String(value).replace(' ', 'T') + '+04:00');
+      if (Number.isNaN(parsed.getTime())) return value;
+      const seconds = Math.max(0, Math.floor((Date.now() - parsed.getTime()) / 1000));
+      if (seconds < 60) return `${seconds}s ago`;
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return `${minutes}m ago`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours}h ago`;
+      return `${Math.floor(hours / 24)}d ago`;
+    }
+
+    function formatEmployeePin(pin) {
+      const value = String(pin || '');
+      return /^\d+$/.test(value) ? value.padStart(5, '0') : value;
+    }
+
     function renderLatestActivity(items) {
       const columns = [
-        { label: labelText('Device', '设备'), width: '28%' },
-        { label: labelText('Employee PIN', '员工编号'), width: '17%' },
-        { label: labelText('Employee Name', '员工姓名'), width: '19%' },
-        { label: labelText('Attendance Type', '事件类型'), width: '18%' },
-        { label: labelText('Attendance Time', '考勤时间'), width: '18%' },
+        { label: labelText('Device', '设备'), width: '18%' },
+        { label: labelText('Employee PIN', '员工编号'), width: '10%' },
+        { label: labelText('Employee Name', '员工姓名'), width: '24%' },
+        { label: labelText('Attendance Type', '事件类型'), width: '20%' },
+        { label: labelText('Attendance Time', '考勤时间'), width: '28%' },
       ];
       const currentKeys = new Set(items.map(activityKey));
-      const rows = items.slice(0, 5).map(item => {
+      const rows = items.slice(0, 7).map(item => {
         const key = activityKey(item);
         const shouldFlash = hasLoadedOnce && !previousActivityKeys.has(key);
         return `
-        <tr class="${shouldFlash ? 'flash-new' : ''}" title="SN: ${esc(item.device_sn)}">
-          <td>${esc(item.device_display || item.device_name)}</td>
-          <td class="mono">${esc(item.employee_pin)}</td>
-          <td>${esc(item.employee_name)}</td>
+        <tr class="${shouldFlash ? 'flash-new' : ''}" title="${esc(item.device_display || item.device_name)}">
+          <td>${esc(item.device_name)}</td>
+          <td class="mono">${esc(formatEmployeePin(item.employee_pin))}</td>
+          <td class="wrap-text">${esc(item.employee_name)}</td>
           <td>${esc(item.attendance_type)}</td>
-          <td class="mono">${esc(item.attendance_time)}</td>
+          <td class="mono full-time">${esc(item.attendance_time)}</td>
         </tr>
       `;
       });
@@ -883,7 +969,7 @@
         container.innerHTML = '<div class="empty-state">Event log cleared<br><span class="zh-sub">页面日志已清空</span></div>';
         return;
       }
-      const visibleEvents = filteredEvents(events);
+      const visibleEvents = filteredEvents(events).sort((left, right) => String(right.time_full || '').localeCompare(String(left.time_full || '')));
       const columns = [
         { label: labelText('Time', '时间'), width: '15%' },
         { label: labelText('Device', '设备'), width: '28%' },
@@ -919,25 +1005,51 @@
       }
     }
 
+    function filteredDeviceSummaryRows(rows) {
+      const statusFilter = document.getElementById('summaryStatusFilter').value;
+      const keyword = document.getElementById('summarySearch').value.trim().toLowerCase();
+      const sortMode = document.getElementById('summarySort').value;
+      const filtered = rows.filter(row => {
+        if (statusFilter !== 'all' && row.status !== statusFilter) return false;
+        if (!keyword) return true;
+        return [row.device_display, row.device_sn, row.location].some(value => String(value || '').toLowerCase().includes(keyword));
+      });
+      return filtered.sort((left, right) => {
+        if (sortMode === 'today_attendance_desc') return Number(right.today_attendance || 0) - Number(left.today_attendance || 0);
+        if (sortMode === 'today_attendance_asc') return Number(left.today_attendance || 0) - Number(right.today_attendance || 0);
+        const leftValue = left.last_heartbeat_sort === '-' ? '' : String(left.last_heartbeat_sort || '');
+        const rightValue = right.last_heartbeat_sort === '-' ? '' : String(right.last_heartbeat_sort || '');
+        return sortMode === 'last_heartbeat_asc' ? leftValue.localeCompare(rightValue) : rightValue.localeCompare(leftValue);
+      });
+    }
+
     function renderDeviceSummary(rows) {
+      latestDeviceSummary = rows;
+      const visibleRows = filteredDeviceSummaryRows(rows);
       const columns = [
-        { label: labelText('Device', '设备'), width: '28%' },
-        { label: labelText('Location', '所属位置'), width: '12%' },
-        { label: labelText('Status', '状态'), width: '13%' },
-        { label: labelText('Last Heartbeat', '最后心跳'), width: '17%' },
-        { label: labelText('Last Attendance', '最后考勤'), width: '17%' },
-        { label: labelText('Today Attendance', '今日考勤'), width: '9%' },
-        { label: labelText('Record Attendance', '记录考勤'), width: '8%' },
+        { label: labelText('Device', '设备'), width: '18%' },
+        { label: labelText('Device SN', '设备编号'), width: '12%' },
+        { label: labelText('Location', '所属位置'), width: '10%' },
+        { label: labelText('Status', '状态'), width: '11%' },
+        { label: labelText('Last Heartbeat', '最后心跳'), width: '13%' },
+        { label: labelText('Last Attendance', '最后考勤'), width: '13%' },
+        { label: labelText('Today', '今日考勤'), width: '7%' },
+        { label: labelText('Record', '记录考勤'), width: '7%' },
+        { label: labelText('Monitor', '监控页'), width: '7%' },
+        { label: labelText('Action', '操作'), width: '8%' },
       ];
-      const tableRows = rows.map(row => `
+      const tableRows = visibleRows.map(row => `
         <tr title="SN: ${esc(row.device_sn)}">
           <td>${esc(row.device_display || row.device_name)}</td>
+          <td class="mono">${esc(row.device_sn)}</td>
           <td>${esc(row.location)}</td>
           <td>${statusChip(row.status)}</td>
-          <td class="mono">${esc(row.last_heartbeat)}</td>
-          <td class="mono">${esc(row.last_attendance)}</td>
+          <td class="mono" title="${esc(row.last_heartbeat)}">${esc(relativeTime(row.last_heartbeat))}</td>
+          <td class="mono" title="${esc(row.last_attendance)}">${esc(relativeTime(row.last_attendance))}</td>
           <td class="mono">${esc(row.today_attendance)}</td>
           <td>${boolText(row.record_attendance)}</td>
+          <td>${boolText(row.show_in_console)}</td>
+          <td><a class="btn btn-sm btn-outline-info btn-console" href="/dms">Config <span class="zh-sub">/ 配置</span></a></td>
         </tr>
       `);
       document.getElementById('deviceSummary').innerHTML = compactTable(columns, tableRows, 'No visible device<br><span class="zh-sub">暂无可显示设备</span>');
@@ -963,6 +1075,7 @@
         renderFilters(data.filter);
         renderServer(data.server);
         renderDashboard(data.dashboard);
+        renderExceptionOverview(data.exception_overview || {});
         renderLatestActivity(data.latest_activity || []);
         latestEvents = data.events || [];
         latestHeartbeatSummary = data.heartbeat_summary || null;
@@ -997,6 +1110,27 @@
       }
       eventLogCleared = true;
       renderEvents([]);
+    });
+    document.getElementById('exceptionOverview').addEventListener('click', function (event) {
+      const button = event.target.closest('button[data-summary-status]');
+      if (!button) return;
+      document.getElementById('summaryStatusFilter').value = button.dataset.summaryStatus || 'all';
+      document.getElementById('deviceSummary').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      renderDeviceSummary(latestDeviceSummary);
+    });
+    ['summaryStatusFilter', 'summarySearch', 'summarySort'].forEach(function (id) {
+      document.getElementById(id).addEventListener('input', function () {
+        renderDeviceSummary(latestDeviceSummary);
+      });
+      document.getElementById(id).addEventListener('change', function () {
+        renderDeviceSummary(latestDeviceSummary);
+      });
+    });
+    document.getElementById('summaryClearBtn').addEventListener('click', function () {
+      document.getElementById('summaryStatusFilter').value = 'all';
+      document.getElementById('summarySearch').value = '';
+      document.getElementById('summarySort').value = 'last_heartbeat_desc';
+      renderDeviceSummary(latestDeviceSummary);
     });
     document.getElementById('eventTypeFilter').addEventListener('change', function () {
       eventLogCleared = false;

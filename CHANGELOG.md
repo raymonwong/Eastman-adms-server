@@ -10,7 +10,7 @@ DT009.83
 
 ## Development Task
 
-DT009.83 Console P0 UX Logic Fixes
+DT009.83 Console P0/P1/P2 UX Improvements
 
 ## Description
 
@@ -28,6 +28,12 @@ DT009.83 Console P0 UX Logic Fixes
 - Added synthetic device online/offline monitor events based on current heartbeat status.
 - Improved Device Management edit workflow with dirty-state detection, disabled Save when unchanged, saving state, unsaved-change prompt, inline validation, switch impact descriptions, and detailed save failures.
 - Renamed log clearing to Clear Current Log and added confirmation that server history is not deleted.
+- Reworked Console navigation so Operation Monitor and Device Management are distinct, while Protocol Console and System Settings are clearly marked as under development.
+- Added Exception Priority view for offline devices, heartbeat timeout devices, latest exception time, and latest normal attendance time.
+- Added Device Summary status filter, keyword search, and sorting by last heartbeat, last attendance, and today's attendance.
+- Added full Latest Activity attendance-time display, 5-digit display formatting for employee PIN values, and expanded Latest Activity to 7 rows without changing stored data.
+- Changed Console online/offline timeout to 60 seconds.
+- Ensured Realtime Event Log keeps the latest event at the top after filtering.
 - Added `scripts/DT009.83_install_ubuntu.sh` without overwriting previous deployment scripts.
 - Kept database schema, API routes, ADMS protocol, HTTP response format, parser logic, Console layout scope, Mingdao sync, ERP logic, and attendance result calculation unchanged.
 

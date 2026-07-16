@@ -10,7 +10,7 @@ Waiting for Review
 
 ## Summary
 
-DT009.83 completes the Console P0/P1 UX logic fixes. Device filtering, device identity display, loading states, ATTLOG main-log de-duplication, event-log controls, business-language event labels, and Device Management edit safety were improved while keeping the existing `/console` route, database schema, ADMS protocol, and parser behavior unchanged.
+DT009.83 completes the Console P0/P1/P2 UX improvements. Device filtering, device identity display, loading states, ATTLOG main-log de-duplication, event-log controls, business-language event labels, Device Management edit safety, exception-priority monitoring, and Device Summary search/filter/sort were improved while keeping the existing `/console` route, database schema, ADMS protocol, and parser behavior unchanged.
 
 ## Completed
 
@@ -43,7 +43,7 @@ DT009.83 completes the Console P0/P1 UX logic fixes. Device filtering, device id
 - Added `scripts/DT009.81_install_ubuntu.sh`.
 - Integrated Device Filter with visible devices from the `device` table.
 - Updated Dashboard to use real online/offline, ATTLOG, USER, and OPLOG counts.
-- Updated Latest Activity to show latest 5 ATTLOG records by attendance time.
+- Updated Latest Activity to show ATTLOG records by attendance time.
 - Updated Realtime Event Log to show latest 10 supported protocol events.
 - Updated Device Summary to use latest Heartbeat for Online/Offline status and real attendance counts.
 - Added `scripts/DT009.82_install_ubuntu.sh`.
@@ -60,6 +60,12 @@ DT009.83 completes the Console P0/P1 UX logic fixes. Device filtering, device id
 - Converted protocol codes to business-language labels while preserving raw technical details in collapsible rows with copy support.
 - Added synthetic Device Online and Device Offline monitor events based on current heartbeat status.
 - Added Device Management dirty-state detection, disabled Save when unchanged, saving state, unsaved-change prompt, inline validation, switch impact descriptions, and detailed save failures.
+- Reworked Console navigation into Operation Monitor and Device Management, with Protocol Console and System Settings marked as under development.
+- Added Exception Priority cards for offline devices, heartbeat timeout devices, latest exception time, and latest normal attendance.
+- Added Device Summary status filter, keyword search, and sorting by last heartbeat, last attendance, and today's attendance.
+- Added full Latest Activity attendance-time display, 5-digit display formatting for employee PIN values, and expanded Latest Activity to 7 rows.
+- Changed Console online/offline timeout to 60 seconds.
+- Ensured Realtime Event Log keeps the latest event at the top after filtering.
 - Added `scripts/DT009.83_install_ubuntu.sh`.
 - Updated README, CHANGELOG, and project status documentation.
 
@@ -82,10 +88,8 @@ DT009.83 completes the Console P0/P1 UX logic fixes. Device filtering, device id
 - Mingdao/HAP sync
 - ERP business logic
 - Attendance result calculation
-- P2 navigation restructuring
-- P2 exception-priority view
 - P2 language toggle
 
 ## Next Development Task
 
-DT009.83 Review, then DT009.83 P1
+DT009.83 Review

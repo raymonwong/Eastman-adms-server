@@ -4,7 +4,7 @@
 
 Eastman ADMS Server 是用于后续接入考勤设备、考勤平台和明道云/HAP 的服务端项目。
 
-Development Task 009.83 完成 ADMS Server Console P0/P1 体验修复：统一设备筛选作用域，增加加载/无数据/失败状态，合并重复 ATTLOG 主日志，并统一使用 `设备名称 · 设备 SN · 所属位置` 区分同名设备。Review Fix 进一步修复切换设备时短暂显示旧数据的问题，并将展示语言调整为英文主信息、中文辅助信息。P1 增加实时事件日志筛选、搜索、暂停刷新、心跳折叠、业务语言标签、技术详情折叠、设备编辑防误操作和开关影响说明。
+Development Task 009.83 完成 ADMS Server Console P0/P1/P2 体验优化：统一设备筛选作用域，增加加载/无数据/失败状态，合并重复 ATTLOG 主日志，并统一使用 `设备名称 · 设备 SN · 所属位置` 区分同名设备。Review Fix 进一步修复切换设备时短暂显示旧数据的问题，并将展示语言调整为英文主信息、中文辅助信息。P1 增加实时事件日志筛选、搜索、暂停刷新、心跳折叠、业务语言标签、技术详情折叠、设备编辑防误操作和开关影响说明。P2 调整监控首页信息架构，增加异常优先视图、设备状态总览筛选/搜索/排序、导航开发中标识，并确保最新事件显示在最上方。
 
 本阶段不修改 ADMS 协议、HTTP 返回格式、USER/OPLOG Parser、数据库结构、明道云同步或任何 ERP 业务逻辑。
 
@@ -50,11 +50,12 @@ scripts/DT009.83_install_ubuntu.sh
 - 验证 `/console?format=json` 数据
 - 验证 Console V2 设备筛选和 Device Summary 数据结构
 - 验证 Console V2 布局、Lucide 图标、紧凑表格和 Device Summary 列
-- 验证 Console V2 数据集成、最多 5 条 ATTLOG、最多 10 条实时事件和设备筛选数据结构
+- 验证 Console V2 数据集成、最多 7 条 ATTLOG、最多 10 条实时事件和设备筛选数据结构
 - 验证 Console P0 设备唯一显示、加载/失败状态和筛选数据结构
 - 验证 Device Management 加载/失败状态和英文主信息、中文辅助信息展示结构
-- 验证 Realtime Event Log 的事件筛选、暂停刷新、技术详情和清空当前日志说明
+- 验证 Realtime Event Log 的事件筛选、暂停刷新、技术详情、最新事件置顶和清空当前日志说明
 - 验证 Device Management 的未保存提示、保存中状态和开关影响说明
+- 验证 Console P2 Operation Monitor 导航、异常优先视图和 Device Summary 筛选/搜索/排序控件
 - 验证 `package.json` 中声明官方 `lucide` 依赖
 - 验证 `device` 设备管理配置字段
 - 验证 `/dms` 页面
@@ -66,7 +67,7 @@ scripts/DT009.83_install_ubuntu.sh
 
 ```text
 ========================================
-Console P0 UX Logic Ready
+Console P2 UX Ready
 Console URL: http://SERVER_IP:4370/console
 Device Management URL: http://SERVER_IP:4370/dms
 Application Ready
@@ -167,7 +168,7 @@ DT008 增加 `device_user`，保存设备序列号、PIN、姓名、权限、密
 
 DT009.6 为 `device` 增加设备管理配置字段：`location`、`record_attendance`、`show_in_console`。设备仍然通过 ADMS 请求自动发现，不提供手动新增和删除。DT009.7 将新设备默认名称优化为 `New Machine (Device SN)`，并将布尔字段在 UI 中显示为 `ON / 开启` 或 `OFF / 关闭`。
 
-DT009.8 将 Console 升级为多设备监控中心。Console 只显示 `show_in_console = true` 的设备，并在监控视图中优先显示 Device Name。DT009.82 将设备筛选收敛为所有设备或单台可显示设备。DT009.83 完成 Console P0 体验修复，统一筛选作用域、设备唯一显示、加载/失败状态和 ATTLOG 主日志去重。
+DT009.8 将 Console 升级为多设备监控中心。Console 只显示 `show_in_console = true` 的设备，并在监控视图中优先显示 Device Name。DT009.82 将设备筛选收敛为所有设备或单台可显示设备。DT009.83 完成 Console P0/P1/P2 体验优化，统一筛选作用域、设备唯一显示、加载/失败状态、ATTLOG 主日志去重、事件日志操作控件、异常优先视图和设备状态总览筛选/搜索/排序。
 
 开发环境如需重建数据库，可执行：
 
@@ -254,13 +255,14 @@ Console 是开发阶段唯一控制台入口，DT009.83 后按固定监控布局
 - Server Status / 服务器状态
 - Device Filter / 设备筛选
 - Dashboard / 仪表盘
+- Exception Priority / 异常优先
 - Latest Activity / 最近活动
-- Realtime Event Log / 实时事件日志
 - Device Summary / 设备状态总览
+- Realtime Event Log / 实时事件日志
 
 Console 只显示 Device Management 中 `show_in_console = true` 的设备。全局 Device Filter 位于服务器状态卡片下方、业务统计卡片上方，可按所有设备或单台设备筛选；Dashboard、Latest Activity、Realtime Event Log 和 Device Summary 会同步跟随筛选条件。所有筛选请求使用 `device_sn`，不使用设备名称作为筛选依据。
 
-在线状态使用最近 Heartbeat 判断：30 秒内显示 Online，超过 30 秒显示 Offline。Console 统一显示 `设备名称 · 设备 SN · 所属位置`，所属位置为空时显示 `设备名称 · 设备 SN`，无法匹配设备时显示 `Unknown Device`。Latest Activity 从 `attendance_event` 读取最新 5 条 ATTLOG，按 `attendance_time DESC` 排序；Realtime Event Log 从现有 raw request、ATTLOG、USER、OPLOG 记录生成当前筛选条件下的最新 10 条事件，已保存的 ATTLOG 不再重复显示对应 raw ATTLOG 主日志。心跳默认折叠为 Heartbeat Summary，不逐条占用主日志；主日志默认突出考勤、设备上线/离线、操作、用户同步和异常事件。新到达的 Latest Activity 和 Realtime Event Log 记录会短暂红色底色闪动，用于提示有新记录进入，闪动结束后恢复正常底色。事件日志支持事件类型筛选、关键字搜索、暂停/继续实时刷新、自动滚动开关、清除筛选条件，以及技术详情折叠和复制。协议代码在主界面转换为业务语言，例如 `Attendance Event`、`Device Operation`、`Device Heartbeat`，原始类型和详情保留在 Technical Details。页面首次加载和切换设备筛选时显示加载状态，接口失败显示失败原因和重新加载按钮，接口成功且结果为空时才显示无数据状态。页面统一使用英文作为主信息、中文作为辅助信息。页面统一使用官方 Lucide Icons，`package.json` 声明 `lucide` 依赖；非 React 页面通过 Lucide 官方 UMD 构建渲染图标。不使用 Wi-Fi、Signal 或 Radio 图标表示设备在线。页面每 2 秒自动刷新，切换设备筛选时通过 `GET /console?format=json&device_filter=<value>` Ajax 刷新，不新增 `/monitor`、`/dashboard`、`/status`、`/events` 或 `/statistics` 页面。
+在线状态使用最近 Heartbeat 判断：60 秒内显示 Online，超过 60 秒显示 Offline。Console 统一显示 `设备名称 · 设备 SN · 所属位置`，所属位置为空时显示 `设备名称 · 设备 SN`，无法匹配设备时显示 `Unknown Device`。Latest Activity 从 `attendance_event` 读取最新 7 条 ATTLOG，按 `attendance_time DESC` 排序；员工编号在页面显示为 5 位，不修改数据库原始 PIN；考勤时间完整显示。Realtime Event Log 从现有 raw request、ATTLOG、USER、OPLOG 记录生成当前筛选条件下的最新 10 条事件，前端和后端均按事件时间倒序显示，确保最新事件在最上方；已保存的 ATTLOG 不再重复显示对应 raw ATTLOG 主日志。心跳默认折叠为 Heartbeat Summary，不逐条占用主日志；主日志默认突出考勤、设备上线/离线、操作、用户同步和异常事件。新到达的 Latest Activity 和 Realtime Event Log 记录会短暂红色底色闪动，用于提示有新记录进入，闪动结束后恢复正常底色。事件日志支持事件类型筛选、关键字搜索、暂停/继续实时刷新、自动滚动开关、清除筛选条件，以及技术详情折叠和复制。Device Summary 支持按状态筛选、按设备名称/SN/位置搜索，并支持按最后心跳、最后考勤和今日考勤排序；异常优先视图可快速筛选离线或超时未心跳设备。协议代码在主界面转换为业务语言，例如 `Attendance Event`、`Device Operation`、`Device Heartbeat`，原始类型和详情保留在 Technical Details。页面首次加载和切换设备筛选时显示加载状态，接口失败显示失败原因和重新加载按钮，接口成功且结果为空时才显示无数据状态。页面统一使用英文作为主信息、中文作为辅助信息。页面统一使用官方 Lucide Icons，`package.json` 声明 `lucide` 依赖；非 React 页面通过 Lucide 官方 UMD 构建渲染图标。不使用 Wi-Fi、Signal 或 Radio 图标表示设备在线。页面每 2 秒自动刷新，切换设备筛选时通过 `GET /console?format=json&device_filter=<value>` Ajax 刷新，不新增 `/monitor`、`/dashboard`、`/status`、`/events` 或 `/statistics` 页面。
 
 Device Management / 设备管理:
 
@@ -334,7 +336,7 @@ http://<Server Address>:4370/iclock/cdata
 
 ## 8. 后续开发阶段
 
-DT009.83 P0 完成后等待 Review。P1/P2 将在后续 Review 通过后继续实施，不进入 DT010。
+DT009.83 P0/P1/P2 完成后等待 Review，不进入 DT010。
 
 明确禁止在 DT009.83 中加入：
 
