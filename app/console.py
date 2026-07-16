@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import func, or_, text
+from sqlalchemy import false, func, or_, text
 
 from app.database import SessionLocal
 from app.models import AttendanceEvent, Device, DeviceUser, OperationEvent, RawRequest
@@ -14,7 +14,8 @@ router = APIRouter()
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
 
 DUBAI_TZ = ZoneInfo("Asia/Dubai")
-OFFLINE_AFTER_SECONDS = 60
+ALL_DEVICES_FILTER = "all"
+OFFLINE_AFTER_SECONDS = 30
 
 
 def _utc_now_naive() -> datetime:
@@ -43,84 +44,78 @@ def _short_time(value: datetime | None, *, source: str = "utc") -> str:
     return "-" if formatted == "-" else formatted[-8:]
 
 
+def _device_name(device: Device | None, device_sn: str | None) -> str:
+    if device is None:
+        return device_sn or "-"
+    return device.device_name or f"New Machine ({device.device_sn})"
+
+
 def _classify_device(last_seen: datetime | None) -> str:
     if last_seen is None:
         return "OFFLINE"
     age_seconds = (_utc_now_naive() - last_seen).total_seconds()
-    if age_seconds <= OFFLINE_AFTER_SECONDS:
-        return "ONLINE"
-    return "OFFLINE"
+    return "ONLINE" if age_seconds <= OFFLINE_AFTER_SECONDS else "OFFLINE"
 
 
-def _event(event_type: str, event_time: datetime | None, device_sn: str | None, details: dict[str, object]) -> dict[str, object]:
-    return {
-        "type": event_type,
-        "time": _short_time(event_time),
-        "time_full": _format_dubai(event_time),
-        "device_sn": device_sn or "",
-        "details": details,
-    }
+def _visible_devices(session) -> list[Device]:
+    return (
+        session.query(Device)
+        .filter(Device.show_in_console.is_(True))
+        .order_by(Device.updated_at.desc(), Device.device_name.asc(), Device.device_sn.asc())
+        .all()
+    )
 
 
-def _latest_raw_event(raw_request: RawRequest) -> dict[str, object] | None:
-    query_string = raw_request.query_string or ""
-    body = (raw_request.body or "").strip()
-    upper_query = query_string.upper()
-
-    if raw_request.request_path == "/iclock/getrequest":
-        return _event("HEARTBEAT", raw_request.received_at, raw_request.device_sn, {"Client IP": raw_request.client_ip or ""})
-    if "OPTIONS=ALL" in upper_query:
-        return _event("HANDSHAKE", raw_request.received_at, raw_request.device_sn, {"Client IP": raw_request.client_ip or ""})
-    if "TABLE=ATTLOG" in upper_query:
-        first_line = body.splitlines()[0] if body else ""
-        fields = first_line.split("\t")
-        return _event(
-            "ATTLOG RECEIVED",
-            raw_request.received_at,
-            raw_request.device_sn,
-            {
-                "PIN": fields[0] if fields else "",
-                "Attendance Time": fields[1] if len(fields) > 1 else "",
-            },
-        )
-    if "TABLE=OPERLOG" in upper_query:
-        first_line = body.splitlines()[0] if body else ""
-        record_type = first_line.split(None, 1)[0].upper() if first_line else "OPERLOG"
-        if record_type == "USER":
-            details = _parse_user_details(first_line)
-            return _event(
-                "USER RECEIVED",
-                raw_request.received_at,
-                raw_request.device_sn,
-                {"PIN": details.get("PIN", ""), "User Name": details.get("Name", "")},
-            )
-        return _event("OPERLOG RECEIVED", raw_request.received_at, raw_request.device_sn, {"Body": first_line})
-    return None
+def _device_filters(devices: list[Device]) -> list[dict[str, str]]:
+    filters = [{"value": ALL_DEVICES_FILTER, "label": "All Devices / 所有设备"}]
+    locations = sorted({device.location for device in devices if device.location})
+    filters.extend({"value": f"location:{location}", "label": f"{location} / 位置"} for location in locations)
+    filters.extend({"value": f"device:{device.device_sn}", "label": f"{_device_name(device, device.device_sn)} / 设备"} for device in devices)
+    return filters
 
 
-def _request_type(raw_request: RawRequest | None) -> str:
-    if raw_request is None:
-        return "-"
+def _filter_devices(devices: list[Device], selected_filter: str | None) -> list[Device]:
+    if not selected_filter or selected_filter == ALL_DEVICES_FILTER:
+        return devices
+    if selected_filter.startswith("location:"):
+        location = selected_filter.removeprefix("location:")
+        return [device for device in devices if (device.location or "") == location]
+    if selected_filter.startswith("device:"):
+        device_sn = selected_filter.removeprefix("device:")
+        return [device for device in devices if device.device_sn == device_sn]
+    return devices
 
-    query_string = raw_request.query_string or ""
-    body = (raw_request.body or "").strip()
-    upper_query = query_string.upper()
 
-    if raw_request.request_path == "/iclock/getrequest":
-        return "GETREQUEST"
-    if raw_request.request_path == "/iclock/devicecmd":
-        return "DEVICECMD"
-    if raw_request.request_path == "/iclock/cdata":
-        if "OPTIONS=ALL" in upper_query:
-            return "HANDSHAKE"
-        if "TABLE=ATTLOG" in upper_query:
-            return "ATTLOG"
-        if "TABLE=OPERLOG" in upper_query:
-            first_line = body.splitlines()[0] if body else ""
-            record_type = first_line.split(None, 1)[0].upper() if first_line else ""
-            return "USER" if record_type == "USER" else "OPERLOG"
-        return "CDATA"
-    return (raw_request.request_path or "UNKNOWN").strip("/").upper() or "UNKNOWN"
+def _device_map(devices: list[Device]) -> dict[str, Device]:
+    return {device.device_sn: device for device in devices}
+
+
+def _device_sns(devices: list[Device]) -> list[str]:
+    return [device.device_sn for device in devices]
+
+
+def _device_filter(query, device_sns: list[str]):
+    if not device_sns:
+        return query.filter(false())
+    return query.filter(RawRequest.device_sn.in_(device_sns))
+
+
+def _attendance_filter(query, device_sns: list[str]):
+    if not device_sns:
+        return query.filter(false())
+    return query.filter(AttendanceEvent.device_sn.in_(device_sns))
+
+
+def _operation_filter(query, device_sns: list[str]):
+    if not device_sns:
+        return query.filter(false())
+    return query.filter(OperationEvent.device_sn.in_(device_sns))
+
+
+def _user_filter(query, device_sns: list[str]):
+    if not device_sns:
+        return query.filter(false())
+    return query.filter(DeviceUser.device_sn.in_(device_sns))
 
 
 def _latest_raw_request(session, device_sn: str | None = None) -> RawRequest | None:
@@ -134,12 +129,32 @@ def _latest_data_upload(session, device_sn: str | None = None) -> datetime | Non
     query = session.query(func.max(RawRequest.received_at)).filter(RawRequest.request_path == "/iclock/cdata")
     if device_sn is not None:
         query = query.filter(RawRequest.device_sn == device_sn)
-    return query.filter(
-        or_(
-            RawRequest.query_string.ilike("%table=ATTLOG%"),
-            RawRequest.query_string.ilike("%table=OPERLOG%"),
-        )
-    ).scalar()
+    return query.filter(or_(RawRequest.query_string.ilike("%table=ATTLOG%"), RawRequest.query_string.ilike("%table=OPERLOG%"))).scalar()
+
+
+def _request_type(raw_request: RawRequest | None) -> str:
+    if raw_request is None:
+        return "-"
+
+    query_string = raw_request.query_string or ""
+    body = (raw_request.body or "").strip()
+    upper_query = query_string.upper()
+
+    if raw_request.request_path == "/iclock/getrequest":
+        return "HEARTBEAT"
+    if raw_request.request_path == "/iclock/devicecmd":
+        return "DEVICECMD"
+    if raw_request.request_path == "/iclock/cdata":
+        if "OPTIONS=ALL" in upper_query:
+            return "HANDSHAKE"
+        if "TABLE=ATTLOG" in upper_query:
+            return "ATTLOG"
+        if "TABLE=OPERLOG" in upper_query:
+            first_line = body.splitlines()[0] if body else ""
+            record_type = first_line.split(None, 1)[0].upper() if first_line else ""
+            return "USER" if record_type == "USER" else "OPLOG"
+        return "CDATA"
+    return (raw_request.request_path or "UNKNOWN").strip("/").upper() or "UNKNOWN"
 
 
 def _parse_user_details(line: str) -> dict[str, str]:
@@ -153,9 +168,186 @@ def _parse_user_details(line: str) -> dict[str, str]:
     return values
 
 
-def _device_cards(session) -> list[dict[str, object]]:
-    devices = session.query(Device).order_by(Device.device_sn.asc()).all()
-    cards: list[dict[str, object]] = []
+def _event(
+    event_type: str,
+    event_time: datetime | None,
+    device: Device | None,
+    device_sn: str | None,
+    details: dict[str, object],
+) -> dict[str, object]:
+    return {
+        "type": event_type,
+        "time": _short_time(event_time),
+        "time_full": _format_dubai(event_time),
+        "device_name": _device_name(device, device_sn),
+        "device_sn": device_sn or "",
+        "details": details,
+    }
+
+
+def _raw_event(raw_request: RawRequest, device_map: dict[str, Device]) -> dict[str, object] | None:
+    query_string = raw_request.query_string or ""
+    body = (raw_request.body or "").strip()
+    upper_query = query_string.upper()
+    device = device_map.get(raw_request.device_sn or "")
+
+    if raw_request.request_path == "/iclock/getrequest":
+        return _event("HEARTBEAT", raw_request.received_at, device, raw_request.device_sn, {"Client IP": raw_request.client_ip or ""})
+    if "OPTIONS=ALL" in upper_query:
+        return _event("HANDSHAKE", raw_request.received_at, device, raw_request.device_sn, {"Client IP": raw_request.client_ip or ""})
+    if "TABLE=ATTLOG" in upper_query:
+        first_line = body.splitlines()[0] if body else ""
+        fields = first_line.split("\t")
+        return _event(
+            "ATTLOG",
+            raw_request.received_at,
+            device,
+            raw_request.device_sn,
+            {
+                "PIN": fields[0] if fields else "",
+                "Attendance Time": fields[1] if len(fields) > 1 else "",
+            },
+        )
+    if "TABLE=OPERLOG" in upper_query:
+        first_line = body.splitlines()[0] if body else ""
+        record_type = first_line.split(None, 1)[0].upper() if first_line else "OPLOG"
+        if record_type == "USER":
+            details = _parse_user_details(first_line)
+            return _event("USER", raw_request.received_at, device, raw_request.device_sn, {"PIN": details.get("PIN", ""), "User Name": details.get("Name", "")})
+        return _event("OPLOG", raw_request.received_at, device, raw_request.device_sn, {"Details": first_line})
+    return None
+
+
+def _dashboard(session, devices: list[Device]) -> dict[str, int]:
+    today_start = _today_start_utc_naive()
+    device_sns = _device_sns(devices)
+    online = 0
+    offline = 0
+
+    for device in devices:
+        latest_raw = _latest_raw_request(session, device.device_sn)
+        if _classify_device(latest_raw.received_at if latest_raw is not None else None) == "ONLINE":
+            online += 1
+        else:
+            offline += 1
+
+    attendance_query = session.query(AttendanceEvent).filter(AttendanceEvent.receive_time >= today_start)
+    user_query = session.query(DeviceUser).filter(DeviceUser.receive_time >= today_start)
+    operation_query = session.query(OperationEvent).filter(OperationEvent.receive_time >= today_start)
+
+    return {
+        "online_devices": online,
+        "offline_devices": offline,
+        "attendance": _attendance_filter(attendance_query, device_sns).count(),
+        "user": _user_filter(user_query, device_sns).count(),
+        "oplog": _operation_filter(operation_query, device_sns).count(),
+    }
+
+
+def _latest_activities(session, devices: list[Device]) -> list[dict[str, object]]:
+    device_sns = _device_sns(devices)
+    devices_by_sn = _device_map(devices)
+    attendance_events = (
+        _attendance_filter(session.query(AttendanceEvent), device_sns)
+        .order_by(AttendanceEvent.receive_time.desc(), AttendanceEvent.id.desc())
+        .limit(12)
+        .all()
+    )
+    user_names = {
+        (user.device_sn, user.pin): user.name
+        for user in _user_filter(session.query(DeviceUser), device_sns).all()
+    }
+
+    return [
+        {
+            "device_name": _device_name(devices_by_sn.get(item.device_sn), item.device_sn),
+            "device_sn": item.device_sn,
+            "employee_pin": item.pin,
+            "employee_name": user_names.get((item.device_sn, item.pin)) or "-",
+            "attendance_type": item.status or "-",
+            "attendance_time": _format_dubai(item.attendance_time, source="local"),
+            "receive_time": _format_dubai(item.receive_time),
+        }
+        for item in attendance_events
+    ]
+
+
+def _events(session, devices: list[Device]) -> list[dict[str, object]]:
+    device_sns = _device_sns(devices)
+    devices_by_sn = _device_map(devices)
+    events: list[dict[str, object]] = []
+
+    raw_requests = (
+        _device_filter(
+            session.query(RawRequest).filter(or_(RawRequest.request_path == "/iclock/getrequest", RawRequest.request_path == "/iclock/cdata")),
+            device_sns,
+        )
+        .order_by(RawRequest.received_at.desc(), RawRequest.id.desc())
+        .limit(80)
+        .all()
+    )
+    for raw_request in raw_requests:
+        event = _raw_event(raw_request, devices_by_sn)
+        if event is not None:
+            events.append(event)
+
+    attendance_events = (
+        _attendance_filter(session.query(AttendanceEvent), device_sns)
+        .order_by(AttendanceEvent.receive_time.desc(), AttendanceEvent.id.desc())
+        .limit(30)
+        .all()
+    )
+    for item in attendance_events:
+        device = devices_by_sn.get(item.device_sn)
+        events.append(
+            _event(
+                "ATTLOG SAVED",
+                item.receive_time,
+                device,
+                item.device_sn,
+                {
+                    "Attendance ID": item.id,
+                    "PIN": item.pin,
+                    "Attendance Time": _format_dubai(item.attendance_time, source="local"),
+                },
+            )
+        )
+
+    operation_events = (
+        _operation_filter(session.query(OperationEvent), device_sns)
+        .order_by(OperationEvent.receive_time.desc(), OperationEvent.id.desc())
+        .limit(30)
+        .all()
+    )
+    for item in operation_events:
+        device = devices_by_sn.get(item.device_sn)
+        events.append(
+            _event(
+                "OPLOG SAVED",
+                item.receive_time,
+                device,
+                item.device_sn,
+                {"Operation": item.operation_code, "Operation Time": _format_dubai(item.operation_time, source="local")},
+            )
+        )
+
+    users = (
+        _user_filter(session.query(DeviceUser), device_sns)
+        .order_by(DeviceUser.receive_time.desc(), DeviceUser.id.desc())
+        .limit(30)
+        .all()
+    )
+    for user in users:
+        device = devices_by_sn.get(user.device_sn)
+        events.append(_event("USER SAVED", user.receive_time, device, user.device_sn, {"PIN": user.pin, "User Name": user.name or ""}))
+
+    events.sort(key=lambda item: item["time_full"], reverse=True)
+    return events[:80]
+
+
+def _device_summary(session, devices: list[Device]) -> list[dict[str, object]]:
+    today_start = _today_start_utc_naive()
+    rows: list[dict[str, object]] = []
 
     for device in devices:
         latest_raw = _latest_raw_request(session, device.device_sn)
@@ -165,168 +357,54 @@ def _device_cards(session) -> list[dict[str, object]]:
             .filter(RawRequest.device_sn == device.device_sn, RawRequest.request_path == "/iclock/getrequest")
             .scalar()
         )
-        last_data_upload = _latest_data_upload(session, device.device_sn)
-        last_attlog = (
+        last_attendance = (
             session.query(func.max(AttendanceEvent.receive_time))
             .filter(AttendanceEvent.device_sn == device.device_sn)
             .scalar()
         )
-        last_operlog = (
-            session.query(func.max(OperationEvent.receive_time))
-            .filter(OperationEvent.device_sn == device.device_sn)
-            .scalar()
+        today_attendance = (
+            session.query(AttendanceEvent)
+            .filter(AttendanceEvent.device_sn == device.device_sn, AttendanceEvent.receive_time >= today_start)
+            .count()
         )
-        last_user = (
-            session.query(func.max(DeviceUser.receive_time))
-            .filter(DeviceUser.device_sn == device.device_sn)
-            .scalar()
-        )
-        status = _classify_device(last_seen)
-        cards.append(
+        rows.append(
             {
+                "device_name": _device_name(device, device.device_sn),
                 "device_sn": device.device_sn,
-                "status": status,
-                "last_seen": _format_dubai(last_seen),
+                "location": device.location or "-",
+                "status": _classify_device(last_seen),
                 "last_heartbeat": _format_dubai(last_heartbeat),
-                "last_data_upload": _format_dubai(last_data_upload),
-                "last_request": _request_type(latest_raw),
-                "last_raw_request_id": latest_raw.id if latest_raw is not None else "-",
-                "last_attlog": _format_dubai(last_attlog),
-                "last_operlog": _format_dubai(last_operlog),
-                "last_user": _format_dubai(last_user),
-                "client_ip": (latest_raw.client_ip if latest_raw is not None and latest_raw.client_ip else device.ip_address) or "-",
-                "push_version": device.push_version or "-",
+                "last_attendance": _format_dubai(last_attendance),
+                "today_attendance": today_attendance,
+                "record_attendance": bool(device.record_attendance),
+                "show_in_console": bool(device.show_in_console),
             }
         )
 
-    return cards
+    return rows
 
 
-def _events(session) -> list[dict[str, object]]:
-    events: list[dict[str, object]] = []
-    raw_requests = (
-        session.query(RawRequest)
-        .filter(
-            or_(
-                RawRequest.request_path == "/iclock/getrequest",
-                RawRequest.request_path == "/iclock/cdata",
-            )
-        )
-        .order_by(RawRequest.received_at.desc())
-        .limit(80)
-        .all()
-    )
-    for raw_request in raw_requests:
-        event = _latest_raw_event(raw_request)
-        if event is not None:
-            events.append(event)
-
-    attendance_events = session.query(AttendanceEvent).order_by(AttendanceEvent.receive_time.desc()).limit(30).all()
-    for item in attendance_events:
-        events.append(
-            _event(
-                "ATTLOG SAVED",
-                item.receive_time,
-                item.device_sn,
-                {
-                    "Attendance ID": item.id,
-                    "Raw Request ID": item.raw_request_id,
-                    "PIN": item.pin,
-                    "Attendance Time": _format_dubai(item.attendance_time, source="local"),
-                },
-            )
-        )
-
-    operation_events = session.query(OperationEvent).order_by(OperationEvent.receive_time.desc()).limit(30).all()
-    for item in operation_events:
-        events.append(
-            _event(
-                "OPERLOG SAVED",
-                item.receive_time,
-                item.device_sn,
-                {"Operation ID": item.id, "Operation": item.operation_code, "Operation Time": _format_dubai(item.operation_time, source="local")},
-            )
-        )
-
-    users = session.query(DeviceUser).order_by(DeviceUser.receive_time.desc()).limit(30).all()
-    for user in users:
-        events.append(_event("USER SAVED", user.receive_time, user.device_sn, {"User ID": user.id, "PIN": user.pin, "User Name": user.name or ""}))
-
-    events.sort(key=lambda item: item["time_full"], reverse=True)
-    return events[:80]
-
-
-def _statistics(session) -> dict[str, int]:
-    today_start = _today_start_utc_naive()
-    return {
-        "heartbeat": session.query(RawRequest).filter(RawRequest.request_path == "/iclock/getrequest", RawRequest.received_at >= today_start).count(),
-        "attlog": session.query(AttendanceEvent).filter(AttendanceEvent.receive_time >= today_start).count(),
-        "operlog": session.query(OperationEvent).filter(OperationEvent.receive_time >= today_start).count(),
-        "user": session.query(DeviceUser).filter(DeviceUser.receive_time >= today_start).count(),
-    }
-
-
-def _latest_activity(session) -> dict[str, object]:
-    latest_attendance = session.query(AttendanceEvent).order_by(AttendanceEvent.receive_time.desc()).first()
-    if latest_attendance is None:
-        return {"latest_attendance": None}
-    return {
-        "latest_attendance": {
-            "pin": latest_attendance.pin,
-            "attendance_time": _format_dubai(latest_attendance.attendance_time, source="local"),
-            "receive_time": _format_dubai(latest_attendance.receive_time),
-            "status": latest_attendance.status or "-",
-        }
-    }
-
-
-def _console_data() -> dict[str, object]:
+def _console_data(selected_filter: str | None = None) -> dict[str, object]:
     database_status = "Connected"
     try:
         with SessionLocal() as session:
             session.execute(text("SELECT 1"))
-            devices = _device_cards(session)
-            events = _events(session)
-            statistics = _statistics(session)
-            latest_activity = _latest_activity(session)
-            latest_raw = _latest_raw_request(session)
-            last_data_upload = _latest_data_upload(session)
+            visible_devices = _visible_devices(session)
+            active_filter = selected_filter if selected_filter in {item["value"] for item in _device_filters(visible_devices)} else ALL_DEVICES_FILTER
+            filtered_devices = _filter_devices(visible_devices, active_filter)
+            filters = _device_filters(visible_devices)
+            dashboard = _dashboard(session, filtered_devices)
+            events = _events(session, filtered_devices)
+            latest_activity = _latest_activities(session, filtered_devices)
+            device_summary = _device_summary(session, filtered_devices)
     except Exception as exc:
         database_status = f"Error: {exc}"
-        devices = []
-        events = [_event("ERROR", _utc_now_naive(), "", {"Module": "CONSOLE", "Reason": str(exc)})]
-        statistics = {"heartbeat": 0, "attlog": 0, "operlog": 0, "user": 0}
-        latest_activity = {"latest_attendance": None}
-        latest_raw = None
-        last_data_upload = None
-
-    online_devices = [device for device in devices if device["status"] == "ONLINE"]
-    warning_devices = [device for device in devices if device["status"] == "WARNING"]
-    last_seen = "-"
-    last_seen_times = [device["last_seen"] for device in devices if device["last_seen"] != "-"]
-    if last_seen_times:
-        last_seen = max(last_seen_times)
-    last_heartbeat = "-"
-    heartbeat_times = [device["last_heartbeat"] for device in devices if device["last_heartbeat"] != "-"]
-    if heartbeat_times:
-        last_heartbeat = max(heartbeat_times)
-
-    if online_devices:
-        headline = {"status": "ONLINE", "text": "DEVICE ONLINE", "last_seen": last_seen}
-    elif warning_devices:
-        headline = {"status": "WARNING", "text": "DEVICE WARNING", "last_seen": last_seen}
-    else:
-        headline = {"status": "OFFLINE", "text": "DEVICE OFFLINE", "last_seen": last_seen}
-
-    summary = {
-        "server": "Running",
-        "device": headline["status"],
-        "last_seen": last_seen,
-        "last_heartbeat": last_heartbeat,
-        "last_data_upload": _format_dubai(last_data_upload),
-        "last_raw_request": latest_raw.id if latest_raw is not None else "-",
-        "last_request": _request_type(latest_raw),
-    }
+        active_filter = ALL_DEVICES_FILTER
+        filters = [{"value": ALL_DEVICES_FILTER, "label": "All Devices / 所有设备"}]
+        dashboard = {"online_devices": 0, "offline_devices": 0, "attendance": 0, "user": 0, "oplog": 0}
+        events = [_event("ERROR", _utc_now_naive(), None, "", {"Module": "CONSOLE", "Reason": str(exc)})]
+        latest_activity = []
+        device_summary = []
 
     return {
         "server": {
@@ -335,18 +413,20 @@ def _console_data() -> dict[str, object]:
             "api": "Normal",
             "server_time": _dubai_now().strftime("%Y-%m-%d %H:%M:%S"),
         },
-        "headline": headline,
-        "summary": summary,
-        "devices": devices,
-        "events": events,
-        "statistics": statistics,
+        "filter": {
+            "selected": active_filter,
+            "options": filters,
+        },
+        "dashboard": dashboard,
         "latest_activity": latest_activity,
+        "events": events,
+        "device_summary": device_summary,
     }
 
 
 @router.get("/console", response_class=HTMLResponse)
-async def console(request: Request, format: str | None = None):
-    data = _console_data()
+async def console(request: Request, format: str | None = None, device_filter: str | None = None):
+    data = _console_data(device_filter)
     if format == "json":
         return JSONResponse(data)
     return templates.TemplateResponse("console.html", {"request": request, "data": data})

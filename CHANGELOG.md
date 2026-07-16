@@ -2,6 +2,30 @@
 
 ## Version
 
+DT009.8
+
+## Date
+
+2026-07-16
+
+## Development Task
+
+DT009.8 Console V2 Multi-Device Monitoring Upgrade
+
+## Description
+
+- Upgraded `/console` into a multi-device monitoring dashboard.
+- Added global Device Filter for all devices, locations, and individual visible devices.
+- Limited Console visibility to devices with `show_in_console = true`.
+- Changed Console primary device display from Device SN to Device Name, keeping SN only as tooltip context.
+- Added Dashboard statistics for online devices, offline devices, today's attendance, today's USER, and today's OPLOG.
+- Converted Latest Activity and Realtime Event Log to follow the selected device filter.
+- Added Device Summary table with location, online status, last heartbeat, last attendance, today's attendance, Record Attendance, and Show in Console.
+- Added `scripts/DT009.8_install_ubuntu.sh` without overwriting previous deployment scripts.
+- Kept database schema, Device Management, ADMS protocol, HTTP response format, ATTLOG parser, OPLOG parser, USER parser, Mingdao sync, ERP logic, and attendance result calculation unchanged.
+
+## Version
+
 DT009.7
 
 ## Date

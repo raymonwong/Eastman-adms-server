@@ -2,7 +2,7 @@
 
 ## Current Development Task
 
-DT009.7
+DT009.8
 
 ## Status
 
@@ -10,7 +10,7 @@ Waiting for Review
 
 ## Summary
 
-DT009.7 optimizes the Device Management module at `/dms`. The module remains independent from Console and only handles device configuration, including device name, location, attendance recording control, and the stored show-in-console flag.
+DT009.8 upgrades `/console` into Console V2, a multi-device monitoring center. Device Management remains the configuration module, while Console only displays runtime monitoring data.
 
 ## Completed
 
@@ -28,6 +28,13 @@ DT009.7 optimizes the Device Management module at `/dms`. The module remains ind
 - Updated default auto-discovered device names to `New Machine (Device SN)`.
 - Improved visual read-only treatment for Device SN, Created Time, and Updated Time.
 - Added confirmation when Record Attendance is turned off.
+- Added Console V2 global Device Filter.
+- Limited Console data to devices with `show_in_console = true`.
+- Added Dashboard statistics for online devices, offline devices, today's attendance, today's USER, and today's OPLOG.
+- Added filtered Latest Activity and Realtime Event Log.
+- Added Device Summary table.
+- Changed Console primary display from Device SN to Device Name.
+- Added `scripts/DT009.8_install_ubuntu.sh`.
 - Updated README, CHANGELOG, and project status documentation.
 
 ## Not Included
@@ -36,8 +43,6 @@ DT009.7 optimizes the Device Management module at `/dms`. The module remains ind
 - Permission system
 - Add Device
 - Delete Device
-- Console filtering by `show_in_console`
-- Console device name display
 - ADMS protocol changes
 - API response body changes
 - HTTP status changes
