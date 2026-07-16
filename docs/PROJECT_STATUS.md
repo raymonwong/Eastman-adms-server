@@ -10,7 +10,7 @@ Waiting for Review
 
 ## Summary
 
-DT009.83 completes the Console P0 UX logic fixes. Device filtering, device identity display, loading states, and ATTLOG main-log de-duplication were improved while keeping the existing `/console` route, Device Management module, database schema, ADMS protocol, and parser behavior unchanged.
+DT009.83 completes the Console P0/P1 UX logic fixes. Device filtering, device identity display, loading states, ATTLOG main-log de-duplication, event-log controls, business-language event labels, and Device Management edit safety were improved while keeping the existing `/console` route, database schema, ADMS protocol, and parser behavior unchanged.
 
 ## Completed
 
@@ -55,6 +55,11 @@ DT009.83 completes the Console P0 UX logic fixes. Device filtering, device ident
 - Updated Console and Device Management display hierarchy so English is primary and Chinese is auxiliary.
 - De-duplicated ATTLOG main log rows when the corresponding saved attendance event is shown.
 - Added duplicate device-name warning and Device Name plus SN update feedback in Device Management.
+- Added event type filtering, keyword search, pause/resume refresh, auto-scroll toggle, clear filters, heartbeat summary, and current-page log clear confirmation.
+- Added temporary red flashing for newly arrived Latest Activity and Realtime Event Log rows, returning to the normal background after the notification flash.
+- Converted protocol codes to business-language labels while preserving raw technical details in collapsible rows with copy support.
+- Added synthetic Device Online and Device Offline monitor events based on current heartbeat status.
+- Added Device Management dirty-state detection, disabled Save when unchanged, saving state, unsaved-change prompt, inline validation, switch impact descriptions, and detailed save failures.
 - Added `scripts/DT009.83_install_ubuntu.sh`.
 - Updated README, CHANGELOG, and project status documentation.
 
@@ -77,10 +82,6 @@ DT009.83 completes the Console P0 UX logic fixes. Device filtering, device ident
 - Mingdao/HAP sync
 - ERP business logic
 - Attendance result calculation
-- P1 realtime event-log restructuring
-- P1 business-language event mapping
-- P1 advanced edit-modal workflow
-- P1 switch impact explanations
 - P2 navigation restructuring
 - P2 exception-priority view
 - P2 language toggle

@@ -255,6 +255,27 @@ def _dashboard(session, devices: list[Device]) -> dict[str, int]:
     }
 
 
+def _heartbeat_summary(session, devices: list[Device]) -> dict[str, object]:
+    device_sns = _device_sns(devices)
+    query = session.query(RawRequest).filter(RawRequest.request_path == "/iclock/getrequest")
+    query = _device_filter(query, device_sns)
+    latest = query.order_by(RawRequest.received_at.desc(), RawRequest.id.desc()).first()
+    return {
+        "count": query.count(),
+        "last_time": _format_dubai(latest.received_at) if latest is not None else "-",
+        "last_device": _device_display(_device_map(devices).get(latest.device_sn if latest else ""), latest.device_sn if latest else ""),
+        "last_client_ip": latest.client_ip if latest is not None else "-",
+    }
+
+
+def _attendance_status_label(status: str | None) -> str:
+    if status is None or status == "":
+        return "Unknown / 未知"
+    if status == "255":
+        return "Unrecognized Attendance Status / 未识别的考勤状态"
+    return status
+
+
 def _latest_activities(session, devices: list[Device]) -> list[dict[str, object]]:
     device_sns = _device_sns(devices)
     devices_by_sn = _device_map(devices)
@@ -276,7 +297,8 @@ def _latest_activities(session, devices: list[Device]) -> list[dict[str, object]
             "device_sn": item.device_sn,
             "employee_pin": item.pin,
             "employee_name": user_names.get((item.device_sn, item.pin)) or "-",
-            "attendance_type": item.status or "-",
+            "attendance_type": _attendance_status_label(item.status),
+            "raw_status": item.status or "",
             "attendance_time": _format_dubai(item.attendance_time, source="local"),
             "receive_time": _format_dubai(item.receive_time),
         }
@@ -296,6 +318,19 @@ def _events(session, devices: list[Device]) -> list[dict[str, object]]:
         .all()
     )
     saved_attlog_raw_ids = {item.raw_request_id for item in attendance_events if item.raw_request_id is not None}
+
+    for device in devices:
+        last_heartbeat = _latest_heartbeat(session, device.device_sn)
+        status = _classify_device(last_heartbeat)
+        events.append(
+            _event(
+                "DEVICE ONLINE" if status == "ONLINE" else "DEVICE OFFLINE",
+                last_heartbeat or device.updated_at,
+                device,
+                device.device_sn,
+                {"Status": status, "Last Heartbeat": _format_dubai(last_heartbeat)},
+            )
+        )
 
     raw_requests = (
         _device_filter(
@@ -406,6 +441,7 @@ def _console_data(selected_filter: str | None = None) -> dict[str, object]:
             filters = _device_filters(visible_devices)
             dashboard = _dashboard(session, filtered_devices)
             events = _events(session, filtered_devices)
+            heartbeat_summary = _heartbeat_summary(session, filtered_devices)
             latest_activity = _latest_activities(session, filtered_devices)
             device_summary = _device_summary(session, filtered_devices)
     except Exception as exc:
@@ -413,6 +449,7 @@ def _console_data(selected_filter: str | None = None) -> dict[str, object]:
         active_filter = ALL_DEVICES_FILTER
         filters = [{"value": ALL_DEVICES_FILTER, "label": "All Devices / 所有设备"}]
         dashboard = {"online_devices": 0, "offline_devices": 0, "attendance": 0, "user": 0, "oplog": 0}
+        heartbeat_summary = {"count": 0, "last_time": "-", "last_device": "-", "last_client_ip": "-"}
         events = [_event("ERROR", _utc_now_naive(), None, "", {"Module": "CONSOLE", "Reason": str(exc)})]
         latest_activity = []
         device_summary = []
@@ -429,6 +466,7 @@ def _console_data(selected_filter: str | None = None) -> dict[str, object]:
             "options": filters,
         },
         "dashboard": dashboard,
+        "heartbeat_summary": heartbeat_summary,
         "latest_activity": latest_activity,
         "events": events,
         "device_summary": device_summary,

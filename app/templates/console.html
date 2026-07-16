@@ -293,6 +293,47 @@
       white-space: nowrap;
     }
 
+    .event-toolbar {
+      display: grid;
+      grid-template-columns: minmax(150px, 1fr) minmax(160px, 1.3fr) auto auto auto;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .heartbeat-summary {
+      margin-bottom: 8px;
+      padding: 8px 10px;
+      border: 1px solid rgba(36, 214, 133, 0.18);
+      border-radius: 8px;
+      color: var(--muted);
+      background: rgba(36, 214, 133, 0.045);
+      font-size: 12px;
+    }
+
+    .technical-details {
+      margin-top: 4px;
+      color: var(--muted);
+      white-space: normal;
+    }
+
+    .technical-details summary {
+      cursor: pointer;
+      color: var(--blue);
+      font-size: 11px;
+    }
+
+    .technical-details code {
+      display: block;
+      margin-top: 4px;
+      padding: 6px;
+      border-radius: 6px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.045);
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
     .split-grid {
       display: grid;
       grid-template-columns: minmax(0, 52fr) minmax(0, 48fr);
@@ -352,6 +393,16 @@
 
     .console-table tbody tr:hover td {
       background: rgba(143, 179, 217, 0.06);
+    }
+
+    .console-table tbody tr.flash-new td {
+      animation: flashNewRow 1.4s ease-out 0s 2;
+    }
+
+    @keyframes flashNewRow {
+      0% { background: rgba(255, 77, 79, 0.36); }
+      55% { background: rgba(255, 77, 79, 0.18); }
+      100% { background: transparent; }
     }
 
     .empty-state {
@@ -437,6 +488,7 @@
       .console-shell { padding: 14px 18px 18px; }
       .server-grid, .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .split-grid { grid-template-columns: 1fr; }
+      .event-toolbar { grid-template-columns: 1fr 1fr; }
     }
 
     @media (max-width: 767.98px) {
@@ -446,6 +498,7 @@
       .device-filter-row { align-items: stretch; flex-direction: column; }
       .filter-box, .btn-console { width: 100%; }
       .metric { min-height: 92px; }
+      .event-toolbar { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -508,10 +561,29 @@
           <div class="panel fixed-table-panel">
             <div class="panel-header">
               <span class="section-title"><i data-lucide="file-text" class="icon"></i> Realtime Event Log <span class="zh-sub">/ 实时事件日志</span></span>
-              <button id="clearBtn" type="button" class="btn btn-sm btn-outline-secondary btn-console"><i data-lucide="trash-2" class="icon"></i> Clear <span class="zh-sub">/ 清空显示</span></button>
+              <button id="clearBtn" type="button" class="btn btn-sm btn-outline-secondary btn-console"><i data-lucide="trash-2" class="icon"></i> Clear Current Log <span class="zh-sub">/ 清空当前日志</span></button>
             </div>
             <div class="panel-body">
               <div id="eventScopeNote" class="section-note mb-2">Last 10 for current filter <span class="zh-sub">/ 当前筛选最近10条</span></div>
+              <div class="event-toolbar">
+                <select id="eventTypeFilter" class="form-select filter-select" aria-label="Event Type Filter">
+                  <option value="important">Important Events / 重要事件</option>
+                  <option value="all">All Events / 所有事件</option>
+                  <option value="attendance">Attendance / 考勤</option>
+                  <option value="operation">Operation / 操作</option>
+                  <option value="user">User / 用户</option>
+                  <option value="heartbeat">Heartbeat / 心跳</option>
+                  <option value="error">Error / 异常</option>
+                </select>
+                <input id="eventSearch" class="form-control filter-select" placeholder="Search events / 搜索事件">
+                <button id="pauseBtn" type="button" class="btn btn-sm btn-outline-info btn-console">Pause <span class="zh-sub">/ 暂停</span></button>
+                <label class="section-note d-flex align-items-center gap-1 mb-0">
+                  <input id="autoScrollToggle" type="checkbox" checked>
+                  Auto Scroll <span class="zh-sub">/ 自动滚动</span>
+                </label>
+                <button id="clearFilterBtn" type="button" class="btn btn-sm btn-outline-secondary btn-console">Clear Filters <span class="zh-sub">/ 清除筛选</span></button>
+              </div>
+              <div id="heartbeatSummary" class="heartbeat-summary"></div>
               <div id="eventLog" class="table-scroll"></div>
             </div>
           </div>
@@ -535,6 +607,11 @@
     let selectedFilter = 'all';
     let hasLoadedOnce = false;
     let refreshSequence = 0;
+    let autoRefreshPaused = false;
+    let latestEvents = [];
+    let latestHeartbeatSummary = null;
+    let previousActivityKeys = new Set();
+    let previousEventKeys = new Set();
 
     function esc(value) {
       return String(value ?? '').replace(/[&<>"']/g, function (char) {
@@ -572,22 +649,30 @@
     };
 
     const eventNames = {
-      HANDSHAKE: 'HEARTBEAT',
-      HEARTBEAT: 'HEARTBEAT',
-      ATTLOG: 'ATTLOG',
-      'ATTLOG SAVED': 'ATTLOG',
-      OPLOG: 'OPLOG',
-      'OPLOG SAVED': 'OPLOG',
-      USER: 'USER',
-      'USER SAVED': 'USER',
-      ERROR: 'ERROR',
+      HANDSHAKE: 'Device Online / 设备上线',
+      HEARTBEAT: 'Device Heartbeat / 设备心跳',
+      ATTLOG: 'Attendance Event / 考勤事件',
+      'ATTLOG SAVED': 'Attendance Event / 考勤事件',
+      OPLOG: 'Device Operation / 设备操作',
+      'OPLOG SAVED': 'Device Operation / 设备操作',
+      USER: 'User Sync / 用户同步',
+      'USER SAVED': 'User Sync / 用户同步',
+      'DEVICE ONLINE': 'Device Online / 设备上线',
+      'DEVICE OFFLINE': 'Device Offline / 设备离线',
+      ERROR: 'Error / 异常',
     };
 
     const eventBadgeClass = {
       HEARTBEAT: 'badge-heartbeat',
+      HANDSHAKE: 'badge-heartbeat',
       ATTLOG: 'badge-attlog',
+      'ATTLOG SAVED': 'badge-attlog',
       USER: 'badge-user',
+      'USER SAVED': 'badge-user',
       OPLOG: 'badge-oplog',
+      'OPLOG SAVED': 'badge-oplog',
+      'DEVICE ONLINE': 'badge-heartbeat',
+      'DEVICE OFFLINE': 'badge-error',
       ERROR: 'badge-error',
     };
 
@@ -596,7 +681,7 @@
     }
 
     function boolText(value) {
-      return value ? '<span class="badge-on">ON / 开启</span>' : '<span class="badge-off">OFF / 关闭</span>';
+      return value ? '<span class="badge-on">Enabled / 开启</span>' : '<span class="badge-off">Disabled / 关闭</span>';
     }
 
     function labelText(en, zh) {
@@ -636,9 +721,19 @@
     }
 
     function eventTag(type) {
-      const name = eventNames[type] || type || 'ERROR';
-      const badgeClass = eventBadgeClass[name] || 'badge-error';
+      const name = eventNames[type] || 'Unknown / 未知';
+      const badgeClass = eventBadgeClass[type] || 'badge-error';
       return `<span class="badge-event ${badgeClass}">${esc(name)}</span>`;
+    }
+
+    function eventCategory(type) {
+      if (type === 'HEARTBEAT') return 'heartbeat';
+      if (type === 'ATTLOG' || type === 'ATTLOG SAVED') return 'attendance';
+      if (type === 'OPLOG' || type === 'OPLOG SAVED') return 'operation';
+      if (type === 'USER' || type === 'USER SAVED') return 'user';
+      if (type === 'DEVICE ONLINE' || type === 'DEVICE OFFLINE' || type === 'HANDSHAKE') return 'important';
+      if (type === 'ERROR') return 'error';
+      return 'important';
     }
 
     function statusChip(status) {
@@ -703,6 +798,14 @@
       `;
     }
 
+    function activityKey(item) {
+      return [item.device_sn, item.employee_pin, item.attendance_time].join('|');
+    }
+
+    function eventKey(event) {
+      return [event.type, event.device_sn, event.time_full, eventDetailsText(event.details)].join('|');
+    }
+
     function renderLatestActivity(items) {
       const columns = [
         { label: labelText('Device', '设备'), width: '28%' },
@@ -711,20 +814,67 @@
         { label: labelText('Attendance Type', '事件类型'), width: '18%' },
         { label: labelText('Attendance Time', '考勤时间'), width: '18%' },
       ];
-      const rows = items.slice(0, 5).map(item => `
-        <tr title="SN: ${esc(item.device_sn)}">
+      const currentKeys = new Set(items.map(activityKey));
+      const rows = items.slice(0, 5).map(item => {
+        const key = activityKey(item);
+        const shouldFlash = hasLoadedOnce && !previousActivityKeys.has(key);
+        return `
+        <tr class="${shouldFlash ? 'flash-new' : ''}" title="SN: ${esc(item.device_sn)}">
           <td>${esc(item.device_display || item.device_name)}</td>
           <td class="mono">${esc(item.employee_pin)}</td>
           <td>${esc(item.employee_name)}</td>
           <td>${esc(item.attendance_type)}</td>
           <td class="mono">${esc(item.attendance_time)}</td>
         </tr>
-      `);
+      `;
+      });
+      previousActivityKeys = currentKeys;
       document.getElementById('latestActivity').innerHTML = compactTable(columns, rows, 'No attendance activity<br><span class="zh-sub">暂无考勤活动</span>');
     }
 
     function eventDetailsText(details) {
       return Object.entries(details || {}).map(([key, value]) => `${key}: ${value || '-'}`).join(' · ') || '-';
+    }
+
+    function eventTechnicalText(event, details) {
+      return JSON.stringify({
+        raw_type: event.type,
+        device_sn: event.device_sn,
+        time: event.time_full,
+        details: details || {},
+      }, null, 2);
+    }
+
+    function renderHeartbeatSummary(summary) {
+      const container = document.getElementById('heartbeatSummary');
+      if (!summary) {
+        container.innerHTML = 'Latest heartbeat: - <span class="zh-sub">/ 最后心跳：-</span>';
+        return;
+      }
+      container.innerHTML = `
+        Latest heartbeat: <span class="mono">${esc(summary.last_time || '-')}</span>
+        <span class="zh-sub">/ 最后心跳</span>
+        · Device: ${esc(summary.last_device || '-')} <span class="zh-sub">/ 设备</span>
+        · Client IP: <span class="mono">${esc(summary.last_client_ip || '-')}</span>
+        · Total heartbeat rows: <span class="mono">${esc(summary.count ?? 0)}</span>
+      `;
+    }
+
+    function filteredEvents(events) {
+      const typeFilter = document.getElementById('eventTypeFilter').value;
+      const keyword = document.getElementById('eventSearch').value.trim().toLowerCase();
+      return events.filter(event => {
+        const category = eventCategory(event.type);
+        if (typeFilter === 'important' && category === 'heartbeat') return false;
+        if (typeFilter !== 'important' && typeFilter !== 'all' && category !== typeFilter) return false;
+        if (!keyword) return true;
+        return [
+          eventNames[event.type],
+          event.device_display,
+          event.device_sn,
+          eventDetailsText(event.details),
+        ].some(value => String(value || '').toLowerCase().includes(keyword));
+      });
     }
 
     function renderEvents(events) {
@@ -733,24 +883,40 @@
         container.innerHTML = '<div class="empty-state">Event log cleared<br><span class="zh-sub">页面日志已清空</span></div>';
         return;
       }
+      const visibleEvents = filteredEvents(events);
       const columns = [
         { label: labelText('Time', '时间'), width: '15%' },
         { label: labelText('Device', '设备'), width: '28%' },
         { label: labelText('Event Type', '事件类型'), width: '18%' },
         { label: labelText('Details', '事件明细'), width: '39%' },
       ];
-      const rows = events.slice(0, 10).map(event => {
+      const currentKeys = new Set(events.map(eventKey));
+      const rows = visibleEvents.slice(0, 10).map((event, index) => {
         const details = eventDetailsText(event.details);
+        const technical = eventTechnicalText(event, event.details);
+        const key = eventKey(event);
+        const shouldFlash = hasLoadedOnce && !previousEventKeys.has(key);
         return `
-          <tr title="SN: ${esc(event.device_sn)} · ${esc(details)}">
+          <tr class="${shouldFlash ? 'flash-new' : ''}" title="SN: ${esc(event.device_sn)} · ${esc(details)}">
             <td class="mono">${esc(event.time)}</td>
             <td>${esc(event.device_display || event.device_name)}</td>
             <td>${eventTag(event.type)}</td>
-            <td>${esc(details)}</td>
+            <td>
+              ${esc(details)}
+              <details class="technical-details">
+                <summary>Technical Details <span class="zh-sub">/ 技术详情</span></summary>
+                <code id="tech-${index}">${esc(technical)}</code>
+                <button type="button" class="btn btn-sm btn-outline-secondary btn-console mt-1" data-copy-target="tech-${index}">Copy <span class="zh-sub">/ 复制</span></button>
+              </details>
+            </td>
           </tr>
         `;
       });
+      previousEventKeys = currentKeys;
       container.innerHTML = compactTable(columns, rows, 'No realtime events<br><span class="zh-sub">暂无实时事件</span>');
+      if (document.getElementById('autoScrollToggle').checked) {
+        container.scrollTop = 0;
+      }
     }
 
     function renderDeviceSummary(rows) {
@@ -798,7 +964,10 @@
         renderServer(data.server);
         renderDashboard(data.dashboard);
         renderLatestActivity(data.latest_activity || []);
-        renderEvents(data.events || []);
+        latestEvents = data.events || [];
+        latestHeartbeatSummary = data.heartbeat_summary || null;
+        renderHeartbeatSummary(latestHeartbeatSummary);
+        renderEvents(latestEvents);
         renderDeviceSummary(data.device_summary || []);
         hasLoadedOnce = true;
       } catch (error) {
@@ -823,13 +992,46 @@
       refreshConsole();
     });
     document.getElementById('clearBtn').addEventListener('click', function () {
+      if (!confirm('Only clear the current page log. Server history will not be deleted. / 仅清空当前页面日志，不会删除服务器历史数据。')) {
+        return;
+      }
       eventLogCleared = true;
       renderEvents([]);
+    });
+    document.getElementById('eventTypeFilter').addEventListener('change', function () {
+      eventLogCleared = false;
+      renderEvents(latestEvents);
+    });
+    document.getElementById('eventSearch').addEventListener('input', function () {
+      eventLogCleared = false;
+      renderEvents(latestEvents);
+    });
+    document.getElementById('clearFilterBtn').addEventListener('click', function () {
+      document.getElementById('eventTypeFilter').value = 'important';
+      document.getElementById('eventSearch').value = '';
+      eventLogCleared = false;
+      renderEvents(latestEvents);
+    });
+    document.getElementById('pauseBtn').addEventListener('click', function () {
+      autoRefreshPaused = !autoRefreshPaused;
+      this.innerHTML = autoRefreshPaused ? 'Resume <span class="zh-sub">/ 继续</span>' : 'Pause <span class="zh-sub">/ 暂停</span>';
+    });
+    document.getElementById('eventLog').addEventListener('click', function (event) {
+      const button = event.target.closest('button[data-copy-target]');
+      if (!button) return;
+      const target = document.getElementById(button.dataset.copyTarget);
+      if (target && navigator.clipboard) {
+        navigator.clipboard.writeText(target.textContent || '');
+      }
     });
 
     refreshIcons();
     refreshConsole();
-    setInterval(refreshConsole, 2000);
+    setInterval(function () {
+      if (!autoRefreshPaused) {
+        refreshConsole();
+      }
+    }, 2000);
   </script>
 </body>
 </html>

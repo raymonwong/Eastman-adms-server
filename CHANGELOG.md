@@ -22,6 +22,12 @@ DT009.83 Console P0 UX Logic Fixes
 - Updated Console and Device Management display hierarchy so English is the primary language and Chinese is auxiliary.
 - De-duplicated main ATTLOG events so a saved attendance event hides the matching raw ATTLOG row.
 - Added duplicate device-name warning in Device Management and included Device Name plus SN in update success feedback.
+- Added P1 realtime event-log controls: event type filter, keyword search, pause/resume refresh, auto-scroll toggle, clear filters, and heartbeat summary.
+- Added temporary red background flashing for newly received Latest Activity and Realtime Event Log rows; rows return to the normal background after the flash.
+- Converted protocol event codes into business-language labels while keeping raw technical details in collapsible rows with copy support.
+- Added synthetic device online/offline monitor events based on current heartbeat status.
+- Improved Device Management edit workflow with dirty-state detection, disabled Save when unchanged, saving state, unsaved-change prompt, inline validation, switch impact descriptions, and detailed save failures.
+- Renamed log clearing to Clear Current Log and added confirmation that server history is not deleted.
 - Added `scripts/DT009.83_install_ubuntu.sh` without overwriting previous deployment scripts.
 - Kept database schema, API routes, ADMS protocol, HTTP response format, parser logic, Console layout scope, Mingdao sync, ERP logic, and attendance result calculation unchanged.
 

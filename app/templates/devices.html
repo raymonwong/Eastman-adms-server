@@ -197,6 +197,19 @@
       margin: 0;
     }
 
+    .help-text {
+      margin-top: 5px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .form-error {
+      display: none;
+      margin-top: 8px;
+      color: var(--red);
+      font-size: 12px;
+    }
+
     @media (max-width: 767.98px) {
       .shell {
         padding: 12px;
@@ -269,6 +282,7 @@
             <div class="col-12 col-md-6">
               <label class="form-label">Device Name <span class="zh-sub">/ 设备名称</span></label>
               <input id="editDeviceName" class="form-control" maxlength="128" required>
+              <div id="editDeviceNameError" class="form-error">Device Name is required. <span class="zh-sub">/ 设备名称不能为空。</span></div>
             </div>
             <div class="col-12">
               <label class="form-label">Location <span class="zh-sub">/ 所属位置</span></label>
@@ -278,15 +292,17 @@
               <label class="form-label">Record Attendance <span class="zh-sub">/ 记录考勤数据</span></label>
               <div class="switch-row form-check form-switch mb-0">
                 <input id="editRecordAttendance" class="form-check-input" type="checkbox" role="switch">
-                <label id="editRecordAttendanceLabel" class="form-check-label" for="editRecordAttendance">ON / 开启</label>
+                <label id="editRecordAttendanceLabel" class="form-check-label" for="editRecordAttendance">Enabled / 开启</label>
               </div>
+              <div class="help-text">When disabled, the device can still connect, but uploaded attendance records will not be saved. <span class="zh-sub">关闭后设备仍可连接，但系统不再保存该设备上传的考勤记录。</span></div>
             </div>
             <div class="col-12 col-md-6">
               <label class="form-label">Show in Console <span class="zh-sub">/ 显示在 Console</span></label>
               <div class="switch-row form-check form-switch mb-0">
                 <input id="editShowInConsole" class="form-check-input" type="checkbox" role="switch">
-                <label id="editShowInConsoleLabel" class="form-check-label" for="editShowInConsole">ON / 开启</label>
+                <label id="editShowInConsoleLabel" class="form-check-label" for="editShowInConsole">Enabled / 开启</label>
               </div>
+              <div class="help-text">Only controls whether this device appears on the monitoring page. It does not affect device communication or data receiving. <span class="zh-sub">仅控制该设备是否出现在监控页面，不影响设备通信和数据接收。</span></div>
             </div>
             <div class="col-12 col-md-6">
               <label class="form-label">Created Time <span class="zh-sub">/ 创建时间</span></label>
@@ -297,6 +313,7 @@
               <div id="editUpdatedAt" class="readonly-box"></div>
             </div>
           </form>
+          <div id="saveError" class="form-error"></div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary btn-console" data-bs-dismiss="modal">Cancel <span class="zh-sub">/ 取消</span></button>
@@ -329,6 +346,8 @@
   <script>
     let devices = [];
     let currentDeviceSn = null;
+    let originalPayload = null;
+    let allowModalClose = false;
     let editModal = null;
     let attendanceConfirmModal = null;
 
@@ -339,7 +358,7 @@
     }
 
     function boolText(value) {
-      return value ? '<span class="badge-on">ON / 开启</span>' : '<span class="badge-off">OFF / 关闭</span>';
+      return value ? '<span class="badge-on">Enabled / 开启</span>' : '<span class="badge-off">Disabled / 关闭</span>';
     }
 
     function tableState(message, isError = false) {
@@ -377,7 +396,43 @@
     function updateSwitchLabel(inputId, labelId) {
       const input = document.getElementById(inputId);
       const label = document.getElementById(labelId);
-      label.textContent = input.checked ? 'ON / 开启' : 'OFF / 关闭';
+      label.textContent = input.checked ? 'Enabled / 开启' : 'Disabled / 关闭';
+    }
+
+    function currentPayload() {
+      return {
+        device_name: document.getElementById('editDeviceName').value.trim(),
+        location: document.getElementById('editLocation').value.trim(),
+        record_attendance: document.getElementById('editRecordAttendance').checked,
+        show_in_console: document.getElementById('editShowInConsole').checked,
+      };
+    }
+
+    function normalizePayload(payload) {
+      return {
+        device_name: payload.device_name || defaultDeviceName(currentDeviceSn),
+        location: payload.location || '',
+        record_attendance: Boolean(payload.record_attendance),
+        show_in_console: Boolean(payload.show_in_console),
+      };
+    }
+
+    function isDirty() {
+      return JSON.stringify(normalizePayload(currentPayload())) !== JSON.stringify(normalizePayload(originalPayload || {}));
+    }
+
+    function updateSaveState() {
+      const saveBtn = document.getElementById('saveBtn');
+      const nameValue = document.getElementById('editDeviceName').value.trim();
+      const nameError = document.getElementById('editDeviceNameError');
+      nameError.style.display = nameValue ? 'none' : 'block';
+      saveBtn.disabled = !currentDeviceSn || !nameValue || !isDirty();
+    }
+
+    function showSaveError(message) {
+      const error = document.getElementById('saveError');
+      error.style.display = 'block';
+      error.innerHTML = `Save failed: ${esc(message)} <span class="zh-sub">/ 保存失败</span>`;
     }
 
     function defaultDeviceName(deviceSn) {
@@ -467,6 +522,8 @@
         return;
       }
       currentDeviceSn = sn;
+      allowModalClose = false;
+      document.getElementById('saveError').style.display = 'none';
       document.getElementById('editDeviceSn').textContent = device.device_sn;
       document.getElementById('editDeviceName').value = displayDeviceName(device);
       document.getElementById('editLocation').value = device.location || '';
@@ -476,6 +533,8 @@
       updateSwitchLabel('editShowInConsole', 'editShowInConsoleLabel');
       document.getElementById('editCreatedAt').textContent = formatTime(device.created_at);
       document.getElementById('editUpdatedAt').textContent = formatTime(device.updated_at);
+      originalPayload = currentPayload();
+      updateSaveState();
       editModal.show();
     }
 
@@ -483,27 +542,47 @@
       if (!currentDeviceSn) {
         return;
       }
-      const payload = {
-        device_name: document.getElementById('editDeviceName').value.trim() || defaultDeviceName(currentDeviceSn),
-        location: document.getElementById('editLocation').value.trim() || null,
-        record_attendance: document.getElementById('editRecordAttendance').checked,
-        show_in_console: document.getElementById('editShowInConsole').checked,
-      };
-      const response = await fetch(`/api/device/${encodeURIComponent(currentDeviceSn)}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) {
-        throw new Error(await response.text());
+      const saveBtn = document.getElementById('saveBtn');
+      const payload = normalizePayload(currentPayload());
+      if (!payload.device_name) {
+        updateSaveState();
+        return;
       }
-      alert(`${payload.device_name}（${currentDeviceSn}）已更新。`);
-      editModal.hide();
-      await loadDevices();
+      saveBtn.disabled = true;
+      saveBtn.innerHTML = 'Saving... <span class="zh-sub">/ 保存中……</span>';
+      document.getElementById('saveError').style.display = 'none';
+      try {
+        const response = await fetch(`/api/device/${encodeURIComponent(currentDeviceSn)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            device_name: payload.device_name,
+            location: payload.location || null,
+            record_attendance: payload.record_attendance,
+            show_in_console: payload.show_in_console,
+          }),
+        });
+        if (!response.ok) {
+          throw new Error(await response.text());
+        }
+        alert(`${payload.device_name}（${currentDeviceSn}）updated. / 已更新。`);
+        allowModalClose = true;
+        editModal.hide();
+        await loadDevices();
+      } catch (error) {
+        showSaveError(error.message || 'Unknown error');
+      } finally {
+        saveBtn.innerHTML = 'Save <span class="zh-sub">/ 保存</span>';
+        updateSaveState();
+      }
     }
 
     document.getElementById('refreshBtn').addEventListener('click', loadDevices);
     document.getElementById('searchInput').addEventListener('input', renderDevices);
+    ['editDeviceName', 'editLocation', 'editRecordAttendance', 'editShowInConsole'].forEach(function (id) {
+      document.getElementById(id).addEventListener('input', updateSaveState);
+      document.getElementById(id).addEventListener('change', updateSaveState);
+    });
     document.getElementById('editRecordAttendance').addEventListener('change', function () {
       if (!this.checked) {
         attendanceConfirmModal.show();
@@ -527,11 +606,23 @@
     document.getElementById('confirmDisableConsoleBtn').addEventListener('click', function () {
       document.getElementById('editShowInConsole').checked = false;
       updateSwitchLabel('editShowInConsole', 'editShowInConsoleLabel');
+      updateSaveState();
       attendanceConfirmModal.hide();
     });
     document.addEventListener('DOMContentLoaded', function () {
       editModal = new bootstrap.Modal(document.getElementById('editModal'));
       attendanceConfirmModal = new bootstrap.Modal(document.getElementById('attendanceConfirmModal'));
+      document.getElementById('editModal').addEventListener('hide.bs.modal', function (event) {
+        if (!allowModalClose && isDirty() && !confirm('Discard unsaved changes? / 放弃未保存的修改？')) {
+          event.preventDefault();
+        }
+      });
+      document.getElementById('editModal').addEventListener('hidden.bs.modal', function () {
+        currentDeviceSn = null;
+        originalPayload = null;
+        allowModalClose = false;
+        document.getElementById('saveError').style.display = 'none';
+      });
       loadDevices();
     });
   </script>

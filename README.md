@@ -4,7 +4,7 @@
 
 Eastman ADMS Server 是用于后续接入考勤设备、考勤平台和明道云/HAP 的服务端项目。
 
-Development Task 009.83 完成 ADMS Server Console P0 体验修复：统一设备筛选作用域，增加加载/无数据/失败状态，合并重复 ATTLOG 主日志，并统一使用 `设备名称 · 设备 SN · 所属位置` 区分同名设备。Review Fix 进一步修复切换设备时短暂显示旧数据的问题，并将展示语言调整为英文主信息、中文辅助信息。
+Development Task 009.83 完成 ADMS Server Console P0/P1 体验修复：统一设备筛选作用域，增加加载/无数据/失败状态，合并重复 ATTLOG 主日志，并统一使用 `设备名称 · 设备 SN · 所属位置` 区分同名设备。Review Fix 进一步修复切换设备时短暂显示旧数据的问题，并将展示语言调整为英文主信息、中文辅助信息。P1 增加实时事件日志筛选、搜索、暂停刷新、心跳折叠、业务语言标签、技术详情折叠、设备编辑防误操作和开关影响说明。
 
 本阶段不修改 ADMS 协议、HTTP 返回格式、USER/OPLOG Parser、数据库结构、明道云同步或任何 ERP 业务逻辑。
 
@@ -53,6 +53,8 @@ scripts/DT009.83_install_ubuntu.sh
 - 验证 Console V2 数据集成、最多 5 条 ATTLOG、最多 10 条实时事件和设备筛选数据结构
 - 验证 Console P0 设备唯一显示、加载/失败状态和筛选数据结构
 - 验证 Device Management 加载/失败状态和英文主信息、中文辅助信息展示结构
+- 验证 Realtime Event Log 的事件筛选、暂停刷新、技术详情和清空当前日志说明
+- 验证 Device Management 的未保存提示、保存中状态和开关影响说明
 - 验证 `package.json` 中声明官方 `lucide` 依赖
 - 验证 `device` 设备管理配置字段
 - 验证 `/dms` 页面
@@ -258,7 +260,7 @@ Console 是开发阶段唯一控制台入口，DT009.83 后按固定监控布局
 
 Console 只显示 Device Management 中 `show_in_console = true` 的设备。全局 Device Filter 位于服务器状态卡片下方、业务统计卡片上方，可按所有设备或单台设备筛选；Dashboard、Latest Activity、Realtime Event Log 和 Device Summary 会同步跟随筛选条件。所有筛选请求使用 `device_sn`，不使用设备名称作为筛选依据。
 
-在线状态使用最近 Heartbeat 判断：30 秒内显示 Online，超过 30 秒显示 Offline。Console 统一显示 `设备名称 · 设备 SN · 所属位置`，所属位置为空时显示 `设备名称 · 设备 SN`，无法匹配设备时显示 `Unknown Device`。Latest Activity 从 `attendance_event` 读取最新 5 条 ATTLOG，按 `attendance_time DESC` 排序；Realtime Event Log 从现有 raw request、ATTLOG、USER、OPLOG 记录生成当前筛选条件下的最新 10 条事件，已保存的 ATTLOG 不再重复显示对应 raw ATTLOG 主日志。页面首次加载和切换设备筛选时显示加载状态，接口失败显示失败原因和重新加载按钮，接口成功且结果为空时才显示无数据状态。页面统一使用英文作为主信息、中文作为辅助信息。页面统一使用官方 Lucide Icons，`package.json` 声明 `lucide` 依赖；非 React 页面通过 Lucide 官方 UMD 构建渲染图标。不使用 Wi-Fi、Signal 或 Radio 图标表示设备在线。页面每 2 秒自动刷新，切换设备筛选时通过 `GET /console?format=json&device_filter=<value>` Ajax 刷新，不新增 `/monitor`、`/dashboard`、`/status`、`/events` 或 `/statistics` 页面。
+在线状态使用最近 Heartbeat 判断：30 秒内显示 Online，超过 30 秒显示 Offline。Console 统一显示 `设备名称 · 设备 SN · 所属位置`，所属位置为空时显示 `设备名称 · 设备 SN`，无法匹配设备时显示 `Unknown Device`。Latest Activity 从 `attendance_event` 读取最新 5 条 ATTLOG，按 `attendance_time DESC` 排序；Realtime Event Log 从现有 raw request、ATTLOG、USER、OPLOG 记录生成当前筛选条件下的最新 10 条事件，已保存的 ATTLOG 不再重复显示对应 raw ATTLOG 主日志。心跳默认折叠为 Heartbeat Summary，不逐条占用主日志；主日志默认突出考勤、设备上线/离线、操作、用户同步和异常事件。新到达的 Latest Activity 和 Realtime Event Log 记录会短暂红色底色闪动，用于提示有新记录进入，闪动结束后恢复正常底色。事件日志支持事件类型筛选、关键字搜索、暂停/继续实时刷新、自动滚动开关、清除筛选条件，以及技术详情折叠和复制。协议代码在主界面转换为业务语言，例如 `Attendance Event`、`Device Operation`、`Device Heartbeat`，原始类型和详情保留在 Technical Details。页面首次加载和切换设备筛选时显示加载状态，接口失败显示失败原因和重新加载按钮，接口成功且结果为空时才显示无数据状态。页面统一使用英文作为主信息、中文作为辅助信息。页面统一使用官方 Lucide Icons，`package.json` 声明 `lucide` 依赖；非 React 页面通过 Lucide 官方 UMD 构建渲染图标。不使用 Wi-Fi、Signal 或 Radio 图标表示设备在线。页面每 2 秒自动刷新，切换设备筛选时通过 `GET /console?format=json&device_filter=<value>` Ajax 刷新，不新增 `/monitor`、`/dashboard`、`/status`、`/events` 或 `/statistics` 页面。
 
 Device Management / 设备管理:
 
@@ -272,7 +274,7 @@ Device Management 是独立配置模块，不属于 Console。页面提供设备
 - `record_attendance = TRUE`
 - `show_in_console = TRUE`
 
-设备管理页按 `updated_at DESC` 排序，搜索支持设备名称、设备 SN 和所属位置。页面首次加载显示加载状态，接口失败显示失败原因和重新加载按钮，接口成功且结果为空时才显示无数据状态。存在同名设备时页面会显示提示，编辑保存成功提示会同时显示设备名称和 SN。
+设备管理页按 `updated_at DESC` 排序，搜索支持设备名称、设备 SN 和所属位置。页面首次加载显示加载状态，接口失败显示失败原因和重新加载按钮，接口成功且结果为空时才显示无数据状态。存在同名设备时页面会显示提示，编辑保存成功提示会同时显示设备名称和 SN。编辑弹窗在内容未变化时禁用 Save，保存过程中显示 Saving 并防止重复点击，存在未保存修改时关闭会提示确认，保存失败会保留用户输入并显示失败原因。Record Attendance 和 Show in Console 均显示影响说明，关闭 Record Attendance 时仍会询问是否同时关闭 Console 显示。
 
 REST API:
 
