@@ -33,6 +33,7 @@ def create_database_tables(engine: Engine) -> None:
     ensure_dt006_tables(engine)
     ensure_dt007_tables(engine)
     ensure_dt008_tables(engine)
+    ensure_dt009_6_device_management(engine)
 
 
 def ensure_dt003_columns(engine: Engine) -> None:
@@ -269,5 +270,24 @@ def ensure_dt008_tables(engine: Engine) -> None:
             except Exception as exc:
                 error_text = str(exc).lower()
                 if "duplicate key name" in error_text or "already exists" in error_text:
+                    continue
+                raise
+
+
+def ensure_dt009_6_device_management(engine: Engine) -> None:
+    # DT009.6 adds device configuration fields to the existing device table.
+    statements = (
+        "ALTER TABLE device ADD COLUMN location VARCHAR(255) NULL",
+        "ALTER TABLE device ADD COLUMN record_attendance BOOL NOT NULL DEFAULT 1",
+        "ALTER TABLE device ADD COLUMN show_in_console BOOL NOT NULL DEFAULT 1",
+        "UPDATE device SET device_name = 'New Machine' WHERE device_name IS NULL OR device_name = ''",
+    )
+
+    with engine.begin() as connection:
+        for statement in statements:
+            try:
+                connection.execute(text(statement))
+            except Exception as exc:
+                if "duplicate column" in str(exc).lower():
                     continue
                 raise

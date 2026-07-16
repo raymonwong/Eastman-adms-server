@@ -2,6 +2,28 @@
 
 ## Version
 
+DT009.6
+
+## Date
+
+2026-07-16
+
+## Development Task
+
+DT009.6 Device Management Module Phase 1
+
+## Description
+
+- Added Device Management configuration page at `/dms`.
+- Added `GET /api/devices`, `GET /api/device/{sn}`, and `PUT /api/device/{sn}`.
+- Added device configuration fields: `location`, `record_attendance`, and `show_in_console`.
+- Updated automatic device registration to default new devices to `New Machine`, `record_attendance = true`, and `show_in_console = true`.
+- Added ATTLOG recording control: when `record_attendance = false`, ATTLOG is received normally but attendance events are not saved.
+- Kept Console behavior, ADMS protocol, HTTP response format, USER parser, OPLOG parser, Mingdao sync, ERP logic, and attendance result calculation unchanged.
+- Added `scripts/DT009.6_install_ubuntu.sh` without overwriting previous deployment scripts.
+
+## Version
+
 DT009.5
 
 ## Date

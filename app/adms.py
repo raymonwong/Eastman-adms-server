@@ -97,13 +97,18 @@ def _upsert_device(
         if device is None:
             device = Device(
                 device_sn=device_sn,
+                device_name="New Machine",
                 ip_address=ip_address,
                 first_online=received_at,
                 last_online=received_at,
                 status="online",
+                record_attendance=True,
+                show_in_console=True,
             )
             session.add(device)
         else:
+            if not device.device_name:
+                device.device_name = "New Machine"
             device.ip_address = ip_address
             device.last_online = received_at
         if handshake:
@@ -114,6 +119,17 @@ def _upsert_device(
             device.push_options = push_options
         session.commit()
         return device.id
+
+
+def _device_records_attendance(device_sn: str | None) -> bool:
+    if not device_sn:
+        return True
+
+    with SessionLocal() as session:
+        device = session.query(Device).filter(Device.device_sn == device_sn).one_or_none()
+        if device is None:
+            return True
+        return bool(device.record_attendance)
 
 
 def _is_initialization_handshake(request: Request) -> bool:
@@ -641,24 +657,6 @@ async def iclock_cdata(request: Request) -> PlainTextResponse:
     body = await request.body()
     context = _save_raw_request(request, body, response_body, response_status_code)
 
-    if is_attlog:
-        saved_count = _parse_and_save_attlog(context, body)
-        _mark_raw_request_parsed(context["raw_request_id"])
-        if saved_count > 0:
-            _update_device_sync_state(context, "ATTLOG", _request_stamp(request))
-        response_body = f"OK:{saved_count}"
-        context["response_body"] = response_body
-        _update_raw_request_response(context["raw_request_id"], response_body, response_status_code)
-
-    if is_operlog:
-        saved_count = _parse_and_save_operlog(context, body)
-        _mark_raw_request_parsed(context["raw_request_id"])
-        if saved_count > 0:
-            _update_device_sync_state(context, "OPERLOG", _request_stamp(request))
-        response_body = f"OK:{saved_count}"
-        context["response_body"] = response_body
-        _update_raw_request_response(context["raw_request_id"], response_body, response_status_code)
-
     device_id = None
     remark = None
     try:
@@ -674,6 +672,35 @@ async def iclock_cdata(request: Request) -> PlainTextResponse:
         )
     except Exception as exc:
         remark = f"device_registration_failed: {exc}"
+
+    if is_attlog:
+        if _device_records_attendance(context["device_sn"]):
+            saved_count = _parse_and_save_attlog(context, body)
+            _mark_raw_request_parsed(context["raw_request_id"])
+            if saved_count > 0:
+                _update_device_sync_state(context, "ATTLOG", _request_stamp(request))
+        else:
+            saved_count = 0
+            _debug_log(
+                "ATTLOG SKIPPED",
+                {
+                    "Device": context["device_sn"] or "",
+                    "Reason": "record_attendance disabled",
+                    "Raw Request ID": context["raw_request_id"],
+                },
+            )
+        response_body = f"OK:{saved_count}"
+        context["response_body"] = response_body
+        _update_raw_request_response(context["raw_request_id"], response_body, response_status_code)
+
+    if is_operlog:
+        saved_count = _parse_and_save_operlog(context, body)
+        _mark_raw_request_parsed(context["raw_request_id"])
+        if saved_count > 0:
+            _update_device_sync_state(context, "OPERLOG", _request_stamp(request))
+        response_body = f"OK:{saved_count}"
+        context["response_body"] = response_body
+        _update_raw_request_response(context["raw_request_id"], response_body, response_status_code)
 
     _save_device_event(context, device_id, remark)
     _log_device_connection(
@@ -701,6 +728,17 @@ async def iclock_getrequest(request: Request) -> PlainTextResponse:
     response_status_code = 200
     body = await request.body()
     context = _save_raw_request(request, body, response_body, response_status_code)
+    try:
+        _upsert_device(context["device_sn"], context["client_ip"], context["received_at"])
+    except Exception as exc:
+        _debug_log(
+            "ERROR",
+            {
+                "Device": context["device_sn"] or "",
+                "Module": "DEVICE REGISTRATION",
+                "Reason": exc,
+            },
+        )
     _debug_log(
         "HEARTBEAT",
         {
@@ -716,5 +754,16 @@ async def iclock_devicecmd(request: Request) -> PlainTextResponse:
     response_body = "OK"
     response_status_code = 200
     body = await request.body()
-    _save_raw_request(request, body, response_body, response_status_code)
+    context = _save_raw_request(request, body, response_body, response_status_code)
+    try:
+        _upsert_device(context["device_sn"], context["client_ip"], context["received_at"])
+    except Exception as exc:
+        _debug_log(
+            "ERROR",
+            {
+                "Device": context["device_sn"] or "",
+                "Module": "DEVICE REGISTRATION",
+                "Reason": exc,
+            },
+        )
     return PlainTextResponse(response_body, status_code=response_status_code, media_type="text/plain")

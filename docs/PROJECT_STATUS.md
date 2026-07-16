@@ -2,7 +2,7 @@
 
 ## Current Development Task
 
-DT009.5
+DT009.6
 
 ## Status
 
@@ -10,37 +10,29 @@ Waiting for Review
 
 ## Summary
 
-DT009.5 adds the ADMS Server Console at `/console`. The console is a bilingual Chinese and English compact development-only dashboard that lets operators check server status, device online/offline state, Last Seen, Last Heartbeat, Last Data Upload, Last Raw Request, Last Request, realtime events, today's counters, and latest attendance without SSH, MySQL, tcpdump, or docker logs.
+DT009.6 adds the Device Management module at `/dms`. The module is independent from Console and only handles device configuration, including device name, location, attendance recording control, and the stored show-in-console flag.
 
 ## Completed
 
-- Added `/console` as the single console entry.
-- Added Jinja2 template rendering for the console page.
-- Added Chinese and English labels for the Console UI.
-- Added same-path JSON data mode through `/console?format=json`.
-- Added Server Status panel.
-- Added top-level device online/offline banner.
-- Added Device Status cards for all known devices.
-- Updated Device Status to use Last Seen as the online/offline source of truth.
-- Added Last Seen, Last Data Upload, Last Raw Request ID, and Last Request Type.
-- Set Console offline threshold to more than 60 seconds without any device request.
-- Added Realtime Event Log from existing raw request and parser result data.
-- Added today's Heartbeat, ATTLOG, OPERLOG, and USER counters.
-- Added Latest Attendance panel.
-- Added 2-second auto refresh.
-- Added Refresh button.
-- Added browser-only Clear Event Log button.
-- Optimized the Console into a compact, high-density desktop operations layout.
-- Added responsive 4/2/1 Current State grid and 3/2/1 Device Status grid.
-- Added internal scrolling for the Realtime Event Log panel.
-- Added `scripts/DT009.5_install_ubuntu.sh`.
+- Added `/dms` as the independent Device Management page.
+- Added bilingual device list and edit UI.
+- Added `GET /api/devices`.
+- Added `GET /api/device/{sn}`.
+- Added `PUT /api/device/{sn}` for `device_name`, `location`, `record_attendance`, and `show_in_console`.
+- Added `location`, `record_attendance`, and `show_in_console` fields to the existing `device` table.
+- Updated automatic device registration default values.
+- Added ATTLOG save skip behavior when `record_attendance = false`.
+- Added `scripts/DT009.6_install_ubuntu.sh`.
 - Updated README, CHANGELOG, and project status documentation.
 
 ## Not Included
 
 - Login
 - Permission system
-- Database schema changes
+- Add Device
+- Delete Device
+- Console filtering by `show_in_console`
+- Console device name display
 - ADMS protocol changes
 - API response body changes
 - HTTP status changes

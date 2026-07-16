@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from app.adms import router as adms_router
 from app.console import router as console_router
 from app.database import check_database_connection, configure_session_factory, create_database_engine, create_database_tables
+from app.device_management import router as device_management_router
 from app.settings import Settings
 
 settings = Settings.from_env()
@@ -29,6 +30,7 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title=settings.app_name, version="0.0.2", lifespan=lifespan)
 app.include_router(adms_router)
 app.include_router(console_router)
+app.include_router(device_management_router)
 
 
 @app.get("/health")

@@ -1,0 +1,392 @@
+<!doctype html>
+<html lang="zh-CN" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Device Management</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #111821;
+      --card: #0d131b;
+      --line: rgba(255, 255, 255, 0.1);
+      --text: #d7e2ee;
+      --muted: #8394a8;
+      --blue: #8fb3d9;
+      --green: #24d685;
+      --red: #ff4d4f;
+      --radius: 8px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .shell {
+      max-width: 1440px;
+      padding: 18px 28px;
+    }
+
+    .topbar,
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    .topbar {
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+
+    .title {
+      margin: 0;
+      color: #f2f7ff;
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .subtitle,
+    .muted {
+      color: var(--muted);
+    }
+
+    .panel-header {
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      color: var(--blue);
+      font-weight: 800;
+    }
+
+    .panel-body {
+      padding: 14px;
+    }
+
+    .form-control,
+    .form-select {
+      background: var(--card);
+      border-color: rgba(255, 255, 255, 0.14);
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+      background: var(--card);
+      border-color: var(--blue);
+      color: var(--text);
+      box-shadow: 0 0 0 0.15rem rgba(143, 179, 217, 0.15);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      min-width: 1080px;
+    }
+
+    th {
+      color: var(--blue);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    td {
+      vertical-align: middle;
+      font-size: 13px;
+    }
+
+    .badge-on {
+      color: var(--green);
+    }
+
+    .badge-off {
+      color: var(--red);
+    }
+
+    .btn-console {
+      min-height: 31px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .modal-content {
+      background: var(--panel);
+      border: 1px solid var(--line);
+    }
+
+    .readonly-box {
+      min-height: 34px;
+      padding: 7px 10px;
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 6px;
+      overflow-wrap: anywhere;
+    }
+
+    .form-switch .form-check-input {
+      width: 3em;
+      height: 1.5em;
+      cursor: pointer;
+    }
+
+    .switch-row {
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 10px;
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 6px;
+    }
+
+    @media (max-width: 767.98px) {
+      .shell {
+        padding: 12px;
+      }
+
+      .title {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container-fluid shell">
+    <section class="topbar">
+      <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+        <div>
+          <h1 class="title">Device Management / 设备管理</h1>
+          <div class="subtitle">Configuration only / 仅用于设备配置 · Devices are discovered automatically / 设备自动发现</div>
+        </div>
+        <button id="refreshBtn" type="button" class="btn btn-outline-info btn-console">Refresh / 刷新</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <span>Device List / 设备列表</span>
+        <span id="deviceCount" class="muted"></span>
+      </div>
+      <div class="panel-body">
+        <div class="row g-2 mb-3">
+          <div class="col-12 col-md-6 col-xl-4">
+            <input id="searchInput" class="form-control" placeholder="Search Device Name / Device SN / Location 搜索设备名称 / 编号 / 位置">
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="table table-dark table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Device Name<br>设备名称</th>
+                <th>Device SN<br>设备编号</th>
+                <th>Location<br>所属位置</th>
+                <th>Record Attendance<br>记录考勤数据</th>
+                <th>Show in Console<br>显示在 Console</th>
+                <th>Created Time<br>创建时间</th>
+                <th>Updated Time<br>修改时间</th>
+                <th>Action<br>操作</th>
+              </tr>
+            </thead>
+            <tbody id="deviceTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title fs-6">Edit Device / 编辑设备</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editForm" class="row g-3">
+            <div class="col-12 col-md-6">
+              <label class="form-label">Device SN / 设备编号</label>
+              <div id="editDeviceSn" class="readonly-box"></div>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Device Name / 设备名称</label>
+              <input id="editDeviceName" class="form-control" maxlength="128" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Location / 所属位置</label>
+              <input id="editLocation" class="form-control" maxlength="255">
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Record Attendance / 记录考勤数据</label>
+              <div class="switch-row form-check form-switch mb-0">
+                <input id="editRecordAttendance" class="form-check-input" type="checkbox" role="switch">
+                <label id="editRecordAttendanceLabel" class="form-check-label" for="editRecordAttendance">ON / 开启</label>
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Show in Console / 显示在 Console</label>
+              <div class="switch-row form-check form-switch mb-0">
+                <input id="editShowInConsole" class="form-check-input" type="checkbox" role="switch">
+                <label id="editShowInConsoleLabel" class="form-check-label" for="editShowInConsole">ON / 开启</label>
+              </div>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Created Time / 创建时间</label>
+              <div id="editCreatedAt" class="readonly-box"></div>
+            </div>
+            <div class="col-12 col-md-6">
+              <label class="form-label">Updated Time / 修改时间</label>
+              <div id="editUpdatedAt" class="readonly-box"></div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary btn-console" data-bs-dismiss="modal">Cancel / 取消</button>
+          <button id="saveBtn" type="button" class="btn btn-info btn-console">Save / 保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let devices = [];
+    let currentDeviceSn = null;
+    let editModal = null;
+
+    function esc(value) {
+      return String(value ?? '').replace(/[&<>"']/g, function (char) {
+        return ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[char];
+      });
+    }
+
+    function boolText(value) {
+      return value ? '<span class="badge-on">TRUE / 是</span>' : '<span class="badge-off">FALSE / 否</span>';
+    }
+
+    function formatTime(value) {
+      return value ? String(value).replace('T', ' ').slice(0, 19) : '-';
+    }
+
+    function updateSwitchLabel(inputId, labelId) {
+      const input = document.getElementById(inputId);
+      const label = document.getElementById(labelId);
+      label.textContent = input.checked ? 'ON / 开启' : 'OFF / 关闭';
+    }
+
+    function filteredDevices() {
+      const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+      if (!keyword) {
+        return devices;
+      }
+      return devices.filter(function (device) {
+        return [device.device_name, device.device_sn, device.location].some(function (value) {
+          return String(value || '').toLowerCase().includes(keyword);
+        });
+      });
+    }
+
+    function renderDevices() {
+      const rows = filteredDevices();
+      document.getElementById('deviceCount').textContent = `${rows.length} / ${devices.length}`;
+      document.getElementById('deviceTableBody').innerHTML = rows.map(function (device) {
+        return `
+          <tr>
+            <td>${esc(device.device_name || '-')}</td>
+            <td>${esc(device.device_sn)}</td>
+            <td>${esc(device.location || '-')}</td>
+            <td>${boolText(device.record_attendance)}</td>
+            <td>${boolText(device.show_in_console)}</td>
+            <td>${esc(formatTime(device.created_at))}</td>
+            <td>${esc(formatTime(device.updated_at))}</td>
+            <td><button type="button" class="btn btn-sm btn-outline-info btn-console" data-sn="${esc(device.device_sn)}">Edit / 编辑</button></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function loadDevices() {
+      const response = await fetch('/api/devices', { cache: 'no-store' });
+      devices = await response.json();
+      renderDevices();
+    }
+
+    function openEditModal(sn) {
+      const device = devices.find(function (item) { return item.device_sn === sn; });
+      if (!device) {
+        return;
+      }
+      currentDeviceSn = sn;
+      document.getElementById('editDeviceSn').textContent = device.device_sn;
+      document.getElementById('editDeviceName').value = device.device_name || 'New Machine';
+      document.getElementById('editLocation').value = device.location || '';
+      document.getElementById('editRecordAttendance').checked = Boolean(device.record_attendance);
+      document.getElementById('editShowInConsole').checked = Boolean(device.show_in_console);
+      updateSwitchLabel('editRecordAttendance', 'editRecordAttendanceLabel');
+      updateSwitchLabel('editShowInConsole', 'editShowInConsoleLabel');
+      document.getElementById('editCreatedAt').textContent = formatTime(device.created_at);
+      document.getElementById('editUpdatedAt').textContent = formatTime(device.updated_at);
+      editModal.show();
+    }
+
+    async function saveDevice() {
+      if (!currentDeviceSn) {
+        return;
+      }
+      const payload = {
+        device_name: document.getElementById('editDeviceName').value.trim() || 'New Machine',
+        location: document.getElementById('editLocation').value.trim() || null,
+        record_attendance: document.getElementById('editRecordAttendance').checked,
+        show_in_console: document.getElementById('editShowInConsole').checked,
+      };
+      const response = await fetch(`/api/device/${encodeURIComponent(currentDeviceSn)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+      editModal.hide();
+      await loadDevices();
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', loadDevices);
+    document.getElementById('searchInput').addEventListener('input', renderDevices);
+    document.getElementById('editRecordAttendance').addEventListener('change', function () {
+      updateSwitchLabel('editRecordAttendance', 'editRecordAttendanceLabel');
+    });
+    document.getElementById('editShowInConsole').addEventListener('change', function () {
+      updateSwitchLabel('editShowInConsole', 'editShowInConsoleLabel');
+    });
+    document.getElementById('deviceTableBody').addEventListener('click', function (event) {
+      const button = event.target.closest('button[data-sn]');
+      if (button) {
+        openEditModal(button.dataset.sn);
+      }
+    });
+    document.getElementById('saveBtn').addEventListener('click', function () {
+      saveDevice().catch(function (error) {
+        alert(`Save failed / 保存失败: ${error.message}`);
+      });
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+      editModal = new bootstrap.Modal(document.getElementById('editModal'));
+      loadDevices();
+    });
+  </script>
+</body>
+</html>
