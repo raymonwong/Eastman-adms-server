@@ -2,7 +2,7 @@
 
 ## Current Development Task
 
-DT009.81
+DT009.82
 
 ## Status
 
@@ -10,7 +10,7 @@ Waiting for Review
 
 ## Summary
 
-DT009.81 refactors the Console V2 page layout. The existing `/console` route and JSON data interface remain unchanged, while the page now follows the approved monitoring layout and compact table presentation.
+DT009.82 integrates real database data into the fixed Console V2 layout. The existing `/console` route, page layout, Device Management module, database schema, and ADMS communication remain unchanged.
 
 ## Completed
 
@@ -41,6 +41,12 @@ DT009.81 refactors the Console V2 page layout. The existing `/console` route and
 - Removed redundant Show in Console from Device Summary.
 - Unified Console icons with official Lucide Icons, added `package.json` with the `lucide` dependency, and avoided Wi-Fi-style online icons.
 - Added `scripts/DT009.81_install_ubuntu.sh`.
+- Integrated Device Filter with visible devices from the `device` table.
+- Updated Dashboard to use real online/offline, ATTLOG, USER, and OPLOG counts.
+- Updated Latest Activity to show latest 5 ATTLOG records by attendance time.
+- Updated Realtime Event Log to show latest 10 supported protocol events.
+- Updated Device Summary to use latest Heartbeat for Online/Offline status and real attendance counts.
+- Added `scripts/DT009.82_install_ubuntu.sh`.
 - Updated README, CHANGELOG, and project status documentation.
 
 ## Not Included

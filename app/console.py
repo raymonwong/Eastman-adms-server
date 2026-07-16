@@ -46,7 +46,7 @@ def _short_time(value: datetime | None, *, source: str = "utc") -> str:
 
 def _device_name(device: Device | None, device_sn: str | None) -> str:
     if device is None:
-        return device_sn or "-"
+        return "Unknown Device"
     return device.device_name or f"New Machine ({device.device_sn})"
 
 
@@ -68,8 +68,6 @@ def _visible_devices(session) -> list[Device]:
 
 def _device_filters(devices: list[Device]) -> list[dict[str, str]]:
     filters = [{"value": ALL_DEVICES_FILTER, "label": "All Devices / 所有设备"}]
-    locations = sorted({device.location for device in devices if device.location})
-    filters.extend({"value": f"location:{location}", "label": f"{location} / 位置"} for location in locations)
     filters.extend({"value": f"device:{device.device_sn}", "label": f"{_device_name(device, device.device_sn)} / 设备"} for device in devices)
     return filters
 
@@ -77,9 +75,6 @@ def _device_filters(devices: list[Device]) -> list[dict[str, str]]:
 def _filter_devices(devices: list[Device], selected_filter: str | None) -> list[Device]:
     if not selected_filter or selected_filter == ALL_DEVICES_FILTER:
         return devices
-    if selected_filter.startswith("location:"):
-        location = selected_filter.removeprefix("location:")
-        return [device for device in devices if (device.location or "") == location]
     if selected_filter.startswith("device:"):
         device_sn = selected_filter.removeprefix("device:")
         return [device for device in devices if device.device_sn == device_sn]
@@ -130,6 +125,14 @@ def _latest_data_upload(session, device_sn: str | None = None) -> datetime | Non
     if device_sn is not None:
         query = query.filter(RawRequest.device_sn == device_sn)
     return query.filter(or_(RawRequest.query_string.ilike("%table=ATTLOG%"), RawRequest.query_string.ilike("%table=OPERLOG%"))).scalar()
+
+
+def _latest_heartbeat(session, device_sn: str) -> datetime | None:
+    return (
+        session.query(func.max(RawRequest.received_at))
+        .filter(RawRequest.device_sn == device_sn, RawRequest.request_path == "/iclock/getrequest")
+        .scalar()
+    )
 
 
 def _request_type(raw_request: RawRequest | None) -> str:
@@ -225,8 +228,7 @@ def _dashboard(session, devices: list[Device]) -> dict[str, int]:
     offline = 0
 
     for device in devices:
-        latest_raw = _latest_raw_request(session, device.device_sn)
-        if _classify_device(latest_raw.received_at if latest_raw is not None else None) == "ONLINE":
+        if _classify_device(_latest_heartbeat(session, device.device_sn)) == "ONLINE":
             online += 1
         else:
             offline += 1
@@ -249,8 +251,8 @@ def _latest_activities(session, devices: list[Device]) -> list[dict[str, object]
     devices_by_sn = _device_map(devices)
     attendance_events = (
         _attendance_filter(session.query(AttendanceEvent), device_sns)
-        .order_by(AttendanceEvent.receive_time.desc(), AttendanceEvent.id.desc())
-        .limit(12)
+        .order_by(AttendanceEvent.attendance_time.desc(), AttendanceEvent.id.desc())
+        .limit(5)
         .all()
     )
     user_names = {
@@ -283,7 +285,7 @@ def _events(session, devices: list[Device]) -> list[dict[str, object]]:
             device_sns,
         )
         .order_by(RawRequest.received_at.desc(), RawRequest.id.desc())
-        .limit(80)
+        .limit(40)
         .all()
     )
     for raw_request in raw_requests:
@@ -294,7 +296,7 @@ def _events(session, devices: list[Device]) -> list[dict[str, object]]:
     attendance_events = (
         _attendance_filter(session.query(AttendanceEvent), device_sns)
         .order_by(AttendanceEvent.receive_time.desc(), AttendanceEvent.id.desc())
-        .limit(30)
+        .limit(10)
         .all()
     )
     for item in attendance_events:
@@ -316,7 +318,7 @@ def _events(session, devices: list[Device]) -> list[dict[str, object]]:
     operation_events = (
         _operation_filter(session.query(OperationEvent), device_sns)
         .order_by(OperationEvent.receive_time.desc(), OperationEvent.id.desc())
-        .limit(30)
+        .limit(10)
         .all()
     )
     for item in operation_events:
@@ -334,7 +336,7 @@ def _events(session, devices: list[Device]) -> list[dict[str, object]]:
     users = (
         _user_filter(session.query(DeviceUser), device_sns)
         .order_by(DeviceUser.receive_time.desc(), DeviceUser.id.desc())
-        .limit(30)
+        .limit(10)
         .all()
     )
     for user in users:
@@ -342,7 +344,7 @@ def _events(session, devices: list[Device]) -> list[dict[str, object]]:
         events.append(_event("USER SAVED", user.receive_time, device, user.device_sn, {"PIN": user.pin, "User Name": user.name or ""}))
 
     events.sort(key=lambda item: item["time_full"], reverse=True)
-    return events[:80]
+    return events[:10]
 
 
 def _device_summary(session, devices: list[Device]) -> list[dict[str, object]]:
@@ -350,13 +352,7 @@ def _device_summary(session, devices: list[Device]) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
 
     for device in devices:
-        latest_raw = _latest_raw_request(session, device.device_sn)
-        last_seen = latest_raw.received_at if latest_raw is not None else None
-        last_heartbeat = (
-            session.query(func.max(RawRequest.received_at))
-            .filter(RawRequest.device_sn == device.device_sn, RawRequest.request_path == "/iclock/getrequest")
-            .scalar()
-        )
+        last_heartbeat = _latest_heartbeat(session, device.device_sn)
         last_attendance = (
             session.query(func.max(AttendanceEvent.receive_time))
             .filter(AttendanceEvent.device_sn == device.device_sn)
@@ -372,12 +368,11 @@ def _device_summary(session, devices: list[Device]) -> list[dict[str, object]]:
                 "device_name": _device_name(device, device.device_sn),
                 "device_sn": device.device_sn,
                 "location": device.location or "-",
-                "status": _classify_device(last_seen),
+                "status": _classify_device(last_heartbeat),
                 "last_heartbeat": _format_dubai(last_heartbeat),
                 "last_attendance": _format_dubai(last_attendance),
                 "today_attendance": today_attendance,
                 "record_attendance": bool(device.record_attendance),
-                "show_in_console": bool(device.show_in_console),
             }
         )
 

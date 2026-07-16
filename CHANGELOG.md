@@ -2,6 +2,30 @@
 
 ## Version
 
+DT009.82
+
+## Date
+
+2026-07-16
+
+## Development Task
+
+DT009.82 Console V2 Data Integration
+
+## Description
+
+- Integrated Console V2 with real database data while keeping the DT009.81 layout unchanged.
+- Limited Device Filter to All Devices plus visible devices where `show_in_console = true`.
+- Updated Dashboard statistics to calculate online and offline devices from the latest Heartbeat within a 30-second window.
+- Updated Latest Activity to read latest 5 ATTLOG records from `attendance_event` ordered by `attendance_time DESC`.
+- Updated Realtime Event Log to return latest 10 supported events from existing raw request, ATTLOG, USER, and OPLOG data.
+- Updated Device Summary status to use latest Heartbeat, and removed `show_in_console` from the JSON row payload.
+- Changed unmatched device display fallback to `Unknown Device`.
+- Added `scripts/DT009.82_install_ubuntu.sh` without overwriting previous deployment scripts.
+- Kept database schema, Device Management, ADMS protocol, HTTP response format, parser logic, Console layout, Mingdao sync, ERP logic, and attendance result calculation unchanged.
+
+## Version
+
 DT009.81
 
 ## Date
