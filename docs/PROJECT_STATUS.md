@@ -2,7 +2,7 @@
 
 ## Current Development Task
 
-DT009.6
+DT009.7
 
 ## Status
 
@@ -10,7 +10,7 @@ Waiting for Review
 
 ## Summary
 
-DT009.6 adds the Device Management module at `/dms`. The module is independent from Console and only handles device configuration, including device name, location, attendance recording control, and the stored show-in-console flag.
+DT009.7 optimizes the Device Management module at `/dms`. The module remains independent from Console and only handles device configuration, including device name, location, attendance recording control, and the stored show-in-console flag.
 
 ## Completed
 
@@ -23,6 +23,11 @@ DT009.6 adds the Device Management module at `/dms`. The module is independent f
 - Updated automatic device registration default values.
 - Added ATTLOG save skip behavior when `record_attendance = false`.
 - Added `scripts/DT009.6_install_ubuntu.sh`.
+- Added `scripts/DT009.7_install_ubuntu.sh`.
+- Optimized boolean display to `ON / 开启` and `OFF / 关闭`.
+- Updated default auto-discovered device names to `New Machine (Device SN)`.
+- Improved visual read-only treatment for Device SN, Created Time, and Updated Time.
+- Added confirmation when Record Attendance is turned off.
 - Updated README, CHANGELOG, and project status documentation.
 
 ## Not Included

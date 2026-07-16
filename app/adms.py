@@ -97,7 +97,7 @@ def _upsert_device(
         if device is None:
             device = Device(
                 device_sn=device_sn,
-                device_name="New Machine",
+                device_name=f"New Machine ({device_sn})",
                 ip_address=ip_address,
                 first_online=received_at,
                 last_online=received_at,
@@ -108,7 +108,7 @@ def _upsert_device(
             session.add(device)
         else:
             if not device.device_name:
-                device.device_name = "New Machine"
+                device.device_name = f"New Machine ({device_sn})"
             device.ip_address = ip_address
             device.last_online = received_at
         if handshake:

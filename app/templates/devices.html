@@ -130,9 +130,10 @@
     .readonly-box {
       min-height: 34px;
       padding: 7px 10px;
-      background: var(--card);
-      border: 1px solid rgba(255, 255, 255, 0.09);
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid rgba(255, 255, 255, 0.13);
       border-radius: 6px;
+      color: #aebdcd;
       overflow-wrap: anywhere;
     }
 
@@ -146,11 +147,23 @@
       min-height: 38px;
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 10px;
       padding: 7px 10px;
       background: var(--card);
       border: 1px solid rgba(255, 255, 255, 0.09);
       border-radius: 6px;
+    }
+
+    .switch-row .form-check-input {
+      float: none;
+      margin: 0;
+      order: 2;
+    }
+
+    .switch-row .form-check-label {
+      order: 1;
+      margin: 0;
     }
 
     @media (max-width: 767.98px) {
@@ -261,11 +274,31 @@
     </div>
   </div>
 
+  <div class="modal fade" id="attendanceConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title fs-6">Record Attendance Disabled / 记录考勤已关闭</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-2">Do you also want to disable Show in Console?</p>
+          <p class="mb-0 muted">是否同时关闭 Console 显示？</p>
+        </div>
+        <div class="modal-footer">
+          <button id="keepConsoleBtn" type="button" class="btn btn-outline-secondary btn-console" data-bs-dismiss="modal">No / 否</button>
+          <button id="confirmDisableConsoleBtn" type="button" class="btn btn-info btn-console">Yes / 是</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     let devices = [];
     let currentDeviceSn = null;
     let editModal = null;
+    let attendanceConfirmModal = null;
 
     function esc(value) {
       return String(value ?? '').replace(/[&<>"']/g, function (char) {
@@ -274,7 +307,7 @@
     }
 
     function boolText(value) {
-      return value ? '<span class="badge-on">TRUE / 是</span>' : '<span class="badge-off">FALSE / 否</span>';
+      return value ? '<span class="badge-on">ON / 开启</span>' : '<span class="badge-off">OFF / 关闭</span>';
     }
 
     function formatTime(value) {
@@ -285,6 +318,10 @@
       const input = document.getElementById(inputId);
       const label = document.getElementById(labelId);
       label.textContent = input.checked ? 'ON / 开启' : 'OFF / 关闭';
+    }
+
+    function defaultDeviceName(deviceSn) {
+      return `New Machine (${deviceSn})`;
     }
 
     function filteredDevices() {
@@ -331,7 +368,7 @@
       }
       currentDeviceSn = sn;
       document.getElementById('editDeviceSn').textContent = device.device_sn;
-      document.getElementById('editDeviceName').value = device.device_name || 'New Machine';
+      document.getElementById('editDeviceName').value = device.device_name || defaultDeviceName(device.device_sn);
       document.getElementById('editLocation').value = device.location || '';
       document.getElementById('editRecordAttendance').checked = Boolean(device.record_attendance);
       document.getElementById('editShowInConsole').checked = Boolean(device.show_in_console);
@@ -347,7 +384,7 @@
         return;
       }
       const payload = {
-        device_name: document.getElementById('editDeviceName').value.trim() || 'New Machine',
+        device_name: document.getElementById('editDeviceName').value.trim() || defaultDeviceName(currentDeviceSn),
         location: document.getElementById('editLocation').value.trim() || null,
         record_attendance: document.getElementById('editRecordAttendance').checked,
         show_in_console: document.getElementById('editShowInConsole').checked,
@@ -367,6 +404,9 @@
     document.getElementById('refreshBtn').addEventListener('click', loadDevices);
     document.getElementById('searchInput').addEventListener('input', renderDevices);
     document.getElementById('editRecordAttendance').addEventListener('change', function () {
+      if (!this.checked) {
+        attendanceConfirmModal.show();
+      }
       updateSwitchLabel('editRecordAttendance', 'editRecordAttendanceLabel');
     });
     document.getElementById('editShowInConsole').addEventListener('change', function () {
@@ -383,8 +423,14 @@
         alert(`Save failed / 保存失败: ${error.message}`);
       });
     });
+    document.getElementById('confirmDisableConsoleBtn').addEventListener('click', function () {
+      document.getElementById('editShowInConsole').checked = false;
+      updateSwitchLabel('editShowInConsole', 'editShowInConsoleLabel');
+      attendanceConfirmModal.hide();
+    });
     document.addEventListener('DOMContentLoaded', function () {
       editModal = new bootstrap.Modal(document.getElementById('editModal'));
+      attendanceConfirmModal = new bootstrap.Modal(document.getElementById('attendanceConfirmModal'));
       loadDevices();
     });
   </script>

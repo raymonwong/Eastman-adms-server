@@ -4,7 +4,7 @@
 
 Eastman ADMS Server 是用于后续接入考勤设备、考勤平台和明道云/HAP 的服务端项目。
 
-Development Task 009.6 增加 Device Management / 设备管理模块：服务器会自动发现设备，提供独立 `/dms` 配置页面和 `/api/devices`、`/api/device/{sn}` REST API，并支持按设备关闭 ATTLOG 考勤入库。Console 保持监控用途，Device Management 只做配置。
+Development Task 009.7 优化 Device Management / 设备管理模块：`/dms` 页面继续作为独立配置页面，优化开关显示、默认设备名称、只读字段视觉和关闭考勤记录时的联动确认。Console 保持监控用途，Device Management 只做配置。
 
 本阶段不修改 ADMS 协议、Console 行为、HTTP 返回格式、USER/OPLOG Parser、明道云同步或任何 ERP 业务逻辑。
 
@@ -26,7 +26,7 @@ Development Task 009.6 增加 Device Management / 设备管理模块：服务器
 在项目根目录执行：
 
 ```bash
-scripts/DT009.6_install_ubuntu.sh
+scripts/DT009.7_install_ubuntu.sh
 ```
 
 安装脚本会自动完成：
@@ -51,13 +51,14 @@ scripts/DT009.6_install_ubuntu.sh
 - 验证 `device` 设备管理配置字段
 - 验证 `/dms` 页面
 - 验证 `/api/devices` 数据
+- 验证 Device Management 优化 UI
 - 失败时输出容器状态和最近 100 行容器日志
 
 部署成功后会输出：
 
 ```text
 ========================================
-Device Management Ready
+Device Management Optimization Ready
 Device Management URL: http://SERVER_IP:4370/dms
 Application Ready
 ========================================
@@ -85,7 +86,8 @@ eastman-adms-server/
 │   ├── DT008_install_ubuntu.sh
 │   ├── DT009_install_ubuntu.sh
 │   ├── DT009.5_install_ubuntu.sh
-│   └── DT009.6_install_ubuntu.sh
+│   ├── DT009.6_install_ubuntu.sh
+│   └── DT009.7_install_ubuntu.sh
 ├── docs/
 │   ├── Architecture.md
 │   ├── Deploy.md
@@ -149,7 +151,7 @@ DT007 增加 `device_sync_state`，保存设备序列号、数据类型、设备
 
 DT008 增加 `device_user`，保存设备序列号、PIN、姓名、权限、密码、卡号、组号、时区、验证方式、副卡、开始时间、结束时间、接收时间和对应 `raw_request`。同一设备同一 PIN 再次上传时执行更新。
 
-DT009.6 为 `device` 增加设备管理配置字段：`location`、`record_attendance`、`show_in_console`。设备仍然通过 ADMS 请求自动发现，不提供手动新增和删除。
+DT009.6 为 `device` 增加设备管理配置字段：`location`、`record_attendance`、`show_in_console`。设备仍然通过 ADMS 请求自动发现，不提供手动新增和删除。DT009.7 将新设备默认名称优化为 `New Machine (Device SN)`，并将布尔字段在 UI 中显示为 `ON / 开启` 或 `OFF / 关闭`。
 
 开发环境如需重建数据库，可执行：
 
@@ -251,7 +253,7 @@ GET /dms
 
 Device Management 是独立配置模块，不属于 Console。页面提供设备搜索和编辑，不提供新增和删除。设备由 ADMS 请求自动注册，默认值为：
 
-- `device_name = New Machine`
+- `device_name = New Machine (Device SN)`
 - `record_attendance = TRUE`
 - `show_in_console = TRUE`
 
@@ -263,7 +265,7 @@ GET /api/device/{sn}
 PUT /api/device/{sn}
 ```
 
-`PUT /api/device/{sn}` 仅允许更新 `device_name`、`location`、`record_attendance`、`show_in_console`。当 `record_attendance = FALSE` 时，服务器继续接收设备请求并正常返回，但跳过 ATTLOG 入库和考勤事件处理，适合测试设备使用。本阶段只保存 `show_in_console` 字段，不改变 Console 显示过滤。
+`PUT /api/device/{sn}` 仅允许更新 `device_name`、`location`、`record_attendance`、`show_in_console`。当 `record_attendance = FALSE` 时，服务器继续接收设备请求并正常返回，但跳过 ATTLOG 入库和考勤事件处理，适合测试设备使用。在 `/dms` 页面关闭 Record Attendance 时，会提示是否同时关闭 Show in Console。本阶段只保存 `show_in_console` 字段，不改变 Console 显示过滤。
 
 设备同步状态：
 
@@ -313,9 +315,9 @@ http://<Server Address>:4370/iclock/cdata
 
 ## 8. 后续开发阶段
 
-DT010 预计根据真实设备数据继续处理下一类协议数据。DT009.6 完成后等待 Review，不进入 DT010。
+DT010 预计根据真实设备数据继续处理下一类协议数据。DT009.7 完成后等待 Review，不进入 DT010。
 
-明确禁止在 DT009.6 中加入：
+明确禁止在 DT009.7 中加入：
 
 - 考勤结果计算
 - 排班

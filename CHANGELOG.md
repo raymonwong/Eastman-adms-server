@@ -2,6 +2,28 @@
 
 ## Version
 
+DT009.7
+
+## Date
+
+2026-07-16
+
+## Development Task
+
+DT009.7 Device Management Optimization
+
+## Description
+
+- Changed Device Management boolean display from TRUE/FALSE to ON/OFF bilingual labels.
+- Updated automatically discovered device default name to `New Machine (Device SN)`.
+- Improved read-only styling for Device SN, Created Time, and Updated Time.
+- Improved switch alignment and consistent switch labels.
+- Added confirmation when disabling Record Attendance, with optional automatic Show in Console disable.
+- Added `scripts/DT009.7_install_ubuntu.sh` without overwriting previous deployment scripts.
+- Kept database schema, API paths, Console behavior, ADMS protocol, Mingdao sync, ERP logic, and attendance result calculation unchanged.
+
+## Version
+
 DT009.6
 
 ## Date
