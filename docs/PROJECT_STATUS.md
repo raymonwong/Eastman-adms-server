@@ -2,7 +2,7 @@
 
 ## Current Development Task
 
-DT009.8
+DT009.81
 
 ## Status
 
@@ -10,7 +10,7 @@ Waiting for Review
 
 ## Summary
 
-DT009.8 upgrades `/console` into Console V2, a multi-device monitoring center. Device Management remains the configuration module, while Console only displays runtime monitoring data.
+DT009.81 refactors the Console V2 page layout. The existing `/console` route and JSON data interface remain unchanged, while the page now follows the approved monitoring layout and compact table presentation.
 
 ## Completed
 
@@ -35,6 +35,12 @@ DT009.8 upgrades `/console` into Console V2, a multi-device monitoring center. D
 - Added Device Summary table.
 - Changed Console primary display from Device SN to Device Name.
 - Added `scripts/DT009.8_install_ubuntu.sh`.
+- Refactored Console V2 layout into the required order: server status, device filter, dashboard, latest activity and realtime event tables, and device summary.
+- Converted Latest Activity to a compact 5-row table.
+- Converted Realtime Event Log to a compact 10-row table.
+- Removed redundant Show in Console from Device Summary.
+- Unified Console icons with official Lucide Icons, added `package.json` with the `lucide` dependency, and avoided Wi-Fi-style online icons.
+- Added `scripts/DT009.81_install_ubuntu.sh`.
 - Updated README, CHANGELOG, and project status documentation.
 
 ## Not Included

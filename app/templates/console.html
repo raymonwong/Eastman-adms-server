@@ -10,13 +10,11 @@
       --font-base: 14px;
       --font-small: 12px;
       --font-label: 11px;
-      --space-xs: 4px;
       --space-sm: 8px;
-      --space-md: 12px;
-      --panel-gap: 12px;
+      --space-md: 14px;
+      --panel-gap: 14px;
       --panel-padding: 14px;
-      --card-padding: 10px;
-      --radius: 8px;
+      --radius: 10px;
       --bg: #0b0f14;
       --panel: #111821;
       --card: #0d131b;
@@ -26,15 +24,18 @@
       --muted: #8394a8;
       --blue: #8fb3d9;
       --green: #24d685;
+      --orange: #f59f00;
       --red: #ff4d4f;
     }
 
     body {
+      margin: 0;
       background: var(--bg);
       color: var(--text);
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
       font-size: var(--font-base);
       line-height: 1.4;
+      overflow-x: hidden;
     }
 
     .app-frame {
@@ -64,9 +65,14 @@
       line-height: 1.15;
     }
 
+    .brand-subtitle,
+    .sidebar-version,
+    .muted {
+      color: var(--muted);
+    }
+
     .brand-subtitle {
       margin-top: 5px;
-      color: var(--muted);
       font-size: 10px;
       line-height: 1.25;
     }
@@ -75,10 +81,10 @@
       display: flex;
       align-items: center;
       gap: 7px;
-      min-height: 32px;
+      min-height: 34px;
       margin-bottom: 6px;
       padding: 7px 8px;
-      border-radius: 7px;
+      border-radius: 8px;
       color: var(--muted);
       text-decoration: none;
       font-size: 11px;
@@ -99,47 +105,131 @@
       position: absolute;
       bottom: 14px;
       left: 14px;
-      color: var(--muted);
       font-size: 10px;
     }
 
-    .console-shell {
-      max-width: 1920px;
-      padding: 16px 28px 20px;
+    .icon {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
     }
 
-    .topbar,
+    .console-shell {
+      width: 100%;
+      max-width: 1780px;
+      padding: 16px 24px 20px;
+    }
+
+    .page-head,
     .panel {
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: var(--radius);
     }
 
-    .topbar {
-      display: grid;
-      grid-template-columns: minmax(260px, auto) minmax(220px, 360px) auto;
-      gap: var(--space-md);
-      align-items: center;
-      min-height: 68px;
+    .page-head {
       margin-bottom: var(--panel-gap);
-      padding: 10px 14px;
+      padding: 14px 16px;
     }
 
-    .top-title {
+    .page-title {
       margin: 0;
       color: #f2f7ff;
       font-size: 21px;
       line-height: 1.15;
-      font-weight: 800;
+      font-weight: 900;
     }
 
-    .top-subtitle {
-      margin-top: 3px;
+    .page-subtitle {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: var(--font-small);
+    }
+
+    .layout-grid {
+      display: grid;
+      gap: var(--panel-gap);
+    }
+
+    .panel {
+      overflow: hidden;
+    }
+
+    .panel-header {
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-sm);
+      padding: 8px var(--panel-padding);
+      border-bottom: 1px solid var(--line-soft);
+      color: var(--blue);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .panel-body {
+      padding: var(--panel-padding);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .section-note {
       color: var(--muted);
       font-size: var(--font-label);
+      font-weight: 700;
     }
 
-    .filter-label,
+    .server-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-md);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: var(--space-md);
+    }
+
+    .metric {
+      min-height: 108px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 10px;
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.075);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+
+    .metric-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .metric-icon {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      background: rgba(143, 179, 217, 0.1);
+      color: var(--blue);
+      flex: 0 0 auto;
+    }
+
+    .metric-icon .icon {
+      width: 21px;
+      height: 21px;
+    }
+
     .metric-label,
     .field-label {
       color: var(--muted);
@@ -147,10 +237,42 @@
       line-height: 1.25;
     }
 
+    .metric-title {
+      color: #f2f7ff;
+      font-size: 13px;
+      font-weight: 850;
+      line-height: 1.25;
+    }
+
+    .metric-value {
+      align-self: end;
+      color: #f2f7ff;
+      font-size: 22px;
+      line-height: 1.05;
+      font-weight: 950;
+      overflow-wrap: anywhere;
+    }
+
+    .metric-value.small {
+      font-size: 15px;
+      line-height: 1.25;
+    }
+
+    .device-filter-row {
+      display: flex;
+      align-items: end;
+      gap: 16px;
+      min-height: 46px;
+    }
+
+    .filter-box {
+      width: min(360px, 100%);
+    }
+
     .filter-select,
     .btn-console {
-      min-height: 31px;
-      border-radius: 6px;
+      min-height: 32px;
+      border-radius: 7px;
       font-size: var(--font-small);
     }
 
@@ -165,170 +287,116 @@
       white-space: nowrap;
     }
 
-    .layout-grid {
-      --bs-gutter-x: var(--panel-gap);
-      --bs-gutter-y: var(--panel-gap);
+    .split-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 52fr) minmax(0, 48fr);
+      gap: var(--panel-gap);
+      align-items: stretch;
     }
 
-    .panel {
-      min-height: 100%;
-      overflow: hidden;
-      box-shadow: 0 0 0 1px rgba(143, 179, 217, 0.02);
-    }
-
-    .panel-header {
-      min-height: 38px;
+    .fixed-table-panel .panel-body {
+      height: 358px;
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: var(--space-sm);
-      padding: 8px var(--panel-padding);
-      border-bottom: 1px solid var(--line-soft);
+      flex-direction: column;
+    }
+
+    .table-scroll {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+    }
+
+    .summary-scroll {
+      max-height: 360px;
+      overflow: auto;
+    }
+
+    .console-table {
+      width: 100%;
+      margin: 0;
+      color: var(--text);
+      table-layout: fixed;
+    }
+
+    .console-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #141d27;
       color: var(--blue);
-      font-size: 14px;
-      font-weight: 800;
-    }
-
-    .panel-body {
-      padding: var(--panel-padding);
-    }
-
-    .metric {
-      min-width: 0;
-      background: var(--card);
-      border: 1px solid rgba(255, 255, 255, 0.075);
-      border-radius: var(--radius);
-      padding: var(--card-padding);
-    }
-
-    .metric-value,
-    .field-value {
-      color: #f2f7ff;
-      font-size: 14px;
-      font-weight: 750;
-      line-height: 1.25;
-      overflow-wrap: anywhere;
-    }
-
-    .server-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: var(--space-sm);
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: var(--space-sm);
-    }
-
-    .stat-value {
-      margin-top: 2px;
-      color: #f2f7ff;
-      font-size: 22px;
-      line-height: 1.1;
-      font-weight: 900;
-    }
-
-    .activity-grid {
-      display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
-      gap: var(--space-sm);
-    }
-
-    .activity-card,
-    .event-item {
-      background: var(--card);
-      border: 1px solid rgba(255, 255, 255, 0.075);
-      border-radius: var(--radius);
-      padding: var(--card-padding);
-    }
-
-    .activity-card {
-      margin-bottom: var(--space-sm);
-    }
-
-    .event-log {
-      max-height: 420px;
-      overflow-y: auto;
-      padding-right: 2px;
-    }
-
-    .event-item {
-      margin-bottom: 7px;
-      border-left: 3px solid #335a86;
-      border-radius: 0 6px 6px 0;
-    }
-
-    .event-line {
-      display: grid;
-      grid-template-columns: 58px minmax(150px, 0.75fr) minmax(160px, 1fr) minmax(180px, 1fr);
-      gap: var(--space-sm);
-      align-items: baseline;
-    }
-
-    .event-title {
-      color: #f2f7ff;
-      font-size: 13px;
-      font-weight: 900;
-    }
-
-    .event-details {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 3px 12px;
-      margin-top: 4px;
-      font-size: var(--font-small);
-    }
-
-    .summary-table-wrap {
-      overflow-x: auto;
-    }
-
-    .summary-table {
-      min-width: 1120px;
-      margin-bottom: 0;
-    }
-
-    .summary-table th {
-      color: var(--blue);
+      border-bottom: 1px solid var(--line);
       font-size: var(--font-label);
+      font-weight: 850;
+      line-height: 1.2;
+      padding: 8px 9px;
       white-space: nowrap;
     }
 
-    .summary-table td {
+    .console-table tbody td {
+      height: 42px;
+      padding: 7px 9px;
+      border-bottom: 1px solid var(--line-soft);
+      color: var(--text);
+      font-size: 12px;
       vertical-align: middle;
-      font-size: 12.5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
-    .muted {
-      color: var(--muted);
+    .console-table tbody tr:hover td {
+      background: rgba(143, 179, 217, 0.06);
     }
+
+    .empty-state {
+      height: 210px;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: var(--font-small);
+      text-align: center;
+    }
+
+    .badge-event,
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      max-width: 100%;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 850;
+      line-height: 1.35;
+      white-space: nowrap;
+    }
+
+    .badge-heartbeat { color: var(--green); background: rgba(36, 214, 133, 0.1); }
+    .badge-attlog { color: var(--blue); background: rgba(143, 179, 217, 0.12); }
+    .badge-user { color: #c084fc; background: rgba(192, 132, 252, 0.12); }
+    .badge-oplog { color: var(--orange); background: rgba(245, 159, 0, 0.12); }
+    .badge-error { color: var(--red); background: rgba(255, 77, 79, 0.12); }
+
+    .status-online { color: var(--green); }
+    .status-offline { color: var(--red); }
+    .status-warning { color: var(--orange); }
+    .badge-on { color: var(--green); font-weight: 850; }
+    .badge-off { color: var(--red); font-weight: 850; }
 
     .dot {
       display: inline-block;
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 999px;
-      margin-right: 6px;
-      vertical-align: 1px;
+      background: currentColor;
     }
-
-    .dot-online { background: var(--green); }
-    .dot-offline { background: var(--red); }
-
-    .badge-on { color: var(--green); font-weight: 800; }
-    .badge-off { color: var(--red); font-weight: 800; }
 
     .mono {
       font-variant-numeric: tabular-nums;
     }
 
     @media (max-width: 1199.98px) {
-      .app-frame {
-        grid-template-columns: 1fr;
-      }
-
+      .app-frame { grid-template-columns: 1fr; }
       .sidebar {
         position: static;
         height: auto;
@@ -338,71 +406,21 @@
         padding: 8px 14px;
         overflow-x: auto;
       }
-
-      .brand {
-        flex: 0 0 auto;
-        margin: 0 8px 0 0;
-      }
-
-      .brand-subtitle,
-      .sidebar-version {
-        display: none;
-      }
-
-      .nav-link-console {
-        flex: 0 0 auto;
-        margin-bottom: 0;
-      }
-
-      .console-shell {
-        padding: 14px 20px 18px;
-      }
-
-      .topbar {
-        grid-template-columns: minmax(0, 1fr) auto;
-      }
-
-      .filter-box {
-        grid-column: 1 / -1;
-        grid-row: 2;
-      }
-
-      .server-grid,
-      .stats-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
-      .activity-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
+      .brand { flex: 0 0 auto; margin: 0 8px 0 0; }
+      .brand-subtitle, .sidebar-version { display: none; }
+      .nav-link-console { flex: 0 0 auto; margin-bottom: 0; }
+      .console-shell { padding: 14px 18px 18px; }
+      .server-grid, .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .split-grid { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 767.98px) {
-      .console-shell {
-        padding: 10px 12px 16px;
-      }
-
-      .topbar {
-        grid-template-columns: 1fr;
-        min-height: auto;
-        padding: 10px 12px;
-      }
-
-      .top-title {
-        font-size: 20px;
-      }
-
-      .btn-console {
-        width: 100%;
-      }
-
-      .server-grid,
-      .stats-grid,
-      .activity-grid,
-      .event-line,
-      .event-details {
-        grid-template-columns: 1fr;
-      }
+      .console-shell { padding: 10px 12px 16px; }
+      .page-title { font-size: 19px; }
+      .server-grid, .stats-grid { grid-template-columns: 1fr; }
+      .device-filter-row { align-items: stretch; flex-direction: column; }
+      .filter-box, .btn-console { width: 100%; }
+      .metric { min-height: 92px; }
     }
   </style>
 </head>
@@ -413,76 +431,80 @@
         <div class="brand-title">ADMS CONSOLE</div>
         <div class="brand-subtitle">Attendance Data<br>Management Server</div>
       </div>
-      <a class="nav-link-console active" href="/console">▣ Dashboard<br>监控</a>
-      <a class="nav-link-console" href="/console">▤ Console<br>控制台</a>
-      <a class="nav-link-console" href="/dms">▥ Device Management<br>设备管理</a>
-      <span class="nav-link-console">⚙ Settings<br>设置</span>
+      <a class="nav-link-console active" href="/console"><i data-lucide="layout-dashboard" class="icon"></i><span>Dashboard<br>监控</span></a>
+      <a class="nav-link-console" href="/console"><i data-lucide="square-terminal" class="icon"></i><span>Console<br>控制台</span></a>
+      <a class="nav-link-console" href="/dms"><i data-lucide="monitor-cog" class="icon"></i><span>Device Management<br>设备管理</span></a>
+      <span class="nav-link-console"><i data-lucide="settings" class="icon"></i><span>Settings<br>设置</span></span>
       <div class="sidebar-version">v1.0.0</div>
     </aside>
 
     <main class="container-fluid console-shell">
-    <section class="topbar">
-      <div>
-        <h1 class="top-title">ADMS Server Console V2 / ADMS 服务器监控中心</h1>
-        <div class="top-subtitle">Multi-device monitoring center / 多设备监控中心 · Auto refresh every 2 seconds / 每 2 秒自动刷新</div>
-      </div>
-      <div class="filter-box">
-        <div class="filter-label">Device Filter / 设备筛选</div>
-        <select id="deviceFilter" class="form-select filter-select" aria-label="Device Filter"></select>
-      </div>
-      <button id="refreshBtn" type="button" class="btn btn-outline-info btn-console">Refresh / 刷新</button>
-    </section>
+      <section class="page-head">
+        <h1 class="page-title">运行监控 / Operation Console</h1>
+        <div class="page-subtitle">ADMS Server 与设备实时运行状态 / Real-time ADMS Server and attendance device status</div>
+      </section>
 
-    <div class="row layout-grid">
-      <section class="col-12">
-        <div class="panel">
-          <div class="panel-header">① Server Status / 服务器状态</div>
+      <div class="layout-grid">
+        <section class="panel">
           <div class="panel-body">
-            <div id="serverStatus"></div>
+            <div id="serverStatus" class="server-grid"></div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="col-12">
-        <div class="panel">
-          <div class="panel-header">② Dashboard / 仪表盘</div>
+        <section class="panel">
           <div class="panel-body">
-            <div id="dashboard"></div>
+            <div class="device-filter-row">
+              <div class="filter-box">
+                <div class="field-label">设备 / Device</div>
+                <select id="deviceFilter" class="form-select filter-select" aria-label="Device Filter"></select>
+              </div>
+              <button id="refreshBtn" type="button" class="btn btn-outline-info btn-console"><i data-lucide="refresh-cw" class="icon"></i> Refresh / 刷新</button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section class="col-12 col-xl-6">
-        <div class="panel">
-          <div class="panel-header">③ Latest Activity / 最新活动</div>
-          <div class="panel-body" id="latestActivity"></div>
-        </div>
-      </section>
+        <section class="panel">
+          <div class="panel-body">
+            <div id="dashboard" class="stats-grid"></div>
+          </div>
+        </section>
 
-      <section class="col-12 col-xl-6">
-        <div class="panel">
+        <section class="split-grid">
+          <div class="panel fixed-table-panel">
+            <div class="panel-header">
+              <span class="section-title"><i data-lucide="clipboard-check" class="icon"></i> 最近考勤活动 / Latest Activity</span>
+              <span class="section-note">最近5条 / Last 5</span>
+            </div>
+            <div class="panel-body">
+              <div id="latestActivity" class="table-scroll"></div>
+            </div>
+          </div>
+
+          <div class="panel fixed-table-panel">
+            <div class="panel-header">
+              <span class="section-title"><i data-lucide="file-text" class="icon"></i> 实时事件日志 / Realtime Event Log</span>
+              <button id="clearBtn" type="button" class="btn btn-sm btn-outline-secondary btn-console"><i data-lucide="trash-2" class="icon"></i> Clear / 清空显示</button>
+            </div>
+            <div class="panel-body">
+              <div class="section-note mb-2">最近10条 / Last 10</div>
+              <div id="eventLog" class="table-scroll"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
           <div class="panel-header">
-            <span>④ Realtime Event Log / 实时事件日志</span>
-            <button id="clearBtn" type="button" class="btn btn-sm btn-outline-secondary btn-console">Clear Event Log / 清空页面日志</button>
+            <span class="section-title"><i data-lucide="monitor-check" class="icon"></i> 设备状态总览 / Device Summary</span>
           </div>
           <div class="panel-body">
-            <div id="eventLog" class="event-log"></div>
+            <div id="deviceSummary" class="summary-scroll"></div>
           </div>
-        </div>
-      </section>
-
-      <section class="col-12">
-        <div class="panel">
-          <div class="panel-header">⑤ Device Summary / 设备状态总览</div>
-          <div class="panel-body">
-            <div id="deviceSummary"></div>
-          </div>
-        </div>
-      </section>
-    </div>
+        </section>
+      </div>
     </main>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
   <script>
     let eventLogCleared = false;
     let selectedFilter = 'all';
@@ -493,77 +515,71 @@
       });
     }
 
-    function statusDot(status) {
-      const normalized = String(status || '').toLowerCase();
-      return normalized === 'online' || normalized === 'running' || normalized === 'connected' || normalized === 'normal'
-        ? '<span class="dot dot-online"></span>'
-        : '<span class="dot dot-offline"></span>';
+    function refreshIcons() {
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
     }
 
-    const labels = {
-      Server: 'Server / 服务器',
-      Database: 'Database / 数据库',
-      API: 'API / 接口状态',
-      'Server Time': 'Server Time / 服务器时间',
-      'Online Devices': 'Online Devices / 在线设备',
-      'Offline Devices': 'Offline Devices / 离线设备',
-      "Today's Attendance": "Today's Attendance / 今日考勤",
-      "Today's USER": "Today's USER / 今日用户同步",
-      "Today's OPLOG": "Today's OPLOG / 今日操作日志",
-      'Device Name': 'Device Name / 设备名称',
-      Location: 'Location / 所属位置',
-      Status: 'Status / 状态',
-      'Last Heartbeat': 'Last Heartbeat / 最后心跳',
-      'Last Attendance': 'Last Attendance / 最后考勤',
-      'Record Attendance': 'Record Attendance / 记录考勤',
-      'Show in Console': 'Show in Console / 显示在 Console',
-      'Employee PIN': 'Employee PIN / 员工编号',
-      'Employee Name': 'Employee Name / 员工姓名',
-      'Attendance Type': 'Attendance Type / 事件类型',
-      'Attendance Time': 'Attendance Time / 考勤时间',
-      Time: 'Time / 时间',
-      'Event Type': 'Event Type / 事件类型',
-      Details: 'Details / 事件详情',
-      PIN: 'PIN / 员工编号',
-      'User Name': 'User Name / 用户姓名',
-      Operation: 'Operation / 操作',
-      'Client IP': 'Client IP / 客户端 IP',
-    };
+    function icon(name) {
+      return `<i data-lucide="${name}" class="icon"></i>`;
+    }
+
+    function statusClass(value) {
+      const normalized = String(value || '').toLowerCase();
+      if (normalized === 'online' || normalized === 'running' || normalized === 'connected' || normalized === 'normal') {
+        return 'status-online';
+      }
+      if (normalized === 'warning') {
+        return 'status-warning';
+      }
+      return 'status-offline';
+    }
 
     const statuses = {
-      ONLINE: 'ONLINE / 在线',
-      OFFLINE: 'OFFLINE / 离线',
+      ONLINE: 'Online / 在线',
+      OFFLINE: 'Offline / 离线',
       Running: 'Running / 运行中',
       Connected: 'Connected / 已连接',
       Normal: 'Normal / 正常',
     };
 
     const eventNames = {
-      HANDSHAKE: 'HANDSHAKE / 初始化握手',
-      HEARTBEAT: 'HEARTBEAT / 心跳',
-      ATTLOG: 'ATTLOG / 考勤上传',
-      'ATTLOG SAVED': 'ATTLOG SAVED / 考勤已保存',
-      OPLOG: 'OPLOG / 操作日志',
-      'OPLOG SAVED': 'OPLOG SAVED / 操作日志已保存',
-      USER: 'USER / 用户上传',
-      'USER SAVED': 'USER SAVED / 用户已保存',
-      ERROR: 'ERROR / 错误',
+      HANDSHAKE: 'HEARTBEAT',
+      HEARTBEAT: 'HEARTBEAT',
+      ATTLOG: 'ATTLOG',
+      'ATTLOG SAVED': 'ATTLOG',
+      OPLOG: 'OPLOG',
+      'OPLOG SAVED': 'OPLOG',
+      USER: 'USER',
+      'USER SAVED': 'USER',
+      ERROR: 'ERROR',
     };
 
-    function label(value) {
-      return labels[value] || value;
-    }
+    const eventBadgeClass = {
+      HEARTBEAT: 'badge-heartbeat',
+      ATTLOG: 'badge-attlog',
+      USER: 'badge-user',
+      OPLOG: 'badge-oplog',
+      ERROR: 'badge-error',
+    };
 
     function displayStatus(value) {
-      return statuses[value] || value;
-    }
-
-    function displayEvent(value) {
-      return eventNames[value] || value;
+      return statuses[value] || value || '-';
     }
 
     function boolText(value) {
       return value ? '<span class="badge-on">ON / 开启</span>' : '<span class="badge-off">OFF / 关闭</span>';
+    }
+
+    function eventTag(type) {
+      const name = eventNames[type] || type || 'ERROR';
+      const badgeClass = eventBadgeClass[name] || 'badge-error';
+      return `<span class="badge-event ${badgeClass}">${esc(name)}</span>`;
+    }
+
+    function statusChip(status) {
+      return `<span class="status-chip ${statusClass(status)}"><span class="dot"></span>${esc(displayStatus(status))}</span>`;
     }
 
     function renderFilters(filter) {
@@ -576,130 +592,127 @@
       select.value = selectedFilter;
     }
 
-    function renderServer(server) {
-      const items = [
-        ['Server', server.server],
-        ['Database', server.database],
-        ['API', server.api],
-        ['Server Time', server.server_time],
-      ];
-      document.getElementById('serverStatus').innerHTML = `
-        <div class="server-grid">
-          ${items.map(([name, value]) => `
-            <div class="metric">
-              <div class="metric-label">${esc(label(name))}</div>
-              <div class="metric-value mono">${name === 'Server Time' ? '' : statusDot(value)}${esc(displayStatus(value))}</div>
+    function metricCard(iconName, titleZh, titleEn, value, valueClass = '') {
+      return `
+        <div class="metric">
+          <div class="metric-head">
+            <div class="metric-icon">${icon(iconName)}</div>
+            <div>
+              <div class="metric-title">${esc(titleZh)}</div>
+              <div class="metric-label">${esc(titleEn)}</div>
             </div>
-          `).join('')}
+          </div>
+          <div class="metric-value mono ${valueClass}">${value}</div>
         </div>
       `;
     }
 
+    function renderServer(server) {
+      document.getElementById('serverStatus').innerHTML = [
+        metricCard('server', '服务器状态', 'Server', `${statusChip(server.server)}`, 'small'),
+        metricCard('database', '数据库状态', 'Database', `${statusChip(server.database)}`, 'small'),
+        metricCard('cable', '接口状态', 'API', `${statusChip(server.api)}`, 'small'),
+        metricCard('clock-3', '服务器时间', 'Server Time', esc(server.server_time), 'small'),
+      ].join('');
+      refreshIcons();
+    }
+
     function renderDashboard(dashboard) {
-      const items = [
-        ['Online Devices', dashboard.online_devices],
-        ['Offline Devices', dashboard.offline_devices],
-        ["Today's Attendance", dashboard.attendance],
-        ["Today's USER", dashboard.user],
-        ["Today's OPLOG", dashboard.oplog],
-      ];
-      document.getElementById('dashboard').innerHTML = `
-        <div class="stats-grid">
-          ${items.map(([name, value]) => `
-            <div class="metric">
-              <div class="metric-label">${esc(label(name))}</div>
-              <div class="stat-value mono">${esc(value)}</div>
-            </div>
-          `).join('')}
-        </div>
+      document.getElementById('dashboard').innerHTML = [
+        metricCard('monitor-check', '在线设备', 'Online Devices', esc(dashboard.online_devices)),
+        metricCard('monitor-off', '离线设备', 'Offline Devices', esc(dashboard.offline_devices)),
+        metricCard('clipboard-check', '今日考勤', "Today's Attendance", esc(dashboard.attendance)),
+        metricCard('users', '今日用户', "Today's USER", esc(dashboard.user)),
+        metricCard('file-text', '今日操作', "Today's OPLOG", esc(dashboard.oplog)),
+      ].join('');
+      refreshIcons();
+    }
+
+    function compactTable(columns, rows, emptyText) {
+      if (!rows.length) {
+        return `<div class="empty-state">${emptyText}</div>`;
+      }
+      return `
+        <table class="console-table">
+          <thead><tr>${columns.map(column => `<th style="width:${column.width || 'auto'}">${column.label}</th>`).join('')}</tr></thead>
+          <tbody>${rows.join('')}</tbody>
+        </table>
       `;
     }
 
     function renderLatestActivity(items) {
-      const container = document.getElementById('latestActivity');
-      if (!items.length) {
-        container.innerHTML = '<div class="muted">No attendance event yet. / 暂无考勤记录。</div>';
-        return;
-      }
-      container.innerHTML = items.map(item => `
-        <div class="activity-card" title="SN: ${esc(item.device_sn)}">
-          <div class="activity-grid">
-            <div><div class="field-label">${esc(label('Device Name'))}</div><div class="field-value">${esc(item.device_name)}</div></div>
-            <div><div class="field-label">${esc(label('Employee PIN'))}</div><div class="field-value mono">${esc(item.employee_pin)}</div></div>
-            <div><div class="field-label">${esc(label('Employee Name'))}</div><div class="field-value">${esc(item.employee_name)}</div></div>
-            <div><div class="field-label">${esc(label('Attendance Type'))}</div><div class="field-value mono">${esc(item.attendance_type)}</div></div>
-            <div><div class="field-label">${esc(label('Attendance Time'))}</div><div class="field-value mono">${esc(item.attendance_time)}</div></div>
-          </div>
-        </div>
-      `).join('');
+      const columns = [
+        { label: '设备名称<br>Device Name', width: '23%' },
+        { label: '员工编号<br>Employee PIN', width: '17%' },
+        { label: '员工姓名<br>Employee Name', width: '19%' },
+        { label: '事件类型<br>Attendance Type', width: '18%' },
+        { label: '考勤时间<br>Attendance Time', width: '23%' },
+      ];
+      const rows = items.slice(0, 5).map(item => `
+        <tr title="SN: ${esc(item.device_sn)}">
+          <td>${esc(item.device_name)}</td>
+          <td class="mono">${esc(item.employee_pin)}</td>
+          <td>${esc(item.employee_name)}</td>
+          <td>${esc(item.attendance_type)}</td>
+          <td class="mono">${esc(item.attendance_time)}</td>
+        </tr>
+      `);
+      document.getElementById('latestActivity').innerHTML = compactTable(columns, rows, '暂无考勤活动<br>No attendance activity');
+    }
+
+    function eventDetailsText(details) {
+      return Object.entries(details || {}).map(([key, value]) => `${key}: ${value || '-'}`).join(' · ') || '-';
     }
 
     function renderEvents(events) {
       const container = document.getElementById('eventLog');
       if (eventLogCleared) {
-        container.innerHTML = '<div class="muted">Event log cleared in browser cache. Refresh will load events again. / 页面日志已清空，点击刷新会重新加载事件。</div>';
+        container.innerHTML = '<div class="empty-state">页面日志已清空<br>Event log cleared</div>';
         return;
       }
-      if (!events.length) {
-        container.innerHTML = '<div class="muted">No ADMS events yet. / 暂无 ADMS 事件。</div>';
-        return;
-      }
-      container.innerHTML = events.map(event => {
-        const details = Object.entries(event.details || {}).map(([key, value]) => `
-          <div><span class="muted">${esc(label(key))}:</span> <span class="mono">${esc(value || '-')}</span></div>
-        `).join('');
+      const columns = [
+        { label: '时间<br>Time', width: '15%' },
+        { label: '设备名称<br>Device Name', width: '26%' },
+        { label: '事件类型<br>Event Type', width: '18%' },
+        { label: '事件明细<br>Details', width: '41%' },
+      ];
+      const rows = events.slice(0, 10).map(event => {
+        const details = eventDetailsText(event.details);
         return `
-          <div class="event-item" title="SN: ${esc(event.device_sn)}">
-            <div class="event-line">
-              <div class="muted mono">${esc(event.time)}</div>
-              <div class="event-title">${esc(displayEvent(event.type))}</div>
-              <div>${esc(event.device_name)}</div>
-              <div class="muted">${esc(label('Details'))}</div>
-            </div>
-            <div class="event-details">${details}</div>
-          </div>
+          <tr title="SN: ${esc(event.device_sn)} · ${esc(details)}">
+            <td class="mono">${esc(event.time)}</td>
+            <td>${esc(event.device_name)}</td>
+            <td>${eventTag(event.type)}</td>
+            <td>${esc(details)}</td>
+          </tr>
         `;
-      }).join('');
+      });
+      container.innerHTML = compactTable(columns, rows, '暂无实时事件<br>No realtime events');
     }
 
     function renderDeviceSummary(rows) {
-      const container = document.getElementById('deviceSummary');
-      if (!rows.length) {
-        container.innerHTML = '<div class="muted">No visible device. / 暂无可显示设备。</div>';
-        return;
-      }
-      container.innerHTML = `
-        <div class="summary-table-wrap">
-          <table class="table table-dark table-hover summary-table">
-            <thead>
-              <tr>
-                <th>${esc(label('Device Name'))}</th>
-                <th>${esc(label('Location'))}</th>
-                <th>${esc(label('Status'))}</th>
-                <th>${esc(label('Last Heartbeat'))}</th>
-                <th>${esc(label('Last Attendance'))}</th>
-                <th>${esc("Today's Attendance / 今日考勤")}</th>
-                <th>${esc(label('Record Attendance'))}</th>
-                <th>${esc(label('Show in Console'))}</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${rows.map(row => `
-                <tr title="SN: ${esc(row.device_sn)}">
-                  <td>${esc(row.device_name)}</td>
-                  <td>${esc(row.location)}</td>
-                  <td>${statusDot(row.status)}${esc(displayStatus(row.status))}</td>
-                  <td class="mono">${esc(row.last_heartbeat)}</td>
-                  <td class="mono">${esc(row.last_attendance)}</td>
-                  <td class="mono">${esc(row.today_attendance)}</td>
-                  <td>${boolText(row.record_attendance)}</td>
-                  <td>${boolText(row.show_in_console)}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      `;
+      const columns = [
+        { label: '设备名称<br>Device Name', width: '20%' },
+        { label: '所属位置<br>Location', width: '16%' },
+        { label: '状态<br>Status', width: '13%' },
+        { label: '最后心跳<br>Last Heartbeat', width: '17%' },
+        { label: '最后考勤<br>Last Attendance', width: '17%' },
+        { label: '今日考勤<br>Today Attendance', width: '9%' },
+        { label: '记录考勤<br>Record Attendance', width: '8%' },
+      ];
+      const tableRows = rows.map(row => `
+        <tr title="SN: ${esc(row.device_sn)}">
+          <td>${esc(row.device_name)}</td>
+          <td>${esc(row.location)}</td>
+          <td>${statusChip(row.status)}</td>
+          <td class="mono">${esc(row.last_heartbeat)}</td>
+          <td class="mono">${esc(row.last_attendance)}</td>
+          <td class="mono">${esc(row.today_attendance)}</td>
+          <td>${boolText(row.record_attendance)}</td>
+        </tr>
+      `);
+      document.getElementById('deviceSummary').innerHTML = compactTable(columns, tableRows, '暂无可显示设备<br>No visible device');
+      refreshIcons();
     }
 
     async function refreshConsole() {
@@ -709,9 +722,10 @@
       renderFilters(data.filter);
       renderServer(data.server);
       renderDashboard(data.dashboard);
-      renderLatestActivity(data.latest_activity);
-      renderEvents(data.events);
-      renderDeviceSummary(data.device_summary);
+      renderLatestActivity(data.latest_activity || []);
+      renderEvents(data.events || []);
+      renderDeviceSummary(data.device_summary || []);
+      refreshIcons();
     }
 
     document.getElementById('deviceFilter').addEventListener('change', function () {
@@ -728,6 +742,7 @@
       renderEvents([]);
     });
 
+    refreshIcons();
     refreshConsole();
     setInterval(refreshConsole, 2000);
   </script>

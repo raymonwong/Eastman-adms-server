@@ -1,0 +1,8 @@
+{
+  "name": "eastman-adms-server",
+  "private": true,
+  "version": "0.0.0",
+  "dependencies": {
+    "lucide": "^0.468.0"
+  }
+}

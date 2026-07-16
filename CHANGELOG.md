@@ -2,6 +2,29 @@
 
 ## Version
 
+DT009.81
+
+## Date
+
+2026-07-16
+
+## Development Task
+
+DT009.81 Console V2 Layout Refactor
+
+## Description
+
+- Refactored Console V2 page layout to follow the required order: operation title, server status, device filter, dashboard statistics, latest activity and realtime events, device summary.
+- Converted Latest Activity from large cards into a compact 5-row table.
+- Converted Realtime Event Log from large cards into a compact 10-row table with event badges and tooltips.
+- Updated Device Summary into a full-width compact table and removed the redundant Show in Console column.
+- Moved the global Device Filter below server status and above dashboard statistics.
+- Unified Console icons with official Lucide Icons, added `package.json` with the `lucide` dependency, and avoided Wi-Fi, Signal, or Radio icons for online device status.
+- Kept existing `/console` route, JSON data interface, auto-refresh, device filter behavior, database schema, Device Management, ADMS protocol, parser logic, and business logic unchanged.
+- Added `scripts/DT009.81_install_ubuntu.sh` without overwriting previous deployment scripts.
+
+## Version
+
 DT009.8
 
 ## Date
