@@ -10,7 +10,7 @@ Waiting for Review
 
 ## Summary
 
-DT009.5 adds the ADMS Server Console at `/console`. The console is a bilingual Chinese and English development-only dashboard that lets operators check server status, device online/offline state, Last Seen, Last Heartbeat, Last Data Upload, Last Raw Request, Last Request, realtime events, today's counters, and latest attendance without SSH, MySQL, tcpdump, or docker logs.
+DT009.5 adds the ADMS Server Console at `/console`. The console is a bilingual Chinese and English compact development-only dashboard that lets operators check server status, device online/offline state, Last Seen, Last Heartbeat, Last Data Upload, Last Raw Request, Last Request, realtime events, today's counters, and latest attendance without SSH, MySQL, tcpdump, or docker logs.
 
 ## Completed
 
@@ -30,6 +30,9 @@ DT009.5 adds the ADMS Server Console at `/console`. The console is a bilingual C
 - Added 2-second auto refresh.
 - Added Refresh button.
 - Added browser-only Clear Event Log button.
+- Optimized the Console into a compact, high-density desktop operations layout.
+- Added responsive 4/2/1 Current State grid and 3/2/1 Device Status grid.
+- Added internal scrolling for the Realtime Event Log panel.
 - Added `scripts/DT009.5_install_ubuntu.sh`.
 - Updated README, CHANGELOG, and project status documentation.
 

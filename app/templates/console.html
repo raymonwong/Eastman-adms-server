@@ -6,168 +6,431 @@
   <title>Eastman ADMS Server Console</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
+    :root {
+      --font-base: 14px;
+      --font-small: 12px;
+      --font-label: 11px;
+      --space-xs: 4px;
+      --space-sm: 8px;
+      --space-md: 12px;
+      --panel-gap: 12px;
+      --panel-padding: 14px;
+      --card-padding: 10px;
+      --radius: 8px;
+      --bg: #0b0f14;
+      --panel: #111821;
+      --card: #0d131b;
+      --line: rgba(255, 255, 255, 0.1);
+      --line-soft: rgba(255, 255, 255, 0.07);
+      --text: #d7e2ee;
+      --muted: #8394a8;
+      --blue: #8fb3d9;
+      --green: #24d685;
+      --yellow: #ffc107;
+      --red: #ff4d4f;
+    }
+
     body {
-      background: #0b0f14;
-      color: #d7e2ee;
+      background: var(--bg);
+      color: var(--text);
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: var(--font-base);
+      line-height: 1.4;
     }
+
     .console-shell {
-      max-width: 1440px;
+      max-width: 1920px;
+      padding: 16px 28px 20px;
     }
-    .status-banner {
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 8px;
-      padding: 22px 24px;
-      background: #111821;
-    }
-    .status-headline {
-      font-size: clamp(28px, 4vw, 52px);
-      line-height: 1;
-      font-weight: 900;
-    }
-    .status-subline {
-      font-size: 15px;
-      color: #a8bad0;
-    }
-    .status-online {
-      border-color: rgba(36, 214, 133, 0.5);
-      box-shadow: 0 0 0 1px rgba(36, 214, 133, 0.12), 0 0 34px rgba(36, 214, 133, 0.08);
-    }
-    .status-warning {
-      border-color: rgba(255, 193, 7, 0.55);
-      box-shadow: 0 0 0 1px rgba(255, 193, 7, 0.12), 0 0 34px rgba(255, 193, 7, 0.08);
-    }
-    .status-offline {
-      border-color: rgba(255, 77, 79, 0.58);
-      box-shadow: 0 0 0 1px rgba(255, 77, 79, 0.12), 0 0 34px rgba(255, 77, 79, 0.08);
-    }
-    .panel {
-      background: #111821;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      min-height: 100%;
-    }
-    .panel-header {
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 14px 16px;
-      color: #8fb3d9;
-      letter-spacing: 0;
-      font-weight: 700;
-    }
-    .panel-body {
-      padding: 16px;
-    }
-    .metric {
-      background: #0d131b;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 8px;
-      padding: 12px;
-    }
-    .primary-metric {
-      min-height: 118px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      border-color: rgba(143, 179, 217, 0.22);
-    }
-    .metric-label {
-      color: #7f93aa;
-      font-size: 12px;
-    }
-    .metric-value {
-      font-size: 20px;
-      font-weight: 700;
-    }
-    .primary-metric .metric-value {
-      font-size: 24px;
-    }
-    .state-board {
-      background: #0d131b;
-      border: 1px solid rgba(143, 179, 217, 0.22);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-    .state-row {
+
+    .topbar {
+      min-height: 68px;
       display: grid;
-      grid-template-columns: minmax(160px, 0.45fr) 1fr;
-      gap: 16px;
+      grid-template-columns: minmax(260px, auto) minmax(0, 1fr) auto;
+      gap: var(--space-md);
       align-items: center;
-      padding: 14px 16px;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      margin-bottom: var(--panel-gap);
+      padding: 10px 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
     }
-    .state-row:first-child {
-      border-top: 0;
-    }
-    .state-label {
-      color: #7f93aa;
-      font-size: 13px;
-    }
-    .state-value {
-      color: #f2f7ff;
-      font-size: clamp(18px, 2vw, 26px);
+
+    .top-title {
+      font-size: 21px;
+      line-height: 1.15;
       font-weight: 800;
-      text-align: right;
+      color: #f2f7ff;
+    }
+
+    .top-subtitle {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: var(--font-label);
+    }
+
+    .status-summary {
+      min-width: 0;
+      color: #f2f7ff;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .summary-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .summary-item {
       overflow-wrap: anywhere;
     }
+
+    .summary-sep {
+      color: #47596c;
+    }
+
+    .btn-console {
+      min-height: 31px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: var(--font-small);
+      white-space: nowrap;
+    }
+
+    .layout-grid {
+      --bs-gutter-x: var(--panel-gap);
+      --bs-gutter-y: var(--panel-gap);
+    }
+
+    .panel {
+      min-height: 100%;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(143, 179, 217, 0.02);
+    }
+
+    .panel-header {
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-sm);
+      padding: 8px var(--panel-padding);
+      border-bottom: 1px solid var(--line-soft);
+      color: var(--blue);
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    .panel-body {
+      padding: var(--panel-padding);
+    }
+
+    .metric {
+      min-width: 0;
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.075);
+      border-radius: var(--radius);
+      padding: var(--card-padding);
+    }
+
+    .metric-label,
+    .state-label,
+    .field-label {
+      color: var(--muted);
+      font-size: var(--font-label);
+      line-height: 1.25;
+    }
+
+    .metric-value,
+    .state-value,
+    .field-value {
+      color: #f2f7ff;
+      font-size: 14px;
+      font-weight: 750;
+      line-height: 1.25;
+      overflow-wrap: anywhere;
+    }
+
+    .state-board {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-sm);
+    }
+
+    .state-item {
+      min-width: 0;
+      padding: 9px 10px;
+      background: var(--card);
+      border: 1px solid rgba(143, 179, 217, 0.18);
+      border-radius: var(--radius);
+    }
+
+    .state-value {
+      margin-top: 3px;
+      font-size: 15px;
+    }
+
+    .device-grid {
+      --bs-gutter-x: var(--space-sm);
+      --bs-gutter-y: var(--space-sm);
+    }
+
     .device-card {
-      background: #0d131b;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 8px;
-      padding: 14px;
+      height: 100%;
+      min-width: 0;
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.075);
+      border-radius: var(--radius);
+      padding: 11px;
     }
+
+    .device-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-sm);
+    }
+
+    .device-sn {
+      color: #f2f7ff;
+      font-size: 13px;
+      font-weight: 800;
+      overflow-wrap: anywhere;
+    }
+
+    .status-pill {
+      flex: 0 0 auto;
+      font-size: 13px;
+      font-weight: 900;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .field-grid {
+      display: grid;
+      grid-template-columns: minmax(118px, 0.85fr) minmax(0, 1fr);
+      gap: 5px 8px;
+      align-items: baseline;
+    }
+
+    .field-value {
+      text-align: right;
+      font-size: 12.5px;
+    }
+
+    .device-secondary {
+      margin-top: var(--space-sm);
+      padding-top: var(--space-sm);
+      border-top: 1px solid var(--line-soft);
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-sm);
+    }
+
+    .server-time {
+      margin-top: var(--space-sm);
+      padding-top: var(--space-sm);
+      border-top: 1px solid var(--line-soft);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-sm);
+    }
+
+    .stat-value {
+      margin-top: 2px;
+      color: #f2f7ff;
+      font-size: 22px;
+      line-height: 1.1;
+      font-weight: 900;
+    }
+
+    .latest-card {
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.075);
+      border-radius: var(--radius);
+      padding: var(--card-padding);
+    }
+
+    .latest-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-sm);
+    }
+
     .event-log {
-      max-height: 360px;
-      overflow: auto;
+      max-height: 410px;
+      overflow-y: auto;
+      padding-right: 2px;
     }
+
     .event-item {
+      margin-bottom: 7px;
+      padding: 7px 9px;
+      background: var(--card);
       border-left: 3px solid #335a86;
-      background: #0d131b;
-      padding: 10px 12px;
-      margin-bottom: 10px;
-      border-radius: 0 8px 8px 0;
+      border-radius: 0 6px 6px 0;
     }
+
+    .event-line {
+      display: grid;
+      grid-template-columns: 58px minmax(150px, 0.8fr) minmax(160px, 1fr) minmax(130px, 0.8fr);
+      gap: var(--space-sm);
+      align-items: baseline;
+    }
+
     .event-title {
       color: #f2f7ff;
-      font-weight: 800;
+      font-size: 13px;
+      font-weight: 900;
     }
+
+    .event-details {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 3px 12px;
+      margin-top: 4px;
+      font-size: var(--font-small);
+    }
+
     .muted {
-      color: #8394a8;
+      color: var(--muted);
     }
+
     .dot {
       display: inline-block;
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
       border-radius: 999px;
-      margin-right: 8px;
+      margin-right: 6px;
+      vertical-align: 1px;
     }
-    .dot-online { background: #24d685; }
-    .dot-warning { background: #ffc107; }
-    .dot-offline { background: #ff4d4f; }
-    .btn-console {
-      border-radius: 6px;
+
+    .dot-online { background: var(--green); }
+    .dot-warning { background: var(--yellow); }
+    .dot-offline { background: var(--red); }
+
+    .mono {
+      font-variant-numeric: tabular-nums;
+    }
+
+    @media (max-width: 1199.98px) {
+      .console-shell {
+        padding: 14px 20px 18px;
+      }
+
+      .topbar {
+        grid-template-columns: minmax(0, 1fr) auto;
+      }
+
+      .status-summary {
+        grid-column: 1 / -1;
+        grid-row: 2;
+      }
+
+      .top-actions {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: end;
+      }
+
+      .summary-line {
+        justify-content: flex-start;
+      }
+
+      .state-board {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .latest-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 767.98px) {
+      .console-shell {
+        padding: 10px 12px 16px;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr;
+        min-height: auto;
+        padding: 10px 12px;
+      }
+
+      .status-summary {
+        grid-column: auto;
+        grid-row: auto;
+      }
+
+      .top-title {
+        font-size: 20px;
+      }
+
+      .top-actions {
+        grid-column: auto;
+        grid-row: auto;
+        justify-self: stretch;
+      }
+
+      .btn-console {
+        width: 100%;
+      }
+
+      .state-board,
+      .status-grid,
+      .stats-grid,
+      .latest-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .field-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .field-value {
+        text-align: left;
+      }
+
+      .event-line,
+      .event-details {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
-  <main class="container-fluid console-shell py-4">
-    <div id="headline" class="status-banner mb-4"></div>
-
-    <div class="d-flex align-items-center justify-content-between mb-3">
+  <main class="container-fluid console-shell">
+    <section class="topbar">
       <div>
-        <h1 class="h4 mb-1">Eastman ADMS Server Console / ADMS 服务器控制台</h1>
-        <div class="muted">State-first development console / 状态优先开发控制台 · Auto refresh every 2 seconds / 每 2 秒自动刷新</div>
+        <h1 class="top-title mb-0">ADMS Server Console / ADMS 服务器控制台</h1>
+        <div class="top-subtitle">State-first development console / 状态优先开发控制台 · Auto refresh every 2 seconds / 每 2 秒自动刷新</div>
       </div>
-      <div class="d-flex gap-2">
+      <div id="headline" class="status-summary"></div>
+      <div class="top-actions">
         <button id="refreshBtn" type="button" class="btn btn-outline-info btn-console">Refresh / 刷新</button>
       </div>
-    </div>
+    </section>
 
-    <div class="row g-3">
+    <div class="row layout-grid">
       <section class="col-12">
         <div class="panel">
           <div class="panel-header">① Current State / 当前状态</div>
           <div class="panel-body">
-            <div id="primaryStatus" class="row g-3"></div>
+            <div id="primaryStatus"></div>
           </div>
         </div>
       </section>
@@ -176,30 +439,30 @@
         <div class="panel">
           <div class="panel-header">② Device Status / 设备状态</div>
           <div class="panel-body">
-            <div id="deviceStatus" class="row g-3"></div>
+            <div id="deviceStatus" class="row device-grid"></div>
           </div>
         </div>
       </section>
 
-      <section class="col-12 col-xl-4">
+      <section class="col-12 col-xl-5">
         <div class="panel">
           <div class="panel-header">③ Server Status / 服务器状态</div>
           <div class="panel-body">
-            <div id="serverStatus" class="row g-2"></div>
+            <div id="serverStatus"></div>
           </div>
         </div>
       </section>
 
-      <section class="col-12 col-xl-4">
+      <section class="col-12 col-xl-7">
         <div class="panel">
           <div class="panel-header">④ Statistics / 今日统计</div>
           <div class="panel-body">
-            <div id="statistics" class="row g-2"></div>
+            <div id="statistics"></div>
           </div>
         </div>
       </section>
 
-      <section class="col-12 col-xl-4">
+      <section class="col-12">
         <div class="panel">
           <div class="panel-header">⑤ Latest Activity / 最近活动</div>
           <div class="panel-body" id="latestActivity"></div>
@@ -208,7 +471,7 @@
 
       <section class="col-12">
         <div class="panel">
-          <div class="panel-header d-flex justify-content-between align-items-center">
+          <div class="panel-header">
             <span>⑥ Realtime Event Log / 实时事件日志</span>
             <button id="clearBtn" type="button" class="btn btn-sm btn-outline-secondary btn-console">Clear Event Log / 清空页面日志</button>
           </div>
@@ -276,7 +539,6 @@
       'Attendance Time': 'Attendance Time / 考勤时间',
       'Receive Time': 'Receive Time / 接收时间',
       Status: 'Status / 状态',
-      'Client IP': 'Client IP / 客户端 IP',
       PIN: 'PIN / 员工编号',
       'User Name': 'User Name / 用户姓名',
       'Attendance ID': 'Attendance ID / 考勤记录编号',
@@ -312,7 +574,7 @@
       '-': '-',
     };
 
-    function label(value) {
+    function labelFor(value) {
       return labelText[value] || value;
     }
 
@@ -340,18 +602,15 @@
 
     function renderHeadline(headline) {
       const element = document.getElementById('headline');
-      const status = String(headline.status || 'OFFLINE').toLowerCase();
-      element.className = `status-banner mb-4 status-${status}`;
       element.innerHTML = `
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-          <div>
-            <div class="status-headline">${statusDot(headline.status)}${esc(displayStatus(headline.status))}</div>
-            <div class="status-subline mt-2">Last Seen / 最近通信: ${esc(headline.last_seen)}</div>
-          </div>
-          <div class="text-end muted">
-            <div>Unique entry / 唯一入口</div>
-            <div class="fw-bold text-light">/console</div>
-          </div>
+        <div class="summary-line">
+          <span class="summary-item">${statusDot('Running')}Server / 服务器 ${esc(displayStatus('Running'))}</span>
+          <span class="summary-sep">·</span>
+          <span class="summary-item">${statusDot(headline.status)}Device / 设备 ${esc(displayStatus(headline.status))}</span>
+          <span class="summary-sep">·</span>
+          <span class="summary-item">Last Seen / 最近通信 <span class="mono">${esc(headline.last_seen)}</span></span>
+          <span class="summary-sep">·</span>
+          <span class="summary-item">/console</span>
         </div>
       `;
     }
@@ -368,34 +627,37 @@
         ['Last Request', summary.last_request || '-'],
       ];
       document.getElementById('primaryStatus').innerHTML = `
-        <div class="col-12">
-          <div class="state-board">
-            ${rows.map(([label, value]) => `
-              <div class="state-row">
-                <div class="state-label">${esc(window.label(label))}</div>
-                <div class="state-value">${label === 'Device' || label === 'Server' ? statusDot(value) : ''}${esc(displayValue(label, value))}</div>
-              </div>
-            `).join('')}
-          </div>
+        <div class="state-board">
+          ${rows.map(([labelName, value]) => `
+            <div class="state-item">
+              <div class="state-label">${esc(labelFor(labelName))}</div>
+              <div class="state-value mono">${labelName === 'Device' || labelName === 'Server' ? statusDot(value) : ''}${esc(displayValue(labelName, value))}</div>
+            </div>
+          `).join('')}
         </div>
       `;
     }
 
     function renderServer(server) {
-      const items = [
+      const statusItems = [
         ['Server', server.server],
         ['Database', server.database],
         ['API', server.api],
-        ['Server Time', server.server_time],
       ];
-      document.getElementById('serverStatus').innerHTML = items.map(([label, value]) => `
-        <div class="col-12 col-sm-6">
-          <div class="metric">
-            <div class="metric-label">${esc(window.label(label))}</div>
-            <div class="metric-value">${statusDot(value)}${esc(displayValue(label, value))}</div>
-          </div>
+      document.getElementById('serverStatus').innerHTML = `
+        <div class="status-grid">
+          ${statusItems.map(([labelName, value]) => `
+            <div class="metric">
+              <div class="metric-label">${esc(labelFor(labelName))}</div>
+              <div class="metric-value">${statusDot(value)}${esc(displayValue(labelName, value))}</div>
+            </div>
+          `).join('')}
         </div>
-      `).join('');
+        <div class="server-time">
+          <div class="metric-label">${esc(labelFor('Server Time'))}</div>
+          <div class="metric-value mono">${esc(server.server_time)}</div>
+        </div>
+      `;
     }
 
     function renderDevices(devices) {
@@ -405,26 +667,28 @@
         return;
       }
       container.innerHTML = devices.map(device => `
-        <div class="col-12 col-lg-6">
+        <div class="col-12 col-md-6 col-xl-4">
           <div class="device-card">
-            <div class="d-flex justify-content-between align-items-start mb-3">
-              <div>
-                <div class="metric-label">Device SN / 设备序列号</div>
-                <div class="fw-bold">${esc(device.device_sn)}</div>
+            <div class="device-head">
+              <div class="min-w-0">
+                <div class="metric-label">${esc(labelFor('Device SN'))}</div>
+                <div class="device-sn mono">${esc(device.device_sn)}</div>
               </div>
-              <div class="fw-bold fs-5">${statusDot(device.status)}${esc(displayStatus(device.status))}</div>
+              <div class="status-pill">${statusDot(device.status)}${esc(displayStatus(device.status))}</div>
             </div>
-            <div class="row g-2 small">
-              <div class="col-6 muted">${esc(label('Last Seen'))}</div><div class="col-6 text-end">${esc(device.last_seen)}</div>
-              <div class="col-6 muted">${esc(label('Last Heartbeat'))}</div><div class="col-6 text-end">${esc(device.last_heartbeat)}</div>
-              <div class="col-6 muted">${esc(label('Last Data Upload'))}</div><div class="col-6 text-end">${esc(device.last_data_upload)}</div>
-              <div class="col-6 muted">${esc(label('Last Request'))}</div><div class="col-6 text-end">${esc(displayRequestType(device.last_request))}</div>
-              <div class="col-6 muted">${esc(label('Last Raw Request ID'))}</div><div class="col-6 text-end">${esc(device.last_raw_request_id)}</div>
-              <div class="col-6 muted">${esc(label('Last ATTLOG'))}</div><div class="col-6 text-end">${esc(device.last_attlog)}</div>
-              <div class="col-6 muted">${esc(label('Last OPERLOG'))}</div><div class="col-6 text-end">${esc(device.last_operlog)}</div>
-              <div class="col-6 muted">${esc(label('Last USER Sync'))}</div><div class="col-6 text-end">${esc(device.last_user)}</div>
-              <div class="col-6 muted">${esc(label('Client IP'))}</div><div class="col-6 text-end">${esc(device.client_ip)}</div>
-              <div class="col-6 muted">${esc(label('Push Version'))}</div><div class="col-6 text-end">${esc(device.push_version)}</div>
+            <div class="field-grid">
+              <div class="field-label">${esc(labelFor('Last Seen'))}</div><div class="field-value mono">${esc(device.last_seen)}</div>
+              <div class="field-label">${esc(labelFor('Last Request'))}</div><div class="field-value mono">${esc(displayRequestType(device.last_request))}</div>
+              <div class="field-label">${esc(labelFor('Client IP'))}</div><div class="field-value mono">${esc(device.client_ip)}</div>
+              <div class="field-label">${esc(labelFor('Push Version'))}</div><div class="field-value mono">${esc(device.push_version)}</div>
+              <div class="field-label">${esc(labelFor('Last Heartbeat'))}</div><div class="field-value mono">${esc(device.last_heartbeat)}</div>
+              <div class="field-label">${esc(labelFor('Last Data Upload'))}</div><div class="field-value mono">${esc(device.last_data_upload)}</div>
+              <div class="field-label">${esc(labelFor('Last Raw Request ID'))}</div><div class="field-value mono">${esc(device.last_raw_request_id)}</div>
+            </div>
+            <div class="device-secondary field-grid">
+              <div class="field-label">${esc(labelFor('Last ATTLOG'))}</div><div class="field-value mono">${esc(device.last_attlog)}</div>
+              <div class="field-label">${esc(labelFor('Last OPERLOG'))}</div><div class="field-value mono">${esc(device.last_operlog)}</div>
+              <div class="field-label">${esc(labelFor('Last USER Sync'))}</div><div class="field-value mono">${esc(device.last_user)}</div>
             </div>
           </div>
         </div>
@@ -442,17 +706,33 @@
         return;
       }
       container.innerHTML = events.map(event => {
-        const details = Object.entries(event.details || {}).map(([key, value]) => `
-          <div><span class="muted">${esc(label(key))}:</span> ${esc(value)}</div>
+        const details = Object.entries(event.details || {});
+        if (event.type === 'HEARTBEAT') {
+          const clientIp = (event.details || {})['Client IP'] || '-';
+          return `
+            <div class="event-item">
+              <div class="event-line">
+                <div class="muted mono">${esc(event.time)}</div>
+                <div class="event-title">${esc(displayEventType(event.type))}</div>
+                <div class="mono">Device / 设备: ${esc(event.device_sn)}</div>
+                <div class="mono">Client IP / 客户端 IP: ${esc(clientIp)}</div>
+              </div>
+            </div>
+          `;
+        }
+        const detailsHtml = details.map(([key, value]) => `
+          <div><span class="muted">${esc(labelFor(key))}:</span> <span class="mono">${esc(value)}</span></div>
         `).join('');
         return `
           <div class="event-item">
-            <div class="d-flex justify-content-between">
+            <div class="d-flex justify-content-between gap-2">
               <div class="event-title">${esc(displayEventType(event.type))}</div>
-              <div class="muted">${esc(event.time)}</div>
+              <div class="muted mono">${esc(event.time)}</div>
             </div>
-            <div class="muted mb-1">Device / 设备: ${esc(event.device_sn)}</div>
-            ${details}
+            <div class="event-details">
+              <div class="mono"><span class="muted">Device / 设备:</span> ${esc(event.device_sn)}</div>
+              ${detailsHtml}
+            </div>
           </div>
         `;
       }).join('');
@@ -465,14 +745,16 @@
         ['OPERLOG', statistics.operlog],
         ['USER', statistics.user],
       ];
-      document.getElementById('statistics').innerHTML = items.map(([label, value]) => `
-        <div class="col-6">
-          <div class="metric">
-            <div class="metric-label">${esc(window.label(label))}</div>
-            <div class="metric-value">${esc(value)}</div>
-          </div>
+      document.getElementById('statistics').innerHTML = `
+        <div class="stats-grid">
+          ${items.map(([labelName, value]) => `
+            <div class="metric">
+              <div class="metric-label">${esc(labelFor(labelName))}</div>
+              <div class="stat-value mono">${esc(value)}</div>
+            </div>
+          `).join('')}
         </div>
-      `).join('');
+      `;
     }
 
     function renderLatestActivity(latestActivity) {
@@ -481,14 +763,22 @@
         document.getElementById('latestActivity').innerHTML = '<div class="muted">No attendance event yet. / 暂无考勤记录。</div>';
         return;
       }
+      const items = [
+        ['Employee PIN', latest.pin],
+        ['Attendance Time', latest.attendance_time],
+        ['Receive Time', latest.receive_time],
+        ['Status', latest.status],
+      ];
       document.getElementById('latestActivity').innerHTML = `
-        <div class="metric">
-          <div class="metric-label mb-2">Latest Attendance / 最近考勤</div>
-          <div class="row g-2">
-            <div class="col-6 muted">${esc(label('Employee PIN'))}</div><div class="col-6 text-end">${esc(latest.pin)}</div>
-            <div class="col-6 muted">${esc(label('Attendance Time'))}</div><div class="col-6 text-end">${esc(latest.attendance_time)}</div>
-            <div class="col-6 muted">${esc(label('Receive Time'))}</div><div class="col-6 text-end">${esc(latest.receive_time)}</div>
-            <div class="col-6 muted">${esc(label('Status'))}</div><div class="col-6 text-end">${esc(latest.status)}</div>
+        <div class="latest-card">
+          <div class="metric-label mb-2">${esc(labelFor('Latest Attendance'))}</div>
+          <div class="latest-grid">
+            ${items.map(([labelName, value]) => `
+              <div>
+                <div class="field-label">${esc(labelFor(labelName))}</div>
+                <div class="field-value mono text-start">${esc(displayValue(labelName, value))}</div>
+              </div>
+            `).join('')}
           </div>
         </div>
       `;

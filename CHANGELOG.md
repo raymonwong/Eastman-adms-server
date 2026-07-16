@@ -24,6 +24,10 @@ DT009.5 ADMS Server Console
 - Added today's Heartbeat, ATTLOG, OPERLOG, and USER counters.
 - Added latest attendance activity panel.
 - Added 2-second auto refresh, manual Refresh, and browser-only Clear Event Log.
+- Optimized Console layout into a compact, high-density desktop operations view.
+- Reworked Current State into a responsive 4/2/1 information grid.
+- Reworked Device Status into a 3/2/1 responsive device-card grid.
+- Reworked Realtime Event Log to use compact rows and internal scrolling.
 - Added `scripts/DT009.5_install_ubuntu.sh` without overwriting previous deployment scripts.
 - Kept database schema, ADMS protocol, API response bodies, HTTP status codes, ATTLOG parser, OPERLOG parser, USER parser, Mingdao sync, ERP logic, and attendance result calculation unchanged.
 

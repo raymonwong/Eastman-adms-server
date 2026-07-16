@@ -4,7 +4,7 @@
 
 Eastman ADMS Server 是用于后续接入考勤设备、考勤平台和明道云/HAP 的服务端项目。
 
-Development Task 009.5 增加 ADMS Server Console：开发人员打开 `/console` 后，无需 SSH、MySQL、tcpdump 或 docker logs，即可查看服务器状态、设备 Online/Offline、Last Seen、Last Heartbeat、Last Data Upload、Last Raw Request、Last Request、实时事件和今日统计。Console 采用中英文双语界面，以最近一次设备通信 Last Seen 判断在线状态，60 秒内为 Online，超过 60 秒为 Offline。
+Development Task 009.5 增加 ADMS Server Console：开发人员打开 `/console` 后，无需 SSH、MySQL、tcpdump 或 docker logs，即可查看服务器状态、设备 Online/Offline、Last Seen、Last Heartbeat、Last Data Upload、Last Raw Request、Last Request、实时事件和今日统计。Console 采用中英文双语和紧凑高信息密度界面，以最近一次设备通信 Last Seen 判断在线状态，60 秒内为 Online，超过 60 秒为 Offline。
 
 本阶段不修改数据库结构、ADMS 协议、HTTP 返回、Parser 行为或任何 ERP 业务逻辑。
 
@@ -235,7 +235,7 @@ Console 是开发阶段唯一控制台入口，包含：
 
 Device Status 使用 Last Seen 判断在线状态。Last Seen 表示设备最近一次通信时间，包括 HANDSHAKE、GETREQUEST、ATTLOG、OPERLOG、USER 或其它已保存的设备请求。60 秒内显示 Online，超过 60 秒显示 Offline。页面同时显示 Last Data Upload、Last Raw Request ID 和 Last Request Type，便于快速判断是否有新的请求进入服务器。
 
-页面每 2 秒自动刷新。页面内数据通过同一路径 `GET /console?format=json` 读取，不新增 `/monitor`、`/dashboard`、`/status`、`/events` 或 `/statistics` 页面。
+页面每 2 秒自动刷新。桌面端使用紧凑运维控制台排版，Current State 为响应式信息网格，Device Status 在宽屏下按三列显示，Realtime Event Log 在面板内部滚动。页面内数据通过同一路径 `GET /console?format=json` 读取，不新增 `/monitor`、`/dashboard`、`/status`、`/events` 或 `/statistics` 页面。
 
 设备同步状态：
 
