@@ -50,6 +50,14 @@ def _device_name(device: Device | None, device_sn: str | None) -> str:
     return device.device_name or f"New Machine ({device.device_sn})"
 
 
+def _device_display(device: Device | None, device_sn: str | None) -> str:
+    name = _device_name(device, device_sn)
+    sn = device.device_sn if device is not None else device_sn
+    location = device.location if device is not None else None
+    parts = [part for part in (name, sn, location) if part]
+    return " · ".join(parts)
+
+
 def _classify_device(last_seen: datetime | None) -> str:
     if last_seen is None:
         return "OFFLINE"
@@ -68,7 +76,7 @@ def _visible_devices(session) -> list[Device]:
 
 def _device_filters(devices: list[Device]) -> list[dict[str, str]]:
     filters = [{"value": ALL_DEVICES_FILTER, "label": "All Devices / 所有设备"}]
-    filters.extend({"value": f"device:{device.device_sn}", "label": f"{_device_name(device, device.device_sn)} / 设备"} for device in devices)
+    filters.extend({"value": f"device:{device.device_sn}", "label": _device_display(device, device.device_sn)} for device in devices)
     return filters
 
 
@@ -183,6 +191,7 @@ def _event(
         "time": _short_time(event_time),
         "time_full": _format_dubai(event_time),
         "device_name": _device_name(device, device_sn),
+        "device_display": _device_display(device, device_sn),
         "device_sn": device_sn or "",
         "details": details,
     }
@@ -263,6 +272,7 @@ def _latest_activities(session, devices: list[Device]) -> list[dict[str, object]
     return [
         {
             "device_name": _device_name(devices_by_sn.get(item.device_sn), item.device_sn),
+            "device_display": _device_display(devices_by_sn.get(item.device_sn), item.device_sn),
             "device_sn": item.device_sn,
             "employee_pin": item.pin,
             "employee_name": user_names.get((item.device_sn, item.pin)) or "-",
@@ -279,6 +289,14 @@ def _events(session, devices: list[Device]) -> list[dict[str, object]]:
     devices_by_sn = _device_map(devices)
     events: list[dict[str, object]] = []
 
+    attendance_events = (
+        _attendance_filter(session.query(AttendanceEvent), device_sns)
+        .order_by(AttendanceEvent.receive_time.desc(), AttendanceEvent.id.desc())
+        .limit(10)
+        .all()
+    )
+    saved_attlog_raw_ids = {item.raw_request_id for item in attendance_events if item.raw_request_id is not None}
+
     raw_requests = (
         _device_filter(
             session.query(RawRequest).filter(or_(RawRequest.request_path == "/iclock/getrequest", RawRequest.request_path == "/iclock/cdata")),
@@ -289,16 +307,13 @@ def _events(session, devices: list[Device]) -> list[dict[str, object]]:
         .all()
     )
     for raw_request in raw_requests:
+        # Hide raw ATTLOG rows when the parsed attendance event is already shown.
+        if raw_request.id in saved_attlog_raw_ids and "TABLE=ATTLOG" in (raw_request.query_string or "").upper():
+            continue
         event = _raw_event(raw_request, devices_by_sn)
         if event is not None:
             events.append(event)
 
-    attendance_events = (
-        _attendance_filter(session.query(AttendanceEvent), device_sns)
-        .order_by(AttendanceEvent.receive_time.desc(), AttendanceEvent.id.desc())
-        .limit(10)
-        .all()
-    )
     for item in attendance_events:
         device = devices_by_sn.get(item.device_sn)
         events.append(
@@ -366,6 +381,7 @@ def _device_summary(session, devices: list[Device]) -> list[dict[str, object]]:
         rows.append(
             {
                 "device_name": _device_name(device, device.device_sn),
+                "device_display": _device_display(device, device.device_sn),
                 "device_sn": device.device_sn,
                 "location": device.location or "-",
                 "status": _classify_device(last_heartbeat),

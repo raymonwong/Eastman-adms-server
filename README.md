@@ -4,7 +4,7 @@
 
 Eastman ADMS Server 是用于后续接入考勤设备、考勤平台和明道云/HAP 的服务端项目。
 
-Development Task 009.82 完成 ADMS Server Console V2 数据集成：在 DT009.81 固定布局基础上，让设备筛选、Dashboard、Latest Activity、Realtime Event Log 和 Device Summary 全部读取现有数据库真实数据。
+Development Task 009.83 完成 ADMS Server Console P0 体验修复：统一设备筛选作用域，增加加载/无数据/失败状态，合并重复 ATTLOG 主日志，并统一使用 `设备名称 · 设备 SN · 所属位置` 区分同名设备。
 
 本阶段不修改 ADMS 协议、HTTP 返回格式、USER/OPLOG Parser、数据库结构、明道云同步或任何 ERP 业务逻辑。
 
@@ -26,7 +26,7 @@ Development Task 009.82 完成 ADMS Server Console V2 数据集成：在 DT009.8
 在项目根目录执行：
 
 ```bash
-scripts/DT009.82_install_ubuntu.sh
+scripts/DT009.83_install_ubuntu.sh
 ```
 
 安装脚本会自动完成：
@@ -51,6 +51,7 @@ scripts/DT009.82_install_ubuntu.sh
 - 验证 Console V2 设备筛选和 Device Summary 数据结构
 - 验证 Console V2 布局、Lucide 图标、紧凑表格和 Device Summary 列
 - 验证 Console V2 数据集成、最多 5 条 ATTLOG、最多 10 条实时事件和设备筛选数据结构
+- 验证 Console P0 设备唯一显示、加载/失败状态和筛选数据结构
 - 验证 `package.json` 中声明官方 `lucide` 依赖
 - 验证 `device` 设备管理配置字段
 - 验证 `/dms` 页面
@@ -62,8 +63,9 @@ scripts/DT009.82_install_ubuntu.sh
 
 ```text
 ========================================
-Console V2 Data Integration Ready
+Console P0 UX Logic Ready
 Console URL: http://SERVER_IP:4370/console
+Device Management URL: http://SERVER_IP:4370/dms
 Application Ready
 ========================================
 ```
@@ -94,7 +96,8 @@ eastman-adms-server/
 │   ├── DT009.7_install_ubuntu.sh
 │   ├── DT009.8_install_ubuntu.sh
 │   ├── DT009.81_install_ubuntu.sh
-│   └── DT009.82_install_ubuntu.sh
+│   ├── DT009.82_install_ubuntu.sh
+│   └── DT009.83_install_ubuntu.sh
 ├── docs/
 │   ├── Architecture.md
 │   ├── Deploy.md
@@ -161,7 +164,7 @@ DT008 增加 `device_user`，保存设备序列号、PIN、姓名、权限、密
 
 DT009.6 为 `device` 增加设备管理配置字段：`location`、`record_attendance`、`show_in_console`。设备仍然通过 ADMS 请求自动发现，不提供手动新增和删除。DT009.7 将新设备默认名称优化为 `New Machine (Device SN)`，并将布尔字段在 UI 中显示为 `ON / 开启` 或 `OFF / 关闭`。
 
-DT009.8 将 Console 升级为多设备监控中心。Console 只显示 `show_in_console = true` 的设备，并在监控视图中优先显示 Device Name。DT009.82 将设备筛选收敛为所有设备或单台可显示设备。
+DT009.8 将 Console 升级为多设备监控中心。Console 只显示 `show_in_console = true` 的设备，并在监控视图中优先显示 Device Name。DT009.82 将设备筛选收敛为所有设备或单台可显示设备。DT009.83 完成 Console P0 体验修复，统一筛选作用域、设备唯一显示、加载/失败状态和 ATTLOG 主日志去重。
 
 开发环境如需重建数据库，可执行：
 
@@ -243,7 +246,7 @@ ADMS Server Console:
 GET /console
 ```
 
-Console 是开发阶段唯一控制台入口，DT009.82 后按固定监控布局展示真实数据库数据：
+Console 是开发阶段唯一控制台入口，DT009.83 后按固定监控布局展示真实数据库数据：
 
 - Server Status / 服务器状态
 - Device Filter / 设备筛选
@@ -252,9 +255,9 @@ Console 是开发阶段唯一控制台入口，DT009.82 后按固定监控布局
 - Realtime Event Log / 实时事件日志
 - Device Summary / 设备状态总览
 
-Console 只显示 Device Management 中 `show_in_console = true` 的设备。全局 Device Filter 位于服务器状态卡片下方、业务统计卡片上方，可按所有设备或单台设备筛选；Dashboard、Latest Activity、Realtime Event Log 和 Device Summary 会同步跟随筛选条件。
+Console 只显示 Device Management 中 `show_in_console = true` 的设备。全局 Device Filter 位于服务器状态卡片下方、业务统计卡片上方，可按所有设备或单台设备筛选；Dashboard、Latest Activity、Realtime Event Log 和 Device Summary 会同步跟随筛选条件。所有筛选请求使用 `device_sn`，不使用设备名称作为筛选依据。
 
-在线状态使用最近 Heartbeat 判断：30 秒内显示 Online，超过 30 秒显示 Offline。Console 主要显示 Device Name，无法匹配设备时显示 `Unknown Device`，Device SN 只作为 tooltip 辅助信息。Latest Activity 从 `attendance_event` 读取最新 5 条 ATTLOG，按 `attendance_time DESC` 排序；Realtime Event Log 从现有 raw request、ATTLOG、USER、OPLOG 记录生成最新 10 条事件；Device Summary 从 `device`、`raw_request` 和 `attendance_event` 读取真实设备状态。页面统一使用官方 Lucide Icons，`package.json` 声明 `lucide` 依赖；非 React 页面通过 Lucide 官方 UMD 构建渲染图标。不使用 Wi-Fi、Signal 或 Radio 图标表示设备在线。页面每 2 秒自动刷新，切换设备筛选时通过 `GET /console?format=json&device_filter=<value>` Ajax 刷新，不新增 `/monitor`、`/dashboard`、`/status`、`/events` 或 `/statistics` 页面。
+在线状态使用最近 Heartbeat 判断：30 秒内显示 Online，超过 30 秒显示 Offline。Console 统一显示 `设备名称 · 设备 SN · 所属位置`，所属位置为空时显示 `设备名称 · 设备 SN`，无法匹配设备时显示 `Unknown Device`。Latest Activity 从 `attendance_event` 读取最新 5 条 ATTLOG，按 `attendance_time DESC` 排序；Realtime Event Log 从现有 raw request、ATTLOG、USER、OPLOG 记录生成当前筛选条件下的最新 10 条事件，已保存的 ATTLOG 不再重复显示对应 raw ATTLOG 主日志。页面首次加载显示加载状态，接口失败显示失败原因和重新加载按钮，接口成功且结果为空时才显示无数据状态。页面统一使用官方 Lucide Icons，`package.json` 声明 `lucide` 依赖；非 React 页面通过 Lucide 官方 UMD 构建渲染图标。不使用 Wi-Fi、Signal 或 Radio 图标表示设备在线。页面每 2 秒自动刷新，切换设备筛选时通过 `GET /console?format=json&device_filter=<value>` Ajax 刷新，不新增 `/monitor`、`/dashboard`、`/status`、`/events` 或 `/statistics` 页面。
 
 Device Management / 设备管理:
 
@@ -267,6 +270,8 @@ Device Management 是独立配置模块，不属于 Console。页面提供设备
 - `device_name = New Machine (Device SN)`
 - `record_attendance = TRUE`
 - `show_in_console = TRUE`
+
+设备管理页按 `updated_at DESC` 排序，搜索支持设备名称、设备 SN 和所属位置。存在同名设备时页面会显示提示，编辑保存成功提示会同时显示设备名称和 SN。
 
 REST API:
 
@@ -326,9 +331,9 @@ http://<Server Address>:4370/iclock/cdata
 
 ## 8. 后续开发阶段
 
-DT010 预计根据真实设备数据继续处理下一类协议数据。DT009.82 完成后等待 Review，不进入 DT010。
+DT009.83 P0 完成后等待 Review。P1/P2 将在后续 Review 通过后继续实施，不进入 DT010。
 
-明确禁止在 DT009.82 中加入：
+明确禁止在 DT009.83 中加入：
 
 - 考勤结果计算
 - 排班

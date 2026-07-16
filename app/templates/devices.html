@@ -115,6 +115,17 @@
       color: var(--red);
     }
 
+    .warning-note {
+      display: none;
+      margin-bottom: 10px;
+      padding: 8px 10px;
+      border: 1px solid rgba(245, 159, 0, 0.35);
+      border-radius: 6px;
+      color: #f8c36a;
+      background: rgba(245, 159, 0, 0.08);
+      font-size: 12px;
+    }
+
     .btn-console {
       min-height: 31px;
       padding: 4px 10px;
@@ -200,6 +211,7 @@
             <input id="searchInput" class="form-control" placeholder="Search Device Name / Device SN / Location 搜索设备名称 / 编号 / 位置">
           </div>
         </div>
+        <div id="duplicateWarning" class="warning-note"></div>
         <div class="table-wrap">
           <table class="table table-dark table-hover align-middle mb-0">
             <thead>
@@ -324,6 +336,33 @@
       return `New Machine (${deviceSn})`;
     }
 
+    function displayDeviceName(device) {
+      return device.device_name || defaultDeviceName(device.device_sn);
+    }
+
+    function deviceDisplay(device) {
+      return [displayDeviceName(device), device.device_sn, device.location].filter(Boolean).join(' · ');
+    }
+
+    function updateDuplicateWarning() {
+      const counts = new Map();
+      devices.forEach(function (device) {
+        const name = displayDeviceName(device).trim().toLowerCase();
+        counts.set(name, (counts.get(name) || 0) + 1);
+      });
+      const duplicated = devices.filter(function (device) {
+        return counts.get(displayDeviceName(device).trim().toLowerCase()) > 1;
+      });
+      const warning = document.getElementById('duplicateWarning');
+      if (!duplicated.length) {
+        warning.style.display = 'none';
+        warning.textContent = '';
+        return;
+      }
+      warning.style.display = 'block';
+      warning.textContent = `检测到同名设备，请使用设备 SN 和位置区分：${duplicated.map(deviceDisplay).join('；')}`;
+    }
+
     function filteredDevices() {
       const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
       if (!keyword) {
@@ -338,11 +377,12 @@
 
     function renderDevices() {
       const rows = filteredDevices();
+      updateDuplicateWarning();
       document.getElementById('deviceCount').textContent = `${rows.length} / ${devices.length}`;
       document.getElementById('deviceTableBody').innerHTML = rows.map(function (device) {
         return `
-          <tr>
-            <td>${esc(device.device_name || '-')}</td>
+          <tr title="${esc(deviceDisplay(device))}">
+            <td>${esc(displayDeviceName(device))}</td>
             <td>${esc(device.device_sn)}</td>
             <td>${esc(device.location || '-')}</td>
             <td>${boolText(device.record_attendance)}</td>
@@ -368,7 +408,7 @@
       }
       currentDeviceSn = sn;
       document.getElementById('editDeviceSn').textContent = device.device_sn;
-      document.getElementById('editDeviceName').value = device.device_name || defaultDeviceName(device.device_sn);
+      document.getElementById('editDeviceName').value = displayDeviceName(device);
       document.getElementById('editLocation').value = device.location || '';
       document.getElementById('editRecordAttendance').checked = Boolean(device.record_attendance);
       document.getElementById('editShowInConsole').checked = Boolean(device.show_in_console);
@@ -397,6 +437,7 @@
       if (!response.ok) {
         throw new Error(await response.text());
       }
+      alert(`${payload.device_name}（${currentDeviceSn}）已更新。`);
       editModal.hide();
       await loadDevices();
     }

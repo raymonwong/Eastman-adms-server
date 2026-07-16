@@ -2,7 +2,7 @@
 
 ## Current Development Task
 
-DT009.82
+DT009.83
 
 ## Status
 
@@ -10,7 +10,7 @@ Waiting for Review
 
 ## Summary
 
-DT009.82 integrates real database data into the fixed Console V2 layout. The existing `/console` route, page layout, Device Management module, database schema, and ADMS communication remain unchanged.
+DT009.83 completes the Console P0 UX logic fixes. Device filtering, device identity display, loading states, and ATTLOG main-log de-duplication were improved while keeping the existing `/console` route, Device Management module, database schema, ADMS protocol, and parser behavior unchanged.
 
 ## Completed
 
@@ -47,6 +47,12 @@ DT009.82 integrates real database data into the fixed Console V2 layout. The exi
 - Updated Realtime Event Log to show latest 10 supported protocol events.
 - Updated Device Summary to use latest Heartbeat for Online/Offline status and real attendance counts.
 - Added `scripts/DT009.82_install_ubuntu.sh`.
+- Unified Console device filtering by `device_sn` across Dashboard, Latest Activity, Realtime Event Log, and Device Summary.
+- Updated device display format to include Device Name, Device SN, and Location.
+- Added loading, empty, and load failure states to the Console page.
+- De-duplicated ATTLOG main log rows when the corresponding saved attendance event is shown.
+- Added duplicate device-name warning and Device Name plus SN update feedback in Device Management.
+- Added `scripts/DT009.83_install_ubuntu.sh`.
 - Updated README, CHANGELOG, and project status documentation.
 
 ## Not Included
@@ -68,7 +74,14 @@ DT009.82 integrates real database data into the fixed Console V2 layout. The exi
 - Mingdao/HAP sync
 - ERP business logic
 - Attendance result calculation
+- P1 realtime event-log restructuring
+- P1 business-language event mapping
+- P1 advanced edit-modal workflow
+- P1 switch impact explanations
+- P2 navigation restructuring
+- P2 exception-priority view
+- P2 language toggle
 
 ## Next Development Task
 
-DT010
+DT009.83 Review, then DT009.83 P1
