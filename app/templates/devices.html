@@ -56,6 +56,12 @@
       color: var(--muted);
     }
 
+    .zh-sub {
+      color: var(--muted);
+      font-size: 0.88em;
+      font-weight: 700;
+    }
+
     .panel-header {
       min-height: 38px;
       display: flex;
@@ -126,6 +132,20 @@
       font-size: 12px;
     }
 
+    .table-state {
+      min-height: 130px;
+      display: grid;
+      gap: 8px;
+      place-items: center;
+      color: var(--muted);
+      text-align: center;
+      font-size: 12px;
+    }
+
+    .table-state.error {
+      color: var(--red);
+    }
+
     .btn-console {
       min-height: 31px;
       padding: 4px 10px;
@@ -193,16 +213,16 @@
     <section class="topbar">
       <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
         <div>
-          <h1 class="title">Device Management / 设备管理</h1>
-          <div class="subtitle">Configuration only / 仅用于设备配置 · Devices are discovered automatically / 设备自动发现</div>
+          <h1 class="title">Device Management <span class="zh-sub">/ 设备管理</span></h1>
+          <div class="subtitle">Configuration only <span class="zh-sub">/ 仅用于设备配置</span> · Devices are discovered automatically <span class="zh-sub">/ 设备自动发现</span></div>
         </div>
-        <button id="refreshBtn" type="button" class="btn btn-outline-info btn-console">Refresh / 刷新</button>
+        <button id="refreshBtn" type="button" class="btn btn-outline-info btn-console">Refresh <span class="zh-sub">/ 刷新</span></button>
       </div>
     </section>
 
     <section class="panel">
       <div class="panel-header">
-        <span>Device List / 设备列表</span>
+        <span>Device List <span class="zh-sub">/ 设备列表</span></span>
         <span id="deviceCount" class="muted"></span>
       </div>
       <div class="panel-body">
@@ -216,14 +236,14 @@
           <table class="table table-dark table-hover align-middle mb-0">
             <thead>
               <tr>
-                <th>Device Name<br>设备名称</th>
-                <th>Device SN<br>设备编号</th>
-                <th>Location<br>所属位置</th>
-                <th>Record Attendance<br>记录考勤数据</th>
-                <th>Show in Console<br>显示在 Console</th>
-                <th>Created Time<br>创建时间</th>
-                <th>Updated Time<br>修改时间</th>
-                <th>Action<br>操作</th>
+                <th>Device Name<br><span class="zh-sub">设备名称</span></th>
+                <th>Device SN<br><span class="zh-sub">设备编号</span></th>
+                <th>Location<br><span class="zh-sub">所属位置</span></th>
+                <th>Record Attendance<br><span class="zh-sub">记录考勤数据</span></th>
+                <th>Show in Console<br><span class="zh-sub">显示在 Console</span></th>
+                <th>Created Time<br><span class="zh-sub">创建时间</span></th>
+                <th>Updated Time<br><span class="zh-sub">修改时间</span></th>
+                <th>Action<br><span class="zh-sub">操作</span></th>
               </tr>
             </thead>
             <tbody id="deviceTableBody"></tbody>
@@ -237,50 +257,50 @@
     <div class="modal-dialog modal-lg modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h2 class="modal-title fs-6">Edit Device / 编辑设备</h2>
+          <h2 class="modal-title fs-6">Edit Device <span class="zh-sub">/ 编辑设备</span></h2>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <form id="editForm" class="row g-3">
             <div class="col-12 col-md-6">
-              <label class="form-label">Device SN / 设备编号</label>
+              <label class="form-label">Device SN <span class="zh-sub">/ 设备编号</span></label>
               <div id="editDeviceSn" class="readonly-box"></div>
             </div>
             <div class="col-12 col-md-6">
-              <label class="form-label">Device Name / 设备名称</label>
+              <label class="form-label">Device Name <span class="zh-sub">/ 设备名称</span></label>
               <input id="editDeviceName" class="form-control" maxlength="128" required>
             </div>
             <div class="col-12">
-              <label class="form-label">Location / 所属位置</label>
+              <label class="form-label">Location <span class="zh-sub">/ 所属位置</span></label>
               <input id="editLocation" class="form-control" maxlength="255">
             </div>
             <div class="col-12 col-md-6">
-              <label class="form-label">Record Attendance / 记录考勤数据</label>
+              <label class="form-label">Record Attendance <span class="zh-sub">/ 记录考勤数据</span></label>
               <div class="switch-row form-check form-switch mb-0">
                 <input id="editRecordAttendance" class="form-check-input" type="checkbox" role="switch">
                 <label id="editRecordAttendanceLabel" class="form-check-label" for="editRecordAttendance">ON / 开启</label>
               </div>
             </div>
             <div class="col-12 col-md-6">
-              <label class="form-label">Show in Console / 显示在 Console</label>
+              <label class="form-label">Show in Console <span class="zh-sub">/ 显示在 Console</span></label>
               <div class="switch-row form-check form-switch mb-0">
                 <input id="editShowInConsole" class="form-check-input" type="checkbox" role="switch">
                 <label id="editShowInConsoleLabel" class="form-check-label" for="editShowInConsole">ON / 开启</label>
               </div>
             </div>
             <div class="col-12 col-md-6">
-              <label class="form-label">Created Time / 创建时间</label>
+              <label class="form-label">Created Time <span class="zh-sub">/ 创建时间</span></label>
               <div id="editCreatedAt" class="readonly-box"></div>
             </div>
             <div class="col-12 col-md-6">
-              <label class="form-label">Updated Time / 修改时间</label>
+              <label class="form-label">Updated Time <span class="zh-sub">/ 修改时间</span></label>
               <div id="editUpdatedAt" class="readonly-box"></div>
             </div>
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary btn-console" data-bs-dismiss="modal">Cancel / 取消</button>
-          <button id="saveBtn" type="button" class="btn btn-info btn-console">Save / 保存</button>
+          <button type="button" class="btn btn-outline-secondary btn-console" data-bs-dismiss="modal">Cancel <span class="zh-sub">/ 取消</span></button>
+          <button id="saveBtn" type="button" class="btn btn-info btn-console">Save <span class="zh-sub">/ 保存</span></button>
         </div>
       </div>
     </div>
@@ -290,16 +310,16 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h2 class="modal-title fs-6">Record Attendance Disabled / 记录考勤已关闭</h2>
+          <h2 class="modal-title fs-6">Record Attendance Disabled <span class="zh-sub">/ 记录考勤已关闭</span></h2>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <p class="mb-2">Do you also want to disable Show in Console?</p>
-          <p class="mb-0 muted">是否同时关闭 Console 显示？</p>
+          <p class="mb-0 muted">Disable Console display as well? <span class="zh-sub">/ 是否同时关闭 Console 显示？</span></p>
         </div>
         <div class="modal-footer">
-          <button id="keepConsoleBtn" type="button" class="btn btn-outline-secondary btn-console" data-bs-dismiss="modal">No / 否</button>
-          <button id="confirmDisableConsoleBtn" type="button" class="btn btn-info btn-console">Yes / 是</button>
+          <button id="keepConsoleBtn" type="button" class="btn btn-outline-secondary btn-console" data-bs-dismiss="modal">No <span class="zh-sub">/ 否</span></button>
+          <button id="confirmDisableConsoleBtn" type="button" class="btn btn-info btn-console">Yes <span class="zh-sub">/ 是</span></button>
         </div>
       </div>
     </div>
@@ -320,6 +340,34 @@
 
     function boolText(value) {
       return value ? '<span class="badge-on">ON / 开启</span>' : '<span class="badge-off">OFF / 关闭</span>';
+    }
+
+    function tableState(message, isError = false) {
+      return `
+        <tr>
+          <td colspan="8">
+            <div class="table-state ${isError ? 'error' : ''}">${message}</div>
+          </td>
+        </tr>
+      `;
+    }
+
+    function showLoading() {
+      document.getElementById('deviceCount').textContent = '-';
+      document.getElementById('duplicateWarning').style.display = 'none';
+      document.getElementById('deviceTableBody').innerHTML = tableState('Loading...<br><span class="zh-sub">正在加载……</span>');
+    }
+
+    function showLoadError(error) {
+      const message = error && error.message ? error.message : 'Unknown error';
+      document.getElementById('deviceCount').textContent = '-';
+      document.getElementById('duplicateWarning').style.display = 'none';
+      document.getElementById('deviceTableBody').innerHTML = tableState(`
+        Load failed<br>
+        <span class="zh-sub">加载失败</span><br>
+        ${esc(message)}<br>
+        <button type="button" class="btn btn-sm btn-outline-info btn-console mt-2" onclick="loadDevices()">Reload <span class="zh-sub">/ 重新加载</span></button>
+      `, true);
     }
 
     function formatTime(value) {
@@ -379,6 +427,10 @@
       const rows = filteredDevices();
       updateDuplicateWarning();
       document.getElementById('deviceCount').textContent = `${rows.length} / ${devices.length}`;
+      if (!rows.length) {
+        document.getElementById('deviceTableBody').innerHTML = tableState('No devices<br><span class="zh-sub">暂无设备</span>');
+        return;
+      }
       document.getElementById('deviceTableBody').innerHTML = rows.map(function (device) {
         return `
           <tr title="${esc(deviceDisplay(device))}">
@@ -389,16 +441,24 @@
             <td>${boolText(device.show_in_console)}</td>
             <td>${esc(formatTime(device.created_at))}</td>
             <td>${esc(formatTime(device.updated_at))}</td>
-            <td><button type="button" class="btn btn-sm btn-outline-info btn-console" data-sn="${esc(device.device_sn)}">Edit / 编辑</button></td>
+            <td><button type="button" class="btn btn-sm btn-outline-info btn-console" data-sn="${esc(device.device_sn)}">Edit <span class="zh-sub">/ 编辑</span></button></td>
           </tr>
         `;
       }).join('');
     }
 
     async function loadDevices() {
-      const response = await fetch('/api/devices', { cache: 'no-store' });
-      devices = await response.json();
-      renderDevices();
+      showLoading();
+      try {
+        const response = await fetch('/api/devices', { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error(`${response.status} ${response.statusText}`);
+        }
+        devices = await response.json();
+        renderDevices();
+      } catch (error) {
+        showLoadError(error);
+      }
     }
 
     function openEditModal(sn) {

@@ -17,6 +17,9 @@ DT009.83 Console P0 UX Logic Fixes
 - Unified Console device filtering around `device_sn`; Dashboard, Latest Activity, Realtime Event Log, and Device Summary all follow the same selected device scope.
 - Updated device display format to `Device Name · Device SN · Location`, with location omitted when empty.
 - Added initial loading state, distinct empty state, and load failure state with a reload action.
+- Added immediate loading state when switching Console device filters to avoid showing stale data.
+- Added loading, empty, and load failure states to Device Management.
+- Updated Console and Device Management display hierarchy so English is the primary language and Chinese is auxiliary.
 - De-duplicated main ATTLOG events so a saved attendance event hides the matching raw ATTLOG row.
 - Added duplicate device-name warning in Device Management and included Device Name plus SN in update success feedback.
 - Added `scripts/DT009.83_install_ubuntu.sh` without overwriting previous deployment scripts.

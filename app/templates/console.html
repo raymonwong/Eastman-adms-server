@@ -184,6 +184,12 @@
       font-weight: 700;
     }
 
+    .zh-sub {
+      color: var(--muted);
+      font-size: 0.86em;
+      font-weight: 700;
+    }
+
     .server-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -450,17 +456,17 @@
         <div class="brand-title">ADMS CONSOLE</div>
         <div class="brand-subtitle">Attendance Data<br>Management Server</div>
       </div>
-      <a class="nav-link-console active" href="/console"><i data-lucide="layout-dashboard" class="icon"></i><span>Dashboard<br>监控</span></a>
-      <a class="nav-link-console" href="/console"><i data-lucide="square-terminal" class="icon"></i><span>Console<br>控制台</span></a>
-      <a class="nav-link-console" href="/dms"><i data-lucide="monitor-cog" class="icon"></i><span>Device Management<br>设备管理</span></a>
-      <span class="nav-link-console"><i data-lucide="settings" class="icon"></i><span>Settings<br>设置</span></span>
+      <a class="nav-link-console active" href="/console"><i data-lucide="layout-dashboard" class="icon"></i><span>Dashboard<br><span class="zh-sub">监控</span></span></a>
+      <a class="nav-link-console" href="/console"><i data-lucide="square-terminal" class="icon"></i><span>Console<br><span class="zh-sub">控制台</span></span></a>
+      <a class="nav-link-console" href="/dms"><i data-lucide="monitor-cog" class="icon"></i><span>Device Management<br><span class="zh-sub">设备管理</span></span></a>
+      <span class="nav-link-console"><i data-lucide="settings" class="icon"></i><span>Settings<br><span class="zh-sub">设置</span></span></span>
       <div class="sidebar-version">v1.0.0</div>
     </aside>
 
     <main class="container-fluid console-shell">
       <section class="page-head">
-        <h1 class="page-title">运行监控 / Operation Console</h1>
-        <div class="page-subtitle">ADMS Server 与设备实时运行状态 / Real-time ADMS Server and attendance device status</div>
+        <h1 class="page-title">Operation Console <span class="zh-sub">/ 运行监控</span></h1>
+        <div class="page-subtitle">Real-time ADMS Server and attendance device status <span class="zh-sub">/ ADMS Server 与设备实时运行状态</span></div>
       </section>
 
       <div class="layout-grid">
@@ -474,10 +480,10 @@
           <div class="panel-body">
             <div class="device-filter-row">
               <div class="filter-box">
-                <div class="field-label">设备 / Device</div>
+                <div class="field-label">Device <span class="zh-sub">/ 设备</span></div>
                 <select id="deviceFilter" class="form-select filter-select" aria-label="Device Filter"></select>
               </div>
-              <button id="refreshBtn" type="button" class="btn btn-outline-info btn-console"><i data-lucide="refresh-cw" class="icon"></i> Refresh / 刷新</button>
+              <button id="refreshBtn" type="button" class="btn btn-outline-info btn-console"><i data-lucide="refresh-cw" class="icon"></i> Refresh <span class="zh-sub">/ 刷新</span></button>
             </div>
           </div>
         </section>
@@ -491,8 +497,8 @@
         <section class="split-grid">
           <div class="panel fixed-table-panel">
             <div class="panel-header">
-              <span class="section-title"><i data-lucide="clipboard-check" class="icon"></i> 最近考勤活动 / Latest Activity</span>
-              <span id="latestScopeNote" class="section-note">当前筛选最近5条 / Last 5 for current filter</span>
+              <span class="section-title"><i data-lucide="clipboard-check" class="icon"></i> Latest Activity <span class="zh-sub">/ 最近考勤活动</span></span>
+              <span id="latestScopeNote" class="section-note">Last 5 for current filter <span class="zh-sub">/ 当前筛选最近5条</span></span>
             </div>
             <div class="panel-body">
               <div id="latestActivity" class="table-scroll"></div>
@@ -501,11 +507,11 @@
 
           <div class="panel fixed-table-panel">
             <div class="panel-header">
-              <span class="section-title"><i data-lucide="file-text" class="icon"></i> 实时事件日志 / Realtime Event Log</span>
-              <button id="clearBtn" type="button" class="btn btn-sm btn-outline-secondary btn-console"><i data-lucide="trash-2" class="icon"></i> Clear / 清空显示</button>
+              <span class="section-title"><i data-lucide="file-text" class="icon"></i> Realtime Event Log <span class="zh-sub">/ 实时事件日志</span></span>
+              <button id="clearBtn" type="button" class="btn btn-sm btn-outline-secondary btn-console"><i data-lucide="trash-2" class="icon"></i> Clear <span class="zh-sub">/ 清空显示</span></button>
             </div>
             <div class="panel-body">
-              <div id="eventScopeNote" class="section-note mb-2">当前筛选最近10条 / Last 10 for current filter</div>
+              <div id="eventScopeNote" class="section-note mb-2">Last 10 for current filter <span class="zh-sub">/ 当前筛选最近10条</span></div>
               <div id="eventLog" class="table-scroll"></div>
             </div>
           </div>
@@ -513,7 +519,7 @@
 
         <section class="panel">
           <div class="panel-header">
-            <span class="section-title"><i data-lucide="monitor-check" class="icon"></i> 设备状态总览 / Device Summary</span>
+            <span class="section-title"><i data-lucide="monitor-check" class="icon"></i> Device Summary <span class="zh-sub">/ 设备状态总览</span></span>
           </div>
           <div class="panel-body">
             <div id="deviceSummary" class="summary-scroll"></div>
@@ -528,6 +534,7 @@
     let eventLogCleared = false;
     let selectedFilter = 'all';
     let hasLoadedOnce = false;
+    let refreshSequence = 0;
 
     function esc(value) {
       return String(value ?? '').replace(/[&<>"']/g, function (char) {
@@ -592,16 +599,20 @@
       return value ? '<span class="badge-on">ON / 开启</span>' : '<span class="badge-off">OFF / 关闭</span>';
     }
 
-    function loadingState(text = '正在加载……<br>Loading...') {
+    function labelText(en, zh) {
+      return `${esc(en)}<br><span class="zh-sub">${esc(zh)}</span>`;
+    }
+
+    function loadingState(text = 'Loading...<br><span class="zh-sub">正在加载……</span>') {
       return `<div class="state-message">${text}</div>`;
     }
 
     function errorState(message) {
       return `
         <div class="state-message state-error">
-          <div>加载失败 / Load failed<br>${esc(message)}</div>
+          <div>Load failed<br><span class="zh-sub">加载失败</span><br>${esc(message)}</div>
           <button type="button" class="btn btn-sm btn-outline-info btn-console" onclick="refreshConsole()">
-            重新加载 / Reload
+            Reload <span class="zh-sub">/ 重新加载</span>
           </button>
         </div>
       `;
@@ -644,14 +655,14 @@
       select.value = selectedFilter;
     }
 
-    function metricCard(iconName, titleZh, titleEn, value, valueClass = '') {
+    function metricCard(iconName, titleEn, titleZh, value, valueClass = '') {
       return `
         <div class="metric">
           <div class="metric-head">
             <div class="metric-icon">${icon(iconName)}</div>
             <div>
-              <div class="metric-title">${esc(titleZh)}</div>
-              <div class="metric-label">${esc(titleEn)}</div>
+              <div class="metric-title">${esc(titleEn)}</div>
+              <div class="metric-label">${esc(titleZh)}</div>
             </div>
           </div>
           <div class="metric-value mono ${valueClass}">${value}</div>
@@ -661,21 +672,21 @@
 
     function renderServer(server) {
       document.getElementById('serverStatus').innerHTML = [
-        metricCard('server', '服务器状态', 'Server', `${statusChip(server.server)}`, 'small'),
-        metricCard('database', '数据库状态', 'Database', `${statusChip(server.database)}`, 'small'),
-        metricCard('cable', '接口状态', 'API', `${statusChip(server.api)}`, 'small'),
-        metricCard('clock-3', '服务器时间', 'Server Time', esc(server.server_time), 'small'),
+        metricCard('server', 'Server', '服务器状态', `${statusChip(server.server)}`, 'small'),
+        metricCard('database', 'Database', '数据库状态', `${statusChip(server.database)}`, 'small'),
+        metricCard('cable', 'API', '接口状态', `${statusChip(server.api)}`, 'small'),
+        metricCard('clock-3', 'Server Time', '服务器时间', esc(server.server_time), 'small'),
       ].join('');
       refreshIcons();
     }
 
     function renderDashboard(dashboard) {
       document.getElementById('dashboard').innerHTML = [
-        metricCard('monitor-check', '在线设备', 'Online Devices', esc(dashboard.online_devices)),
-        metricCard('monitor-off', '离线设备', 'Offline Devices', esc(dashboard.offline_devices)),
-        metricCard('clipboard-check', '今日考勤', "Today's Attendance", esc(dashboard.attendance)),
-        metricCard('users', '今日用户', "Today's USER", esc(dashboard.user)),
-        metricCard('file-text', '今日操作', "Today's OPLOG", esc(dashboard.oplog)),
+        metricCard('monitor-check', 'Online Devices', '在线设备', esc(dashboard.online_devices)),
+        metricCard('monitor-off', 'Offline Devices', '离线设备', esc(dashboard.offline_devices)),
+        metricCard('clipboard-check', "Today's Attendance", '今日考勤', esc(dashboard.attendance)),
+        metricCard('users', "Today's USER", '今日用户', esc(dashboard.user)),
+        metricCard('file-text', "Today's OPLOG", '今日操作', esc(dashboard.oplog)),
       ].join('');
       refreshIcons();
     }
@@ -694,11 +705,11 @@
 
     function renderLatestActivity(items) {
       const columns = [
-        { label: '设备<br>Device', width: '28%' },
-        { label: '员工编号<br>Employee PIN', width: '17%' },
-        { label: '员工姓名<br>Employee Name', width: '19%' },
-        { label: '事件类型<br>Attendance Type', width: '18%' },
-        { label: '考勤时间<br>Attendance Time', width: '18%' },
+        { label: labelText('Device', '设备'), width: '28%' },
+        { label: labelText('Employee PIN', '员工编号'), width: '17%' },
+        { label: labelText('Employee Name', '员工姓名'), width: '19%' },
+        { label: labelText('Attendance Type', '事件类型'), width: '18%' },
+        { label: labelText('Attendance Time', '考勤时间'), width: '18%' },
       ];
       const rows = items.slice(0, 5).map(item => `
         <tr title="SN: ${esc(item.device_sn)}">
@@ -709,7 +720,7 @@
           <td class="mono">${esc(item.attendance_time)}</td>
         </tr>
       `);
-      document.getElementById('latestActivity').innerHTML = compactTable(columns, rows, '暂无考勤活动<br>No attendance activity');
+      document.getElementById('latestActivity').innerHTML = compactTable(columns, rows, 'No attendance activity<br><span class="zh-sub">暂无考勤活动</span>');
     }
 
     function eventDetailsText(details) {
@@ -719,14 +730,14 @@
     function renderEvents(events) {
       const container = document.getElementById('eventLog');
       if (eventLogCleared) {
-        container.innerHTML = '<div class="empty-state">页面日志已清空<br>Event log cleared</div>';
+        container.innerHTML = '<div class="empty-state">Event log cleared<br><span class="zh-sub">页面日志已清空</span></div>';
         return;
       }
       const columns = [
-        { label: '时间<br>Time', width: '15%' },
-        { label: '设备<br>Device', width: '28%' },
-        { label: '事件类型<br>Event Type', width: '18%' },
-        { label: '事件明细<br>Details', width: '39%' },
+        { label: labelText('Time', '时间'), width: '15%' },
+        { label: labelText('Device', '设备'), width: '28%' },
+        { label: labelText('Event Type', '事件类型'), width: '18%' },
+        { label: labelText('Details', '事件明细'), width: '39%' },
       ];
       const rows = events.slice(0, 10).map(event => {
         const details = eventDetailsText(event.details);
@@ -739,18 +750,18 @@
           </tr>
         `;
       });
-      container.innerHTML = compactTable(columns, rows, '暂无实时事件<br>No realtime events');
+      container.innerHTML = compactTable(columns, rows, 'No realtime events<br><span class="zh-sub">暂无实时事件</span>');
     }
 
     function renderDeviceSummary(rows) {
       const columns = [
-        { label: '设备<br>Device', width: '28%' },
-        { label: '所属位置<br>Location', width: '12%' },
-        { label: '状态<br>Status', width: '13%' },
-        { label: '最后心跳<br>Last Heartbeat', width: '17%' },
-        { label: '最后考勤<br>Last Attendance', width: '17%' },
-        { label: '今日考勤<br>Today Attendance', width: '9%' },
-        { label: '记录考勤<br>Record Attendance', width: '8%' },
+        { label: labelText('Device', '设备'), width: '28%' },
+        { label: labelText('Location', '所属位置'), width: '12%' },
+        { label: labelText('Status', '状态'), width: '13%' },
+        { label: labelText('Last Heartbeat', '最后心跳'), width: '17%' },
+        { label: labelText('Last Attendance', '最后考勤'), width: '17%' },
+        { label: labelText('Today Attendance', '今日考勤'), width: '9%' },
+        { label: labelText('Record Attendance', '记录考勤'), width: '8%' },
       ];
       const tableRows = rows.map(row => `
         <tr title="SN: ${esc(row.device_sn)}">
@@ -763,21 +774,26 @@
           <td>${boolText(row.record_attendance)}</td>
         </tr>
       `);
-      document.getElementById('deviceSummary').innerHTML = compactTable(columns, tableRows, '暂无可显示设备<br>No visible device');
+      document.getElementById('deviceSummary').innerHTML = compactTable(columns, tableRows, 'No visible device<br><span class="zh-sub">暂无可显示设备</span>');
       refreshIcons();
     }
 
     async function refreshConsole() {
+      const sequence = ++refreshSequence;
+      const requestedFilter = selectedFilter;
       if (!hasLoadedOnce) {
         showInitialLoading();
       }
       try {
-        const params = new URLSearchParams({ format: 'json', device_filter: selectedFilter });
+        const params = new URLSearchParams({ format: 'json', device_filter: requestedFilter });
         const response = await fetch(`/console?${params.toString()}`, { cache: 'no-store' });
         if (!response.ok) {
           throw new Error(`${response.status} ${response.statusText}`);
         }
         const data = await response.json();
+        if (sequence !== refreshSequence || requestedFilter !== selectedFilter) {
+          return;
+        }
         renderFilters(data.filter);
         renderServer(data.server);
         renderDashboard(data.dashboard);
@@ -786,6 +802,9 @@
         renderDeviceSummary(data.device_summary || []);
         hasLoadedOnce = true;
       } catch (error) {
+        if (sequence !== refreshSequence || requestedFilter !== selectedFilter) {
+          return;
+        }
         showLoadError(error);
       } finally {
         refreshIcons();
@@ -795,10 +814,12 @@
     document.getElementById('deviceFilter').addEventListener('change', function () {
       selectedFilter = this.value;
       eventLogCleared = false;
+      showInitialLoading();
       refreshConsole();
     });
     document.getElementById('refreshBtn').addEventListener('click', function () {
       eventLogCleared = false;
+      showInitialLoading();
       refreshConsole();
     });
     document.getElementById('clearBtn').addEventListener('click', function () {
