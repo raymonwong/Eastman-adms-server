@@ -4,9 +4,9 @@
 
 Eastman ADMS Server 是用于后续接入考勤设备、考勤平台和明道云/HAP 的服务端项目。
 
-Development Task 013.1 增加 Mingdao Attendance Integration Configuration：在 System Settings 下拆分两个子页面，`/settings/integration` 用于 Mingdao 推送员工到 ADMS 的对外 API，`/settings/attendance-sync` 用于配置未来 DT014 考勤同步所需的明道云 OpenAPI URL、AppKey、Sign、Worksheet ID 和字段映射。本阶段只做配置中心，不上传考勤数据。
+Development Task 014 增加 Mingdao Attendance Synchronization：`/settings/attendance-sync` 现在可以将 ADMS 中已保存的 `attendance_event` 上传到明道云考勤工作表。系统只调用明道 V3 新增行记录接口；通过 `attendance_mingdao_sync.attendance_event_id` 唯一键防止同一条考勤重复上传。新考勤记录会由后台循环自动同步；失败记录会按配置的分钟间隔再次尝试新增。
 
-本阶段不修改 ADMS 协议、HTTP 返回格式、ATTLOG/OPLOG/USER Parser、考勤上传逻辑、明道云考勤同步或任何 ERP 业务逻辑。
+本阶段不修改 ADMS 协议、HTTP 返回格式、ATTLOG/OPLOG/USER Parser、用户下发逻辑或任何 ERP 业务逻辑。
 
 ## 2. 系统要求
 
@@ -26,7 +26,7 @@ Development Task 013.1 增加 Mingdao Attendance Integration Configuration：在
 在项目根目录执行：
 
 ```bash
-scripts/DT013.1_install_ubuntu.sh
+scripts/DT014_install_ubuntu.sh
 ```
 
 安装脚本会自动完成：
@@ -63,6 +63,7 @@ scripts/DT013.1_install_ubuntu.sh
 - 验证 Device Management 优化 UI
 - 验证 `device_user` Mingdao 用户字段
 - 验证 `device_user_sync` 表
+- 验证 `attendance_mingdao_sync` 表和防重复上传唯一约束
 - 验证 `POST /api/v1/users`
 - 验证 `POST /api/v1/users/batch`
 - 验证 `GET /api/v1/users/{employee_id}`
@@ -222,13 +223,13 @@ docs/Mingdao_API_Integration.md
 
 DT010.12 增强现有 Integration 页面，不改变布局和既有 Console 功能。API Token 默认全掩码显示，只有点击 Show 才显示完整令牌；API Base URL 继续根据当前访问 Host 动态生成；页面新增 Mingdao Configuration Guide、Copy Mingdao Configuration、API Test、Last API Response Code、Total API Requests 和 Open Integration Documentation。
 
-DT013.1 在 System Settings 下新增独立的 Attendance Synchronization 页面：
+DT014 在 System Settings 下提供独立的 Attendance Synchronization 页面：
 
 ```text
 http://<Server Address>:4370/settings/attendance-sync
 ```
 
-该页面用于 DT014 的考勤同步配置。配置项包括启用状态、明道云考勤 OpenAPI URL、AppKey、Sign、Worksheet ID、Employee Record ID、Check Time、Device Name 和 Device SN 的目标字段 ID。Test Connection 只读取明道云工作表结构，不写考勤记录。DT014 必须以 `attendance_event.id` 作为本地幂等键，避免同一条考勤重复上传到明道云。
+该页面用于明道云考勤同步配置和手动同步。配置项包括启用状态、明道云考勤 OpenAPI URL、AppKey、Sign、Worksheet ID、Employee Record ID、Check Time、Device Name 和 Device SN 的目标字段 ID，以及失败记录重试间隔分钟数。Test Connection 只读取明道云工作表结构，不写考勤记录。Sync Now 会将本地未同步的 `attendance_event` 调用明道 V3 新增行记录接口写入明道云。后台默认每 10 秒扫描新考勤记录并同步。系统以 `attendance_mingdao_sync.attendance_event_id` 作为本地幂等键，`SYNCED` 记录永不重复上传；`FAILED` 记录超过配置分钟数后由后台循环再次尝试新增。
 
 DT010.13 增加 Mingdao 用户 `pin` 字段支持。`employee_id` 仅作为 Mingdao/ERP 工号参考和人员关联字段保留在数据表中；`pin` 是未来下发/更新打卡机用户时使用的设备用户编号。不同 `employee_id` 不允许使用相同 `pin`，重复时接口返回 `409 Conflict`。旧请求如果未传 `pin`，系统仍兼容使用 `employee_id` 作为默认 PIN。
 

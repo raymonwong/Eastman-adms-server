@@ -1,4 +1,6 @@
+import asyncio
 from contextlib import asynccontextmanager
+from contextlib import suppress
 from datetime import UTC, datetime
 
 from fastapi import FastAPI
@@ -8,6 +10,7 @@ from app.console import router as console_router
 from app.database import check_database_connection, configure_session_factory, create_database_engine, create_database_tables
 from app.device_management import router as device_management_router
 from app.integration_settings import router as integration_settings_router
+from app.mingdao_attendance import attendance_auto_sync_interval_seconds, sync_pending_attendance_to_mingdao
 from app.mingdao_users import router as mingdao_users_router
 from app.user_console import router as user_console_router
 from app.settings import Settings
@@ -15,6 +18,24 @@ from app.settings import Settings
 settings = Settings.from_env()
 engine = create_database_engine(settings)
 configure_session_factory(engine)
+
+
+async def _attendance_sync_loop() -> None:
+    await asyncio.sleep(attendance_auto_sync_interval_seconds())
+    while True:
+        try:
+            result = await asyncio.to_thread(sync_pending_attendance_to_mingdao)
+            if result.get("uploaded") or result.get("failed"):
+                print(
+                    "Mingdao Attendance Sync",
+                    f"uploaded={result.get('uploaded', 0)}",
+                    f"failed={result.get('failed', 0)}",
+                    f"pending={result.get('status', {}).get('PENDING', 0)}",
+                    flush=True,
+                )
+        except Exception as exc:
+            print(f"Mingdao Attendance Sync Error: {exc}", flush=True)
+        await asyncio.sleep(attendance_auto_sync_interval_seconds())
 
 
 @asynccontextmanager
@@ -27,7 +48,13 @@ async def lifespan(_: FastAPI):
     create_database_tables(engine)
     print("Tables Ready", flush=True)
     print("========================================", flush=True)
-    yield
+    attendance_sync_task = asyncio.create_task(_attendance_sync_loop())
+    try:
+        yield
+    finally:
+        attendance_sync_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await attendance_sync_task
 
 
 app = FastAPI(title=settings.app_name, version="0.0.2", lifespan=lifespan)

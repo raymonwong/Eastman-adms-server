@@ -2,7 +2,7 @@
 
 ## Current Development Task
 
-DT013.1 Mingdao Attendance Integration Configuration
+DT014 Mingdao Attendance Synchronization
 
 ## Status
 
@@ -10,10 +10,17 @@ Implemented - Waiting for Review
 
 ## Summary
 
-DT013.1 splits Communication Console -> System Settings into two sub pages. `/settings/integration` is the Inbound API page for Mingdao pushing employee data into ADMS. `/settings/attendance-sync` is the Attendance Synchronization page for configuring the OpenAPI URL, AppKey, Sign, Worksheet ID, and field mappings needed by future DT014 Attendance Synchronization. It does not upload attendance records.
+DT014 uploads saved ADMS `attendance_event` records to Mingdao Attendance through the configured Mingdao V3 OpenAPI. It only creates Mingdao rows and uses `attendance_mingdao_sync.attendance_event_id` as the local idempotency key so the same ADMS attendance event is not uploaded twice. New records sync automatically in the background. Failed records retry after the configured interval in minutes.
 
 ## Completed
 
+- Added `attendance_mingdao_sync` for Mingdao attendance upload status.
+- Added local duplicate prevention with unique `attendance_event_id`.
+- Added Mingdao create-row upload for attendance events.
+- Added automatic background sync for new pending attendance records.
+- Added configurable failed-record retry interval in minutes.
+- Added `Sync Now / 立即同步` to `/settings/attendance-sync`.
+- Kept Mingdao attendance writes as create-only; no Mingdao row update is performed.
 - Added `/dms` as the independent Device Management page.
 - Added bilingual device list and edit UI.
 - Added `GET /api/devices`.

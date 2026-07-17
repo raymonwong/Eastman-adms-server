@@ -38,6 +38,7 @@ def create_database_tables(engine: Engine) -> None:
     ensure_dt008_tables(engine)
     ensure_dt009_6_device_management(engine)
     ensure_dt010_1_user_sync(engine)
+    ensure_dt014_attendance_mingdao_sync(engine)
 
 
 def ensure_dt010_1_user_sync_prerequisites(engine: Engine) -> None:
@@ -397,6 +398,52 @@ def ensure_dt010_1_user_sync(engine: Engine) -> None:
                 if (
                     "duplicate column" in error_text
                     or "duplicate key name" in error_text
+                    or "duplicate check constraint name" in error_text
+                    or "already exists" in error_text
+                    or "duplicate foreign key constraint name" in error_text
+                ):
+                    continue
+                raise
+
+
+def ensure_dt014_attendance_mingdao_sync(engine: Engine) -> None:
+    # DT014 records every Mingdao attendance write attempt by attendance_event.id.
+    # The unique constraint is the local idempotency key that prevents duplicate uploads.
+    statements = (
+        """
+        CREATE TABLE IF NOT EXISTS attendance_mingdao_sync (
+            id INT NOT NULL AUTO_INCREMENT,
+            attendance_event_id INT NOT NULL,
+            sync_status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
+            mingdao_row_id VARCHAR(128) NULL,
+            last_sync_time DATETIME NULL,
+            retry_count INT NOT NULL DEFAULT 0,
+            last_error TEXT NULL,
+            request_payload TEXT NULL,
+            response_body TEXT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            CONSTRAINT uq_attendance_mingdao_sync_event UNIQUE (attendance_event_id),
+            CONSTRAINT ck_attendance_mingdao_sync_status CHECK (sync_status IN ('PENDING','SYNCING','SYNCED','FAILED')),
+            CONSTRAINT fk_attendance_mingdao_sync_event FOREIGN KEY (attendance_event_id) REFERENCES attendance_event(id)
+        )
+        """,
+        "CREATE INDEX ix_attendance_mingdao_sync_event_id ON attendance_mingdao_sync (attendance_event_id)",
+        "CREATE INDEX ix_attendance_mingdao_sync_status ON attendance_mingdao_sync (sync_status)",
+        "CREATE INDEX ix_attendance_mingdao_sync_last_sync_time ON attendance_mingdao_sync (last_sync_time)",
+        "ALTER TABLE attendance_mingdao_sync ADD CONSTRAINT ck_attendance_mingdao_sync_status CHECK (sync_status IN ('PENDING','SYNCING','SYNCED','FAILED'))",
+        "ALTER TABLE attendance_mingdao_sync ADD CONSTRAINT fk_attendance_mingdao_sync_event FOREIGN KEY (attendance_event_id) REFERENCES attendance_event(id)",
+    )
+
+    with engine.begin() as connection:
+        for statement in statements:
+            try:
+                connection.execute(text(statement))
+            except Exception as exc:
+                error_text = str(exc).lower()
+                if (
+                    "duplicate key name" in error_text
                     or "duplicate check constraint name" in error_text
                     or "already exists" in error_text
                     or "duplicate foreign key constraint name" in error_text

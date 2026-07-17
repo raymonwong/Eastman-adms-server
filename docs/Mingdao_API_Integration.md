@@ -331,9 +331,10 @@ USER_SYNC_ACK_TIMEOUT_SECONDS=120
 
 DT011 does not implement fingerprint, face, photo, password, or delete commands.
 
-## 6. Attendance Synchronization Configuration
+## 6. Attendance Synchronization
 
-DT013.1 adds the configuration center for future attendance synchronization. It does not upload attendance data and does not create Mingdao attendance records.
+DT014 uploads saved ADMS `attendance_event` records to Mingdao Attendance.
+It only creates Mingdao worksheet rows. It does not update existing Mingdao rows.
 
 Location:
 
@@ -348,7 +349,7 @@ Communication Console
 
 | Item | Purpose |
 | --- | --- |
-| Enable Attendance Synchronization | Enables or disables future DT014 attendance synchronization. DT013.1 only stores this value. |
+| Enable Attendance Synchronization | Enables or disables Mingdao attendance synchronization. |
 | Mingdao Attendance OpenAPI URL | Complete Mingdao OpenAPI base URL or worksheet schema URL. Do not hardcode it in code. |
 | AppKey | Mingdao OpenAPI AppKey copied from Mingdao OpenAPI authorization page. |
 | Sign | Mingdao OpenAPI Sign copied from Mingdao OpenAPI authorization page. |
@@ -357,6 +358,7 @@ Communication Console
 | Check Time Target Field ID | Target Mingdao field ID for attendance check time. |
 | Device Name Target Field ID | Target Mingdao field ID for ADMS device name. |
 | Device SN Target Field ID | Target Mingdao field ID for ADMS device serial number. |
+| Retry Failed After Minutes | Failed records become eligible for another create-row attempt after this interval. |
 
 Mingdao OpenAPI authentication uses the official headers:
 
@@ -390,7 +392,49 @@ The connection test verifies:
 
 The connection test does not write attendance records.
 
-### Duplicate Prevention Design for DT014
+### Mingdao Create Row Request
+
+DT014 writes to the official Mingdao V3 create-record API:
+
+```text
+POST /v3/app/worksheets/{worksheet_id}/rows
+```
+
+Headers:
+
+```http
+HAP-Appkey: <AppKey>
+HAP-Sign: <Sign>
+Content-Type: application/json
+```
+
+Request body:
+
+```json
+{
+  "triggerWorkflow": true,
+  "fields": [
+    {
+      "id": "<Employee Record ID Target Field ID>",
+      "value": "<device_user.employee_record_id>"
+    },
+    {
+      "id": "<Check Time Target Field ID>",
+      "value": "2026-07-17 20:50:02"
+    },
+    {
+      "id": "<Device Name Target Field ID>",
+      "value": "CT ShowRoom"
+    },
+    {
+      "id": "<Device SN Target Field ID>",
+      "value": "UCE6262000016"
+    }
+  ]
+}
+```
+
+### Duplicate Prevention
 
 DT014 must not upload duplicate attendance records to Mingdao.
 
@@ -400,9 +444,11 @@ The required duplicate prevention rule is:
 One ADMS attendance_event.id -> at most one Mingdao attendance record
 ```
 
-DT014 should use `attendance_event.id` as the local idempotency key before writing to Mingdao. Before retrying any failed write, DT014 must check existing local sync state and must not push the same attendance event twice.
+DT014 uses `attendance_event.id` as the local idempotency key before writing to Mingdao.
+The local table `attendance_mingdao_sync` has a unique constraint on `attendance_event_id`.
+Records with `SYNCED` status are never uploaded again.
 
-Future DT014 implementation should store the Mingdao target record ID after successful upload, so retry logic can safely distinguish:
+After a successful upload, ADMS stores the Mingdao row ID when it is returned by Mingdao. Retry logic can distinguish:
 
 - Not uploaded yet.
 - Uploaded successfully.
@@ -410,6 +456,23 @@ Future DT014 implementation should store the Mingdao target record ID after succ
 - Already uploaded and must be skipped.
 
 This design is intentional because device-level duplicate protection and ATTLOG parser uniqueness are not sufficient to protect downstream Mingdao writes during network retries.
+
+### Retry
+
+New `attendance_event` records are registered as `PENDING` and uploaded by the background synchronization loop.
+The loop runs every 10 seconds by default:
+
+```env
+MINGDAO_ATTENDANCE_AUTO_SYNC_INTERVAL_SECONDS=10
+```
+
+Failed records stay `FAILED`. They become eligible for another Mingdao create-row attempt only after:
+
+```env
+MINGDAO_ATTENDANCE_RETRY_FAILED_AFTER_MINUTES=60
+```
+
+This retry still uses the same local idempotency key, so a record already marked `SYNCED` is not uploaded again.
 
 ## 7. Troubleshooting
 

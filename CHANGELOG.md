@@ -2,6 +2,31 @@
 
 ## Version
 
+DT014
+
+## Date
+
+2026-07-18
+
+## Development Task
+
+DT014 Mingdao Attendance Synchronization
+
+## Description
+
+- Added `attendance_mingdao_sync` to track Mingdao upload state for each `attendance_event`.
+- Added duplicate prevention with a unique local idempotency key: `attendance_mingdao_sync.attendance_event_id`.
+- Added Mingdao V3 create-record upload through `POST /v3/app/worksheets/{worksheet_id}/rows`.
+- Mingdao attendance synchronization only creates new rows; it does not update existing Mingdao rows.
+- Added automatic background synchronization for pending attendance records.
+- Added configurable failed-record retry interval in minutes through `MINGDAO_ATTENDANCE_RETRY_FAILED_AFTER_MINUTES`.
+- Added manual `Sync Now / 立即同步` action to `/settings/attendance-sync`.
+- Added upload status summary for `PENDING`, `SYNCING`, `SYNCED`, and `FAILED`.
+- Added `scripts/DT014_install_ubuntu.sh` without overwriting previous deployment scripts.
+- Kept ADMS protocol, ATTLOG parser, OPERLOG parser, USER parser, device synchronization, and existing inbound Mingdao user API behavior unchanged.
+
+## Version
+
 DT013.1
 
 ## Date

@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import text
 
 from app.database import SessionLocal
+from app.mingdao_attendance import attendance_sync_status_summary, sync_pending_attendance_to_mingdao
 from app.mingdao_users import DEFAULT_TOKEN_VALUES, get_mingdao_api_runtime_state
 
 router = APIRouter()
@@ -35,6 +36,7 @@ class AttendanceIntegrationConfigRequest(BaseModel):
     check_time_field_id: str = Field(max_length=128)
     device_name_field_id: str = Field(max_length=128)
     device_sn_field_id: str = Field(max_length=128)
+    retry_failed_after_minutes: int = Field(default=60, ge=1, le=10080)
 
     @field_validator(
         "openapi_url",
@@ -61,6 +63,7 @@ ATTENDANCE_CONFIG_KEYS = {
     "check_time_field_id": "MINGDAO_ATTENDANCE_FIELD_CHECK_TIME",
     "device_name_field_id": "MINGDAO_ATTENDANCE_FIELD_DEVICE_NAME",
     "device_sn_field_id": "MINGDAO_ATTENDANCE_FIELD_DEVICE_SN",
+    "retry_failed_after_minutes": "MINGDAO_ATTENDANCE_RETRY_FAILED_AFTER_MINUTES",
 }
 
 ATTENDANCE_TEST_STATE: dict[str, str | None] = {
@@ -125,8 +128,12 @@ def _attendance_config() -> dict[str, object]:
         "worksheet_id": os.getenv(ATTENDANCE_CONFIG_KEYS["worksheet_id"], "").strip(),
         "token_status": "ADMS API Token Configured" if _is_auth_enabled(token) else "ADMS API Token Not Configured",
         "configured_fields": configured_fields,
+        "retry_failed_after_minutes": int(
+            os.getenv(ATTENDANCE_CONFIG_KEYS["retry_failed_after_minutes"], "60").strip() or "60"
+        ),
         "last_test_time": ATTENDANCE_TEST_STATE["last_test_time"] or "-",
         "last_test_result": ATTENDANCE_TEST_STATE["last_test_result"] or "Not Tested",
+        "sync_status": attendance_sync_status_summary(),
     }
 
 
@@ -176,6 +183,7 @@ def _save_attendance_config_to_env_file(payload: AttendanceIntegrationConfigRequ
         ATTENDANCE_CONFIG_KEYS["check_time_field_id"]: payload.check_time_field_id,
         ATTENDANCE_CONFIG_KEYS["device_name_field_id"]: payload.device_name_field_id,
         ATTENDANCE_CONFIG_KEYS["device_sn_field_id"]: payload.device_sn_field_id,
+        ATTENDANCE_CONFIG_KEYS["retry_failed_after_minutes"]: str(payload.retry_failed_after_minutes),
     }
     os.environ.update(values)
     return _save_values_to_env_file(values)
@@ -418,6 +426,11 @@ def test_attendance_config(payload: AttendanceIntegrationConfigRequest) -> dict[
         "last_test_time": ATTENDANCE_TEST_STATE["last_test_time"],
         "last_test_result": ATTENDANCE_TEST_STATE["last_test_result"],
     }
+
+
+@router.post("/api/settings/integration/attendance/sync")
+def sync_attendance_now(limit: int = 50) -> dict[str, object]:
+    return sync_pending_attendance_to_mingdao(limit=limit)
 
 
 @router.get("/api/settings/integration/health")

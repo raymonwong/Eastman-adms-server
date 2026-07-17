@@ -104,7 +104,7 @@
         <div>
           {% if page_mode == 'attendance' %}
           <h1 class="page-title">Attendance Synchronization <span class="zh-sub">/ 考勤同步配置</span></h1>
-          <div class="page-subtitle">Configure future ADMS attendance uploads to Mingdao. No attendance records are uploaded in DT013.1. <span class="zh-sub">/ 配置未来 ADMS 上传考勤到明道；DT013.1 不上传考勤记录。</span></div>
+          <div class="page-subtitle">Configure and run ADMS attendance uploads to Mingdao with local duplicate prevention. <span class="zh-sub">/ 配置并执行 ADMS 考勤上传到明道，使用本地机制防止重复上传。</span></div>
           {% else %}
           <h1 class="page-title">Inbound API <span class="zh-sub">/ 对外 API</span></h1>
           <div class="page-subtitle">Mingdao pushes employee data into ADMS through authenticated REST APIs. <span class="zh-sub">/ 明道通过鉴权 REST API 将员工资料推送到 ADMS。</span></div>
@@ -171,7 +171,7 @@
             <div class="panel-header">Attendance Synchronization <span class="zh-sub">/ 考勤同步配置</span></div>
             <div class="panel-body">
               <div class="notice mb-3">
-                Configuration center only. DT013.1 does not upload attendance records. DT014 will read these settings. <span class="zh-sub">/ 本阶段只做配置中心，不上传考勤；DT014 将读取这些配置。</span>
+                DT014 uploads saved ADMS attendance events to Mingdao. Each attendance_event.id can be uploaded only once. <span class="zh-sub">/ DT014 将已保存的 ADMS 考勤事件上传到明道；每个 attendance_event.id 只允许上传一次。</span>
               </div>
               <div class="row g-2">
                 <div class="col-12 col-md-4">
@@ -196,6 +196,10 @@
                 <div class="col-12 col-md-6">
                   <label class="label">Worksheet ID <span class="zh-sub">/ 工作表 ID</span></label>
                   <input id="attendanceWorksheetId" class="form-control mono" placeholder="Mingdao attendance worksheet ID">
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="label">Retry Failed After Minutes <span class="zh-sub">/ 失败重试间隔分钟</span></label>
+                  <input id="attendanceRetryMinutes" class="form-control mono" type="number" min="1" max="10080" value="60">
                 </div>
               </div>
 
@@ -224,9 +228,11 @@
               <div class="button-row">
                 <button id="saveAttendanceBtn" class="btn btn-info btn-console" type="button">Save Attendance Config <span class="zh-sub">/ 保存考勤配置</span></button>
                 <button id="testAttendanceBtn" class="btn btn-outline-success btn-console" type="button">Test Connection <span class="zh-sub">/ 测试连接</span></button>
+                <button id="syncAttendanceBtn" class="btn btn-outline-warning btn-console" type="button">Sync Now <span class="zh-sub">/ 立即同步</span></button>
               </div>
               <div id="attendanceFeedback" class="copy-feedback mt-2"></div>
               <pre id="attendanceTestResult" class="mt-3">Not tested.</pre>
+              <pre id="attendanceSyncResult" class="mt-3">Not synced.</pre>
             </div>
           </section>
           {% endif %}
@@ -242,9 +248,11 @@
                 <div class="info-item"><div class="label">Token Status <span class="zh-sub">/ 令牌状态</span></div><div id="attendanceSummaryToken" class="value">-</div></div>
                 <div class="info-item"><div class="label">Configured Fields <span class="zh-sub">/ 已配置字段</span></div><div id="attendanceSummaryFields" class="value mono">-</div></div>
                 <div class="info-item"><div class="label">Last Test <span class="zh-sub">/ 最后测试</span></div><div id="attendanceSummaryTest" class="value mono">-</div></div>
+                <div class="info-item"><div class="label">Upload Status <span class="zh-sub">/ 上传状态</span></div><div id="attendanceSummaryUploadStatus" class="value mono">-</div></div>
+                <div class="info-item"><div class="label">Failed Retry Interval <span class="zh-sub">/ 失败重试间隔</span></div><div id="attendanceSummaryRetry" class="value mono">-</div></div>
               </div>
               <div class="notice mt-3">
-                Duplicate prevention for DT014: one ADMS attendance event must be uploaded only once. Use <code>attendance_event.id</code> as the local idempotency key and keep a Mingdao sync record before retrying. <span class="zh-sub">/ DT014 去重机制：同一条 ADMS 考勤事件只允许上传一次，使用 attendance_event.id 作为本地幂等键，并在重试前记录明道同步状态。</span>
+                Duplicate prevention: one ADMS attendance event can create at most one Mingdao row. The unique key is <code>attendance_mingdao_sync.attendance_event_id</code>. New records sync automatically; failed records are retried after the configured interval and still use Mingdao create-row only. <span class="zh-sub">/ 防重复上传：一条 ADMS 考勤事件最多创建一条明道记录，唯一键为 attendance_mingdao_sync.attendance_event_id。新记录自动同步；失败记录超过配置间隔后再次尝试，仍然只调用明道新增行接口。</span>
               </div>
             </div>
           </section>
@@ -441,7 +449,7 @@ X-API-Key: &lt;API_TOKEN&gt;</pre>
         <div class="panel-header">Attendance Sync Guide <span class="zh-sub">/ 考勤同步说明</span></div>
         <div class="panel-body">
           <h3>1. Purpose <span class="zh-sub">/ 用途</span></h3>
-          <p>This page stores the Mingdao OpenAPI configuration required by future DT014 Attendance Synchronization. DT013.1 only validates and saves configuration. It does not upload attendance records.</p>
+          <p>This page stores Mingdao OpenAPI configuration and can manually upload saved ADMS attendance events to Mingdao. The local sync table prevents the same ADMS attendance event from being uploaded twice.</p>
 
           <h3>2. Mingdao OpenAPI Authentication <span class="zh-sub">/ 明道 OpenAPI 鉴权</span></h3>
           <p>The connection test uses Mingdao OpenAPI headers copied from Mingdao: <code>HAP-Appkey</code> and <code>HAP-Sign</code>.</p>
@@ -452,7 +460,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
           <p>Configure the Mingdao Attendance Worksheet ID and target field IDs for Employee Record ID, Check Time, Device Name, and Device SN. The ADMS source fields are fixed; only Mingdao target field IDs are editable.</p>
 
           <h3>4. Duplicate Prevention <span class="zh-sub">/ 防重复上传</span></h3>
-          <p>DT014 must use <code>attendance_event.id</code> as the local idempotency key. Before retrying any Mingdao write, DT014 must check local sync state and must not upload the same attendance event twice.</p>
+          <p>DT014 uses <code>attendance_event.id</code> as the local idempotency key through <code>attendance_mingdao_sync</code>. Records with <code>SYNCED</code> status are never uploaded again. New records sync automatically; failed records retry after the configured interval in minutes.</p>
 
           <h3>5. Documentation <span class="zh-sub">/ 文档</span></h3>
           <p><a class="btn btn-outline-info btn-console" href="/settings/integration/documentation" target="_blank" rel="noopener">Open Integration Documentation <span class="zh-sub">/ 打开集成文档</span></a></p>
@@ -520,6 +528,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
       byId('attendanceAppKey').value = config.app_key || '';
       byId('attendanceSign').value = config.sign || '';
       byId('attendanceWorksheetId').value = config.worksheet_id || '';
+      byId('attendanceRetryMinutes').value = config.retry_failed_after_minutes || 60;
       const fields = config.configured_fields || {};
       byId('attendanceEmployeeRecordField').value = fields['Employee Record ID'] || '';
       byId('attendanceCheckTimeField').value = fields['Check Time'] || '';
@@ -537,6 +546,15 @@ HAP-Sign: &lt;Sign&gt;</pre>
         `Device SN=${fields['Device SN'] || '-'}`,
       ].join('\n'));
       setText('attendanceSummaryTest', `${config.last_test_time || '-'}\n${config.last_test_result || 'Not Tested'}`);
+      setText('attendanceSummaryRetry', `${config.retry_failed_after_minutes || 60} minutes`);
+      const syncStatus = config.sync_status || {};
+      setText('attendanceSummaryUploadStatus', [
+        `PENDING=${syncStatus.PENDING ?? 0}`,
+        `SYNCING=${syncStatus.SYNCING ?? 0}`,
+        `SYNCED=${syncStatus.SYNCED ?? 0}`,
+        `FAILED=${syncStatus.FAILED ?? 0}`,
+        `TOTAL=${syncStatus.TOTAL ?? 0}`,
+      ].join('\n'));
     }
 
     function attendancePayload() {
@@ -550,6 +568,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
         check_time_field_id: byId('attendanceCheckTimeField').value.trim(),
         device_name_field_id: byId('attendanceDeviceNameField').value.trim(),
         device_sn_field_id: byId('attendanceDeviceSnField').value.trim(),
+        retry_failed_after_minutes: Number(byId('attendanceRetryMinutes').value || 60),
       };
     }
 
@@ -697,6 +716,31 @@ HAP-Sign: &lt;Sign&gt;</pre>
         ...data,
       }, null, 2);
       await refresh(tokenVisible);
+    });
+    on('syncAttendanceBtn', 'click', async () => {
+      const startedAt = performance.now();
+      const button = byId('syncAttendanceBtn');
+      if (button) button.disabled = true;
+      try {
+        const response = await fetch('/api/settings/integration/attendance/sync', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+        });
+        const data = await response.json();
+        const elapsedMs = Math.round(performance.now() - startedAt);
+        byId('attendanceSyncResult').textContent = JSON.stringify({
+          http_status: response.status,
+          execution_time_ms: elapsedMs,
+          ...data,
+        }, null, 2);
+        setText('attendanceFeedback', data.message || 'Attendance sync finished / 考勤同步完成');
+        await refresh(tokenVisible);
+      } catch (error) {
+        byId('attendanceSyncResult').textContent = String(error);
+        setText('attendanceFeedback', 'Attendance sync failed / 考勤同步失败');
+      } finally {
+        if (button) button.disabled = false;
+      }
     });
     on('sendTestBtn', 'click', async () => {
       const startedAt = performance.now();

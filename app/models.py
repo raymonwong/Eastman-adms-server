@@ -139,6 +139,37 @@ class AttendanceEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
+class AttendanceMingdaoSync(Base):
+    __tablename__ = "attendance_mingdao_sync"
+    __table_args__ = (
+        UniqueConstraint("attendance_event_id", name="uq_attendance_mingdao_sync_event"),
+        CheckConstraint(
+            "sync_status IN ('PENDING','SYNCING','SYNCED','FAILED')",
+            name="ck_attendance_mingdao_sync_status",
+        ),
+        Index("ix_attendance_mingdao_sync_event_id", "attendance_event_id"),
+        Index("ix_attendance_mingdao_sync_status", "sync_status"),
+        Index("ix_attendance_mingdao_sync_last_sync_time", "last_sync_time"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    attendance_event_id: Mapped[int] = mapped_column(ForeignKey("attendance_event.id"), nullable=False)
+    sync_status: Mapped[str] = mapped_column(String(32), server_default="PENDING", nullable=False)
+    mingdao_row_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    last_sync_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    retry_count: Mapped[int] = mapped_column(Integer, server_default="0", nullable=False)
+    last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    request_payload: Mapped[str | None] = mapped_column(Text, nullable=True)
+    response_body: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+
 class OperationEvent(Base):
     __tablename__ = "operation_event"
     __table_args__ = (
