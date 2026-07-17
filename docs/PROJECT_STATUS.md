@@ -2,7 +2,7 @@
 
 ## Current Development Task
 
-DT009.83
+DT010.11
 
 ## Status
 
@@ -10,7 +10,7 @@ Waiting for Review
 
 ## Summary
 
-DT009.83 completes the Console P0/P1/P2 UX improvements. Device filtering, device identity display, loading states, ATTLOG main-log de-duplication, event-log controls, business-language event labels, Device Management edit safety, exception-priority monitoring, and Device Summary search/filter/sort were improved while keeping the existing `/console` route, database schema, ADMS protocol, and parser behavior unchanged.
+DT010.11 adds the Communication Console System Settings Integration page for Mingdao API configuration, documentation, runtime status, and integration testing. It does not change ADMS protocol handling or Mingdao synchronization logic.
 
 ## Completed
 
@@ -67,6 +67,29 @@ DT009.83 completes the Console P0/P1/P2 UX improvements. Device filtering, devic
 - Changed Console online/offline timeout to 60 seconds.
 - Ensured Realtime Event Log keeps the latest event at the top after filtering.
 - Added `scripts/DT009.83_install_ubuntu.sh`.
+- Added `POST /api/v1/users`.
+- Added `POST /api/v1/users/batch`.
+- Added `GET /api/v1/users`.
+- Added `GET /api/v1/users/{employee_id}`.
+- Protected all Mingdao user APIs with `MINGDAO_API_TOKEN`, supporting `Authorization: Bearer <token>` and `X-API-Key`.
+- Added text trimming, supported privilege validation, and a 500-user maximum batch limit.
+- Extended `device_user` with `employee_id`, `department`, `card_no`, and `enabled`.
+- Added device-side USER upload metadata fields to `device_user`: `last_device_sn`, `last_device_user_upload_at`, and `last_device_raw_request_id`.
+- Added `device_user_sync` with `PENDING`, `SYNCING`, `SYNCED`, and `FAILED` status support.
+- Added `device_user_sync` foreign keys and status validation constraints.
+- Added idempotent UPSERT behavior by `employee_id`.
+- Added per-device user sync record creation when a Mingdao user changes.
+- Added GETREQUEST pending user sync TODO hook for DT010.2.
+- Added Console user sync event display and separated device USER upload statistics from Mingdao user synchronization statistics.
+- Added `scripts/DT010.1_install_ubuntu.sh`.
+- Added `/settings/integration` under Communication Console System Settings.
+- Added Mingdao Integration runtime display for current API URL, masked API token, server time, API status, authentication status, last API request time, and caller IP.
+- Added API token Show, Hide, Copy, Generate New Token, and Save controls.
+- Added Integration Health Check UI and endpoint.
+- Added generated cURL example for the current API URL.
+- Added permanent Integration Guide in the Console page.
+- Added `docs/Mingdao_API_Integration.md`.
+- Added `scripts/DT010.11_install_ubuntu.sh`.
 - Updated README, CHANGELOG, and project status documentation.
 
 ## Not Included
@@ -84,12 +107,15 @@ DT009.83 completes the Console P0/P1/P2 UX improvements. Device filtering, devic
 - Device Command Queue
 - Device command processing
 - User downlink
-- Personnel synchronization
-- Mingdao/HAP sync
+- Fingerprint synchronization
+- Face synchronization
+- Photo synchronization
+- Attendance synchronization to Mingdao/HAP
 - ERP business logic
 - Attendance result calculation
 - P2 language toggle
+- ERP/MES/OA/WMS integrations
 
 ## Next Development Task
 
-DT009.83 Review
+DT010.11 Review, then DT010.2 user command delivery

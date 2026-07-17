@@ -8,7 +8,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import false, func, or_, text
 
 from app.database import SessionLocal
-from app.models import AttendanceEvent, Device, DeviceUser, OperationEvent, RawRequest
+from app.models import AttendanceEvent, Device, DeviceUser, DeviceUserSync, OperationEvent, RawRequest
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
@@ -121,6 +121,12 @@ def _user_filter(query, device_sns: list[str]):
     return query.filter(DeviceUser.device_sn.in_(device_sns))
 
 
+def _user_sync_filter(query, device_sns: list[str]):
+    if not device_sns:
+        return query.filter(false())
+    return query.filter(DeviceUserSync.device_sn.in_(device_sns))
+
+
 def _latest_raw_request(session, device_sn: str | None = None) -> RawRequest | None:
     query = session.query(RawRequest)
     if device_sn is not None:
@@ -230,6 +236,17 @@ def _raw_event(raw_request: RawRequest, device_map: dict[str, Device]) -> dict[s
     return None
 
 
+def _user_sync_event_type(sync_status: str | None) -> str:
+    status = (sync_status or "").upper()
+    if status == "SYNCED":
+        return "USER SYNC SUCCESS"
+    if status == "FAILED":
+        return "USER SYNC FAILED"
+    if status == "SYNCING":
+        return "USER SYNC WAITING"
+    return "USER SYNC PENDING"
+
+
 def _dashboard(session, devices: list[Device]) -> dict[str, int]:
     today_start = _today_start_utc_naive()
     device_sns = _device_sns(devices)
@@ -244,13 +261,17 @@ def _dashboard(session, devices: list[Device]) -> dict[str, int]:
 
     attendance_query = session.query(AttendanceEvent).filter(AttendanceEvent.receive_time >= today_start)
     user_query = session.query(DeviceUser).filter(DeviceUser.receive_time >= today_start)
+    user_sync_query = session.query(DeviceUserSync).filter(DeviceUserSync.updated_at >= today_start)
     operation_query = session.query(OperationEvent).filter(OperationEvent.receive_time >= today_start)
+    user_upload_count = _user_filter(user_query, device_sns).count()
 
     return {
         "online_devices": online,
         "offline_devices": offline,
         "attendance": _attendance_filter(attendance_query, device_sns).count(),
-        "user": _user_filter(user_query, device_sns).count(),
+        "user": user_upload_count,
+        "user_upload": user_upload_count,
+        "mingdao_sync": _user_sync_filter(user_sync_query, device_sns).count(),
         "oplog": _operation_filter(operation_query, device_sns).count(),
     }
 
@@ -304,6 +325,14 @@ def _latest_activities(session, devices: list[Device]) -> list[dict[str, object]
         (user.device_sn, user.pin): user.name
         for user in _user_filter(session.query(DeviceUser), device_sns).all()
     }
+    attendance_pins = {item.pin for item in attendance_events}
+    mingdao_user_names = {
+        user.employee_id: user.name
+        for user in session.query(DeviceUser)
+        .filter(DeviceUser.employee_id.in_(attendance_pins))
+        .all()
+        if user.employee_id
+    }
 
     return [
         {
@@ -311,7 +340,7 @@ def _latest_activities(session, devices: list[Device]) -> list[dict[str, object]
             "device_display": _device_display(devices_by_sn.get(item.device_sn), item.device_sn),
             "device_sn": item.device_sn,
             "employee_pin": item.pin,
-            "employee_name": user_names.get((item.device_sn, item.pin)) or "-",
+            "employee_name": user_names.get((item.device_sn, item.pin)) or mingdao_user_names.get(item.pin) or "-",
             "attendance_type": _attendance_status_label(item.status),
             "raw_status": item.status or "",
             "attendance_time": _format_dubai(item.attendance_time, source="local"),
@@ -408,6 +437,29 @@ def _events(session, devices: list[Device]) -> list[dict[str, object]]:
         device = devices_by_sn.get(user.device_sn)
         events.append(_event("USER SAVED", user.receive_time, device, user.device_sn, {"PIN": user.pin, "User Name": user.name or ""}))
 
+    sync_records = (
+        _user_sync_filter(session.query(DeviceUserSync), device_sns)
+        .order_by(DeviceUserSync.updated_at.desc(), DeviceUserSync.id.desc())
+        .limit(10)
+        .all()
+    )
+    for sync_record in sync_records:
+        device = devices_by_sn.get(sync_record.device_sn)
+        events.append(
+            _event(
+                _user_sync_event_type(sync_record.sync_status),
+                sync_record.updated_at,
+                device,
+                sync_record.device_sn,
+                {
+                    "Employee ID": sync_record.employee_id,
+                    "Sync Status": sync_record.sync_status,
+                    "Retry Count": sync_record.retry_count,
+                    "Last Error": sync_record.last_error or "",
+                },
+            )
+        )
+
     events.sort(key=lambda item: item["time_full"], reverse=True)
     return events[:10]
 
@@ -467,7 +519,7 @@ def _console_data(selected_filter: str | None = None) -> dict[str, object]:
         database_status = f"Error: {exc}"
         active_filter = ALL_DEVICES_FILTER
         filters = [{"value": ALL_DEVICES_FILTER, "label": "All Devices / 所有设备"}]
-        dashboard = {"online_devices": 0, "offline_devices": 0, "attendance": 0, "user": 0, "oplog": 0}
+        dashboard = {"online_devices": 0, "offline_devices": 0, "attendance": 0, "user": 0, "user_upload": 0, "mingdao_sync": 0, "oplog": 0}
         heartbeat_summary = {"count": 0, "last_time": "-", "last_device": "-", "last_client_ip": "-"}
         events = [_event("ERROR", _utc_now_naive(), None, "", {"Module": "CONSOLE", "Reason": str(exc)})]
         latest_activity = []

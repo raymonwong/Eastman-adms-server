@@ -2,6 +2,62 @@
 
 ## Version
 
+DT010.11
+
+## Date
+
+2026-07-17
+
+## Development Task
+
+DT010.11 Communication Console System Settings Integration
+
+## Description
+
+- Added Communication Console System Settings Integration page at `/settings/integration`.
+- Added Mingdao Integration runtime display for API URL, masked token, server time, API status, authentication status, last API request time, and last caller IP.
+- Added API token show, hide, copy, generate, and save controls without changing DT010 token storage architecture.
+- Added Integration Health Check endpoint and UI result panel.
+- Added generated cURL example for `POST /api/v1/users` using the current API base URL.
+- Added permanent administrator guide in the Integration page.
+- Added `docs/Mingdao_API_Integration.md` matching the current DT010.1 implementation.
+- Added `scripts/DT010.11_install_ubuntu.sh` without overwriting previous deployment scripts.
+- Kept attendance upload, GETREQUEST, user synchronization logic, device synchronization logic, and existing Console functionality unchanged.
+
+## Version
+
+DT010.1
+
+## Date
+
+2026-07-17
+
+## Development Task
+
+DT010.1 Mingdao User Synchronization API
+
+## Description
+
+- DT010.1 Review Fix: protected all Mingdao user APIs with `MINGDAO_API_TOKEN`, supporting `Authorization: Bearer <token>` and `X-API-Key`.
+- Added DT010.1 input validation, text trimming, supported privilege validation, and a 500-user maximum batch size.
+- Strengthened `device_user_sync` with foreign keys, a sync-status check constraint, and Python-side status validation.
+- Documented that `device_user` is the master user table and Mingdao is the only employee source of truth; device USER uploads no longer overwrite Mingdao master profile fields.
+- Renamed repeated GETREQUEST sync logs from `USER SYNC CREATED` to pending/waiting terminology.
+- Split Console statistics between device USER uploads and Mingdao user synchronization.
+- Extended DT010.1 installation verification for API auth, duplicate user prevention, duplicate sync prevention, unchanged payload behavior, batch limit, GETREQUEST, and Console regression.
+- Added Mingdao user synchronization APIs: `POST /api/v1/users`, `POST /api/v1/users/batch`, `GET /api/v1/users`, and `GET /api/v1/users/{employee_id}`.
+- Extended `device_user` with Mingdao user fields: `employee_id`, `department`, `card_no`, and `enabled`.
+- Added `device_user_sync` to track user synchronization status per device.
+- Implemented idempotent user UPSERT by `employee_id`; unchanged payloads do not retrigger device synchronization.
+- Added batch synchronization with per-user success and failure details.
+- Created or updated `PENDING` sync records for every registered device when a Mingdao user is created or changed.
+- Added GETREQUEST hook that checks pending user sync records and leaves command delivery as a DT010.2 TODO.
+- Added Console event support for user sync pending/success/failed records.
+- Added `scripts/DT010.1_install_ubuntu.sh` without overwriting previous deployment scripts.
+- Kept ADMS protocol, HTTP response bodies, ATTLOG upload, ATTLOG parser, OPLOG parser, device-uploaded USER parser, Mingdao attendance sync, ERP logic, and attendance result calculation unchanged.
+
+## Version
+
 DT009.83
 
 ## Date

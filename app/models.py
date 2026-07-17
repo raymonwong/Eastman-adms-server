@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -189,25 +189,63 @@ class DeviceUser(Base):
     __tablename__ = "device_user"
     __table_args__ = (
         UniqueConstraint("device_sn", "pin", name="uq_device_user_device_pin"),
+        UniqueConstraint("employee_id", name="uq_device_user_employee_id"),
         Index("ix_device_user_device_sn", "device_sn"),
         Index("ix_device_user_pin", "pin"),
+        Index("ix_device_user_employee_id", "employee_id"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    device_sn: Mapped[str] = mapped_column(String(64), nullable=False)
-    pin: Mapped[str] = mapped_column(String(64), nullable=False)
+    device_sn: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    pin: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    employee_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    department: Mapped[str | None] = mapped_column(String(255), nullable=True)
     privilege: Mapped[str | None] = mapped_column(String(32), nullable=True)
     password: Mapped[str | None] = mapped_column(String(255), nullable=True)
     card: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    card_no: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, server_default="1", nullable=False)
     group_no: Mapped[str | None] = mapped_column(String(32), nullable=True)
     timezone: Mapped[str | None] = mapped_column(String(255), nullable=True)
     verify_mode: Mapped[str | None] = mapped_column(String(32), nullable=True)
     vice_card: Mapped[str | None] = mapped_column(String(64), nullable=True)
     start_datetime: Mapped[str | None] = mapped_column(String(64), nullable=True)
     end_datetime: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    raw_request_id: Mapped[int] = mapped_column(ForeignKey("raw_request.id"), nullable=False)
-    receive_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    raw_request_id: Mapped[int | None] = mapped_column(ForeignKey("raw_request.id"), nullable=True)
+    receive_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_device_sn: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    last_device_user_upload_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_device_raw_request_id: Mapped[int | None] = mapped_column(ForeignKey("raw_request.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+
+class DeviceUserSync(Base):
+    __tablename__ = "device_user_sync"
+    __table_args__ = (
+        UniqueConstraint("employee_id", "device_sn", name="uq_device_user_sync_employee_device"),
+        CheckConstraint(
+            "sync_status IN ('PENDING','SYNCING','SYNCED','FAILED')",
+            name="ck_device_user_sync_status",
+        ),
+        Index("ix_device_user_sync_employee_id", "employee_id"),
+        Index("ix_device_user_sync_device_sn", "device_sn"),
+        Index("ix_device_user_sync_status", "sync_status"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    employee_id: Mapped[str] = mapped_column(ForeignKey("device_user.employee_id"), nullable=False)
+    device_sn: Mapped[str] = mapped_column(ForeignKey("device.device_sn"), nullable=False)
+    sync_status: Mapped[str] = mapped_column(String(32), server_default="PENDING", nullable=False)
+    last_sync_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    retry_count: Mapped[int] = mapped_column(Integer, server_default="0", nullable=False)
+    last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

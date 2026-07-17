@@ -7,7 +7,7 @@ from fastapi.responses import PlainTextResponse
 from sqlalchemy.exc import IntegrityError
 
 from app.database import SessionLocal
-from app.models import AttendanceEvent, Device, DeviceEventLog, DeviceSyncState, DeviceUser, OperationEvent, RawRequest
+from app.models import AttendanceEvent, Device, DeviceEventLog, DeviceSyncState, DeviceUser, DeviceUserSync, OperationEvent, RawRequest
 
 router = APIRouter()
 
@@ -255,6 +255,30 @@ def _get_device_sync_states(device_sn: str | None) -> dict[str, str | None]:
     with SessionLocal() as session:
         states = session.query(DeviceSyncState).filter(DeviceSyncState.device_sn == device_sn).all()
         return {state.data_type: state.device_stamp for state in states}
+
+
+def _check_pending_user_sync(device_sn: str | None) -> None:
+    if not device_sn:
+        return
+
+    with SessionLocal() as session:
+        pending_count = (
+            session.query(DeviceUserSync)
+            .filter(DeviceUserSync.device_sn == device_sn, DeviceUserSync.sync_status == "PENDING")
+            .count()
+        )
+
+    if pending_count == 0:
+        return
+
+    _debug_log(
+        "USER SYNC PENDING",
+        {
+            "Device": device_sn,
+            "Pending Users": pending_count,
+            "TODO": "DT010.2 will build GETREQUEST user download commands.",
+        },
+    )
 
 
 def _update_device_sync_state(context: dict[str, object], data_type: str, device_stamp: str | None) -> None:
@@ -549,15 +573,33 @@ def _parse_user_line(line: str, device_sn: str | None, receive_time: datetime, r
 
 
 def _save_device_user(user: DeviceUser) -> int:
+    # Mingdao is the employee source of truth. Device USER uploads may confirm that
+    # a terminal has seen a PIN, but they must not overwrite Mingdao profile fields.
     with SessionLocal() as session:
+        master_user = None
+        if user.pin:
+            master_user = session.query(DeviceUser).filter(DeviceUser.employee_id == user.pin).one_or_none()
+
+        if master_user is not None:
+            master_user.last_device_sn = user.device_sn
+            master_user.last_device_user_upload_at = user.receive_time
+            master_user.last_device_raw_request_id = user.raw_request_id
+            session.commit()
+            return master_user.id
+
         existing_user = (
             session.query(DeviceUser)
             .filter(DeviceUser.device_sn == user.device_sn, DeviceUser.pin == user.pin)
             .one_or_none()
         )
         if existing_user is None:
+            user.last_device_sn = user.device_sn
+            user.last_device_user_upload_at = user.receive_time
+            user.last_device_raw_request_id = user.raw_request_id
             session.add(user)
         else:
+            # Legacy device-observed rows are kept for DT008 compatibility only.
+            # They are not allowed to replace Mingdao master records.
             existing_user.name = user.name
             existing_user.privilege = user.privilege
             existing_user.password = user.password
@@ -570,6 +612,9 @@ def _save_device_user(user: DeviceUser) -> int:
             existing_user.end_datetime = user.end_datetime
             existing_user.raw_request_id = user.raw_request_id
             existing_user.receive_time = user.receive_time
+            existing_user.last_device_sn = user.device_sn
+            existing_user.last_device_user_upload_at = user.receive_time
+            existing_user.last_device_raw_request_id = user.raw_request_id
         session.commit()
         return existing_user.id if existing_user is not None else user.id
 
@@ -746,6 +791,7 @@ async def iclock_getrequest(request: Request) -> PlainTextResponse:
             "Client IP": context["client_ip"] or "",
         },
     )
+    _check_pending_user_sync(context["device_sn"])
     return PlainTextResponse(response_body, status_code=response_status_code, media_type="text/plain")
 
 

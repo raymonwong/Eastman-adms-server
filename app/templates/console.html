@@ -198,7 +198,7 @@
 
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: var(--space-md);
     }
 
@@ -542,7 +542,7 @@
       <a class="nav-link-console active" href="/console"><i data-lucide="layout-dashboard" class="icon"></i><span>Operation Monitor<br><span class="zh-sub">运行监控</span></span></a>
       <a class="nav-link-console" href="/dms"><i data-lucide="monitor-cog" class="icon"></i><span>Device Management<br><span class="zh-sub">设备管理</span></span></a>
       <span class="nav-link-console"><i data-lucide="square-terminal" class="icon"></i><span>Protocol Console<br><span class="zh-sub">协议控制台 · 开发中</span></span></span>
-      <span class="nav-link-console"><i data-lucide="settings" class="icon"></i><span>System Settings<br><span class="zh-sub">系统设置 · 开发中</span></span></span>
+      <a class="nav-link-console" href="/settings/integration"><i data-lucide="settings" class="icon"></i><span>System Settings<br><span class="zh-sub">系统设置 · Integration</span></span></a>
       <div class="sidebar-version">v1.0.0</div>
     </aside>
 
@@ -712,6 +712,10 @@
       'OPLOG SAVED': 'Device Operation / 设备操作',
       USER: 'User Sync / 用户同步',
       'USER SAVED': 'User Sync / 用户同步',
+      'USER SYNC PENDING': 'User Sync Pending / 用户待同步',
+      'USER SYNC WAITING': 'User Sync Waiting / 用户等待同步',
+      'USER SYNC SUCCESS': 'User Sync Success / 用户同步成功',
+      'USER SYNC FAILED': 'User Sync Failed / 用户同步失败',
       'DEVICE ONLINE': 'Device Online / 设备上线',
       'DEVICE OFFLINE': 'Device Offline / 设备离线',
       ERROR: 'Error / 异常',
@@ -724,6 +728,10 @@
       'ATTLOG SAVED': 'badge-attlog',
       USER: 'badge-user',
       'USER SAVED': 'badge-user',
+      'USER SYNC PENDING': 'badge-user',
+      'USER SYNC WAITING': 'badge-user',
+      'USER SYNC SUCCESS': 'badge-user',
+      'USER SYNC FAILED': 'badge-error',
       OPLOG: 'badge-oplog',
       'OPLOG SAVED': 'badge-oplog',
       'DEVICE ONLINE': 'badge-heartbeat',
@@ -787,7 +795,7 @@
       if (type === 'HEARTBEAT') return 'heartbeat';
       if (type === 'ATTLOG' || type === 'ATTLOG SAVED') return 'attendance';
       if (type === 'OPLOG' || type === 'OPLOG SAVED') return 'operation';
-      if (type === 'USER' || type === 'USER SAVED') return 'user';
+      if (type === 'USER' || type === 'USER SAVED' || type === 'USER SYNC PENDING' || type === 'USER SYNC WAITING' || type === 'USER SYNC SUCCESS' || type === 'USER SYNC FAILED') return 'user';
       if (type === 'DEVICE ONLINE' || type === 'DEVICE OFFLINE' || type === 'HANDSHAKE') return 'important';
       if (type === 'ERROR') return 'error';
       return 'important';
@@ -837,7 +845,8 @@
         metricCard('monitor-check', 'Online Devices', '在线设备', esc(dashboard.online_devices)),
         metricCard('monitor-off', 'Offline Devices', '离线设备', esc(dashboard.offline_devices)),
         metricCard('clipboard-check', "Today's Attendance", '今日考勤', esc(dashboard.attendance)),
-        metricCard('users', "Today's USER", '今日用户', esc(dashboard.user)),
+        metricCard('users', "Today's USER Upload", '今日设备用户上传', esc(dashboard.user_upload ?? dashboard.user)),
+        metricCard('users', 'Mingdao User Sync', '明道用户同步', esc(dashboard.mingdao_sync ?? 0)),
         metricCard('file-text', "Today's OPLOG", '今日操作', esc(dashboard.oplog)),
       ].join('');
       refreshIcons();

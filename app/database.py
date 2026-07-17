@@ -34,6 +34,7 @@ def create_database_tables(engine: Engine) -> None:
     ensure_dt007_tables(engine)
     ensure_dt008_tables(engine)
     ensure_dt009_6_device_management(engine)
+    ensure_dt010_1_user_sync(engine)
 
 
 def ensure_dt003_columns(engine: Engine) -> None:
@@ -289,5 +290,74 @@ def ensure_dt009_6_device_management(engine: Engine) -> None:
                 connection.execute(text(statement))
             except Exception as exc:
                 if "duplicate column" in str(exc).lower():
+                    continue
+                raise
+
+
+def ensure_dt010_1_user_sync(engine: Engine) -> None:
+    # DT010.1 extends device_user for Mingdao-sourced users and adds per-device sync state.
+    statements = (
+        "ALTER TABLE device_user MODIFY device_sn VARCHAR(64) NULL",
+        "ALTER TABLE device_user MODIFY pin VARCHAR(64) NULL",
+        "ALTER TABLE device_user MODIFY raw_request_id INT NULL",
+        "ALTER TABLE device_user MODIFY receive_time DATETIME NULL",
+        "ALTER TABLE device_user ADD COLUMN employee_id VARCHAR(64) NULL",
+        "ALTER TABLE device_user ADD COLUMN department VARCHAR(255) NULL",
+        "ALTER TABLE device_user ADD COLUMN card_no VARCHAR(64) NULL",
+        "ALTER TABLE device_user ADD COLUMN enabled BOOL NOT NULL DEFAULT 1",
+        "ALTER TABLE device_user ADD COLUMN last_device_sn VARCHAR(64) NULL",
+        "ALTER TABLE device_user ADD COLUMN last_device_user_upload_at DATETIME NULL",
+        "ALTER TABLE device_user ADD COLUMN last_device_raw_request_id INT NULL",
+        "CREATE UNIQUE INDEX uq_device_user_employee_id ON device_user (employee_id)",
+        "CREATE INDEX ix_device_user_employee_id ON device_user (employee_id)",
+        """
+        CREATE TABLE IF NOT EXISTS device_user_sync (
+            id INT NOT NULL AUTO_INCREMENT,
+            employee_id VARCHAR(64) NOT NULL,
+            device_sn VARCHAR(64) NOT NULL,
+            sync_status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
+            last_sync_time DATETIME NULL,
+            retry_count INT NOT NULL DEFAULT 0,
+            last_error TEXT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            CONSTRAINT uq_device_user_sync_employee_device UNIQUE (employee_id, device_sn),
+            CONSTRAINT ck_device_user_sync_status CHECK (sync_status IN ('PENDING','SYNCING','SYNCED','FAILED')),
+            CONSTRAINT fk_device_user_sync_employee_id FOREIGN KEY (employee_id) REFERENCES device_user(employee_id),
+            CONSTRAINT fk_device_user_sync_device_sn FOREIGN KEY (device_sn) REFERENCES device(device_sn)
+        )
+        """,
+        "CREATE INDEX ix_device_user_sync_employee_id ON device_user_sync (employee_id)",
+        "CREATE INDEX ix_device_user_sync_device_sn ON device_user_sync (device_sn)",
+        "CREATE INDEX ix_device_user_sync_status ON device_user_sync (sync_status)",
+        """
+        DELETE dus FROM device_user_sync dus
+        LEFT JOIN device_user du ON du.employee_id = dus.employee_id
+        WHERE du.employee_id IS NULL
+        """,
+        """
+        DELETE dus FROM device_user_sync dus
+        LEFT JOIN device d ON d.device_sn = dus.device_sn
+        WHERE d.device_sn IS NULL
+        """,
+        "ALTER TABLE device_user_sync ADD CONSTRAINT ck_device_user_sync_status CHECK (sync_status IN ('PENDING','SYNCING','SYNCED','FAILED'))",
+        "ALTER TABLE device_user_sync ADD CONSTRAINT fk_device_user_sync_employee_id FOREIGN KEY (employee_id) REFERENCES device_user(employee_id)",
+        "ALTER TABLE device_user_sync ADD CONSTRAINT fk_device_user_sync_device_sn FOREIGN KEY (device_sn) REFERENCES device(device_sn)",
+        "ALTER TABLE device_user ADD CONSTRAINT fk_device_user_last_device_raw_request_id FOREIGN KEY (last_device_raw_request_id) REFERENCES raw_request(id)",
+    )
+
+    with engine.begin() as connection:
+        for statement in statements:
+            try:
+                connection.execute(text(statement))
+            except Exception as exc:
+                error_text = str(exc).lower()
+                if (
+                    "duplicate column" in error_text
+                    or "duplicate key name" in error_text
+                    or "already exists" in error_text
+                    or "duplicate foreign key constraint name" in error_text
+                ):
                     continue
                 raise
