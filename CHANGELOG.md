@@ -22,6 +22,7 @@ DT010.12 Integration Center Enhancement
 - Added API Test form that calls the current `POST /api/v1/users` endpoint with the configured token and displays HTTP status, response JSON, and execution time.
 - Added runtime statistics for last API response code and total API request count.
 - Added Open Integration Documentation button for `docs/Mingdao_API_Integration.md`.
+- Improved DT010.11 installer verification by waiting for `/settings/integration` after API container recreation.
 - Kept attendance upload, GETREQUEST, parser logic, synchronization logic, and existing Console behavior unchanged.
 
 ## Version
