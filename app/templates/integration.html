@@ -252,7 +252,7 @@
                 <div class="info-item"><div class="label">Failed Retry Interval <span class="zh-sub">/ 失败重试间隔</span></div><div id="attendanceSummaryRetry" class="value mono">-</div></div>
               </div>
               <div class="notice mt-3">
-                Duplicate prevention: one ADMS attendance event can create at most one Mingdao row. The unique key is <code>attendance_mingdao_sync.attendance_event_id</code>. New records sync automatically; failed records are retried after the configured interval and still use Mingdao create-row only. <span class="zh-sub">/ 防重复上传：一条 ADMS 考勤事件最多创建一条明道记录，唯一键为 attendance_mingdao_sync.attendance_event_id。新记录自动同步；失败记录超过配置间隔后再次尝试，仍然只调用明道新增行接口。</span>
+                Duplicate prevention: one ADMS attendance event can create at most one Mingdao row. The unique key is <code>attendance_mingdao_sync.attendance_event_id</code>. Records without an employee record ID stay pending and are not sent to Mingdao until the ID is available. <span class="zh-sub">/ 防重复上传：一条 ADMS 考勤事件最多创建一条明道记录，唯一键为 attendance_mingdao_sync.attendance_event_id。缺少员工档案记录 ID 的记录保持待同步，不会发送到明道；该 ID 补齐后再自动同步。</span>
               </div>
             </div>
           </section>
@@ -460,7 +460,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
           <p>Configure the Mingdao Attendance Worksheet ID and target field IDs for Employee Record ID, Check Time, Device Name, and Device SN. The ADMS source fields are fixed; only Mingdao target field IDs are editable.</p>
 
           <h3>4. Duplicate Prevention <span class="zh-sub">/ 防重复上传</span></h3>
-          <p>DT014 uses <code>attendance_event.id</code> as the local idempotency key through <code>attendance_mingdao_sync</code>. Records with <code>SYNCED</code> status are never uploaded again. New records sync automatically; failed records retry after the configured interval in minutes.</p>
+          <p>DT014 uses <code>attendance_event.id</code> as the local idempotency key through <code>attendance_mingdao_sync</code>. Records with <code>SYNCED</code> status are never uploaded again. New records sync automatically; records missing <code>employee_record_id</code> remain pending without calling Mingdao, and failed network/API writes retry after the configured interval in minutes.</p>
 
           <h3>5. Documentation <span class="zh-sub">/ 文档</span></h3>
           <p><a class="btn btn-outline-info btn-console" href="/settings/integration/documentation" target="_blank" rel="noopener">Open Integration Documentation <span class="zh-sub">/ 打开集成文档</span></a></p>

@@ -18,6 +18,7 @@ DT014 uploads saved ADMS `attendance_event` records to Mingdao Attendance throug
 - Added local duplicate prevention with unique `attendance_event_id`.
 - Added Mingdao create-row upload for attendance events.
 - Added automatic background sync for new pending attendance records.
+- Added fallback behavior that keeps attendance records `PENDING` when employee record ID is missing and uploads them after Mingdao later provides the ID.
 - Added configurable failed-record retry interval in minutes.
 - Added `Sync Now / 立即同步` to `/settings/attendance-sync`.
 - Kept Mingdao attendance writes as create-only; no Mingdao row update is performed.

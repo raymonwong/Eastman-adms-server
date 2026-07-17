@@ -26,6 +26,10 @@ class AttendanceSyncConfigError(ValueError):
     pass
 
 
+class MissingEmployeeRecordID(ValueError):
+    pass
+
+
 def _env_bool(key: str, default: bool = False) -> bool:
     value = os.getenv(key, str(default)).strip().lower()
     return value in {"1", "true", "yes", "on", "enabled"}
@@ -105,8 +109,6 @@ def _find_mingdao_user(session: Session, pin: str) -> DeviceUser | None:
             select(DeviceUser)
             .where(
                 DeviceUser.pin == pin,
-                DeviceUser.employee_record_id.is_not(None),
-                DeviceUser.employee_record_id != "",
                 DeviceUser.employee_id.is_not(None),
                 DeviceUser.employee_id != "",
             )
@@ -127,7 +129,7 @@ def _device_name(session: Session, device_sn: str) -> str:
 def _build_mingdao_payload(session: Session, event: AttendanceEvent, config: dict[str, str | bool]) -> dict[str, object]:
     user = _find_mingdao_user(session, event.pin)
     if not user or not user.employee_record_id:
-        raise ValueError(f"No Mingdao employee_record_id found for PIN {event.pin}.")
+        raise MissingEmployeeRecordID(f"Waiting for Mingdao employee_record_id for PIN {event.pin}.")
 
     return {
         "triggerWorkflow": True,
@@ -265,6 +267,7 @@ def sync_pending_attendance_to_mingdao(*, limit: int = DEFAULT_BATCH_SIZE) -> di
                     sync_row.last_error = f"attendance_event {sync_row.attendance_event_id} no longer exists."
                     sync_row.last_sync_time = datetime.now(UTC)
                     failed += 1
+                    session.commit()
                     continue
 
                 sync_row.sync_status = "SYNCING"
@@ -288,6 +291,18 @@ def sync_pending_attendance_to_mingdao(*, limit: int = DEFAULT_BATCH_SIZE) -> di
                             "attendance_event_id": event.id,
                             "status": "SYNCED",
                             "mingdao_row_id": sync_row.mingdao_row_id,
+                        }
+                    )
+                except MissingEmployeeRecordID as exc:
+                    sync_row.sync_status = "PENDING"
+                    sync_row.last_error = str(exc)
+                    sync_row.last_sync_time = datetime.now(UTC)
+                    skipped += 1
+                    details.append(
+                        {
+                            "attendance_event_id": event.id,
+                            "status": "WAITING_EMPLOYEE_RECORD_ID",
+                            "reason": sync_row.last_error,
                         }
                     )
                 except HTTPError as exc:

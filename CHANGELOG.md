@@ -19,6 +19,7 @@ DT014 Mingdao Attendance Synchronization
 - Added Mingdao V3 create-record upload through `POST /v3/app/worksheets/{worksheet_id}/rows`.
 - Mingdao attendance synchronization only creates new rows; it does not update existing Mingdao rows.
 - Added automatic background synchronization for pending attendance records.
+- Added fallback behavior for attendance records whose PIN has no Mingdao `employee_record_id`: keep them `PENDING`, do not call Mingdao, and upload after the employee record ID becomes available.
 - Added configurable failed-record retry interval in minutes through `MINGDAO_ATTENDANCE_RETRY_FAILED_AFTER_MINUTES`.
 - Added manual `Sync Now / 立即同步` action to `/settings/attendance-sync`.
 - Added upload status summary for `PENDING`, `SYNCING`, `SYNCED`, and `FAILED`.

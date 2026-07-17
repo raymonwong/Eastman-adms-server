@@ -447,6 +447,7 @@ One ADMS attendance_event.id -> at most one Mingdao attendance record
 DT014 uses `attendance_event.id` as the local idempotency key before writing to Mingdao.
 The local table `attendance_mingdao_sync` has a unique constraint on `attendance_event_id`.
 Records with `SYNCED` status are never uploaded again.
+If ADMS cannot find a non-empty `device_user.employee_record_id` for the attendance PIN, the record remains `PENDING` and ADMS does not call Mingdao. When Mingdao later updates the user with a non-empty `employee_record_id`, the next synchronization cycle can upload the pending attendance record.
 
 After a successful upload, ADMS stores the Mingdao row ID when it is returned by Mingdao. Retry logic can distinguish:
 
@@ -473,6 +474,7 @@ MINGDAO_ATTENDANCE_RETRY_FAILED_AFTER_MINUTES=60
 ```
 
 This retry still uses the same local idempotency key, so a record already marked `SYNCED` is not uploaded again.
+Records waiting for `employee_record_id` stay `PENDING`; they do not consume the failed retry interval because no Mingdao request has been made yet.
 
 ## 7. Troubleshooting
 
