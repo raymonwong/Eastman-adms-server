@@ -200,16 +200,51 @@
 
     .summary-grid {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 10px;
       margin-bottom: 14px;
     }
 
     .metric {
+      min-height: 78px;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
       background: var(--card);
       border: 1px solid rgba(255, 255, 255, 0.075);
       border-radius: var(--radius);
-      padding: 12px;
+      padding: 10px 12px;
+    }
+
+    .metric-icon {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border-radius: 9px;
+      background: rgba(143, 179, 217, 0.1);
+      color: var(--blue);
+    }
+
+    .metric-icon.success {
+      background: rgba(36, 214, 133, 0.09);
+      color: var(--green);
+    }
+
+    .metric-icon.danger {
+      background: rgba(255, 77, 79, 0.09);
+      color: var(--red);
+    }
+
+    .metric-icon.warning {
+      background: rgba(245, 159, 0, 0.09);
+      color: var(--orange);
+    }
+
+    .metric-icon .icon {
+      width: 20px;
+      height: 20px;
     }
 
     .metric-label {
@@ -219,9 +254,9 @@
     }
 
     .metric-value {
-      margin-top: 6px;
+      margin-top: 3px;
       color: #f2f7ff;
-      font-size: 22px;
+      font-size: 21px;
       font-weight: 900;
     }
 
@@ -254,13 +289,19 @@
 
     th {
       color: var(--blue);
-      font-size: 12px;
+      font-size: 11px;
       white-space: nowrap;
+    }
+
+    th,
+    td {
+      padding: 7px 10px !important;
     }
 
     td {
       vertical-align: middle;
-      font-size: 13px;
+      font-size: 12px;
+      line-height: 1.28;
     }
 
     .mono {
@@ -279,16 +320,16 @@
 
     .sync-badges {
       display: flex;
-      gap: 8px;
+      gap: 5px;
       flex-wrap: wrap;
     }
 
     .sync-badge {
-      padding: 2px 6px;
+      padding: 1px 5px;
       border: 1px solid var(--line);
       border-radius: 999px;
       color: var(--muted);
-      font-size: 11px;
+      font-size: 10px;
     }
 
     .sync-badge.pending { color: var(--orange); }
@@ -306,6 +347,10 @@
 
     .table-state.error {
       color: var(--red);
+    }
+
+    @media (max-width: 1300px) {
+      .summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
 
     @media (max-width: 900px) {
@@ -416,20 +461,24 @@
       const departments = new Set(rows.map(departmentName)).size;
       const pending = rows.reduce((total, user) => total + Number(user.pending_sync || 0), 0);
       document.getElementById('summaryGrid').innerHTML = [
-        metric('Total Users', '用户总数', rows.length),
-        metric('Enabled', '启用', enabled),
-        metric('Disabled', '停用', disabled),
-        metric('Departments', '部门数', departments),
-        metric('Pending Sync', '待同步', pending),
+        metric('Total Users', '用户总数', rows.length, 'users', ''),
+        metric('Enabled', '启用', enabled, 'user-check', 'success'),
+        metric('Disabled', '停用', disabled, 'user-x', 'danger'),
+        metric('Departments', '部门数', departments, 'building-2', ''),
+        metric('Pending Sync', '待同步', pending, 'refresh-cw', 'warning'),
       ].join('');
       document.getElementById('userCount').textContent = `${rows.length} / ${users.length}`;
+      if (window.lucide) window.lucide.createIcons();
     }
 
-    function metric(label, zh, value) {
+    function metric(label, zh, value, icon, tone) {
       return `
         <div class="metric">
-          <div class="metric-label">${label} <span class="zh-sub">/ ${zh}</span></div>
-          <div class="metric-value mono">${esc(value)}</div>
+          <div class="metric-icon ${tone || ''}"><i data-lucide="${esc(icon)}" class="icon"></i></div>
+          <div>
+            <div class="metric-label">${label} <span class="zh-sub">/ ${zh}</span></div>
+            <div class="metric-value mono">${esc(value)}</div>
+          </div>
         </div>
       `;
     }
