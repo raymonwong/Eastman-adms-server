@@ -14,7 +14,8 @@ DT013.1 Mingdao Attendance Integration Configuration
 
 ## Description
 
-- Added Attendance Synchronization configuration section to the existing `/settings/integration` page.
+- Split System Settings into two sub pages: `/settings/integration` for Inbound API and `/settings/attendance-sync` for Attendance Synchronization.
+- Added Attendance Synchronization configuration page under System Settings.
 - Added configurable Mingdao Attendance OpenAPI URL, AppKey, Sign, Worksheet ID, and target field IDs.
 - Stored attendance integration configuration in the existing `.env` Integration configuration path.
 - Added read-only Test Connection for Mingdao worksheet metadata using official `HAP-Appkey` and `HAP-Sign` headers.

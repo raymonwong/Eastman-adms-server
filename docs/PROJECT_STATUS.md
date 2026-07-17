@@ -10,7 +10,7 @@ Implemented - Waiting for Review
 
 ## Summary
 
-DT013.1 adds the Mingdao Attendance Synchronization configuration center inside the existing Communication Console -> System Settings -> Integration page. It stores the OpenAPI URL, AppKey, Sign, Worksheet ID, and field mappings needed by future DT014 Attendance Synchronization. It does not upload attendance records.
+DT013.1 splits Communication Console -> System Settings into two sub pages. `/settings/integration` is the Inbound API page for Mingdao pushing employee data into ADMS. `/settings/attendance-sync` is the Attendance Synchronization page for configuring the OpenAPI URL, AppKey, Sign, Worksheet ID, and field mappings needed by future DT014 Attendance Synchronization. It does not upload attendance records.
 
 ## Completed
 
@@ -125,7 +125,8 @@ DT013.1 adds the Mingdao Attendance Synchronization configuration center inside 
 - Added Employee Record ID display and search support to `/users`.
 - Updated `/settings/integration` guide, cURL output, API Test form, and documentation examples.
 - Added `scripts/DT010.12_install_ubuntu.sh`.
-- Added Attendance Synchronization configuration section to `/settings/integration`.
+- Split System Settings into `/settings/integration` for Inbound API and `/settings/attendance-sync` for Attendance Synchronization.
+- Added Attendance Synchronization configuration page.
 - Added configurable Mingdao Attendance OpenAPI URL, AppKey, Sign, Worksheet ID, and fixed ADMS-to-Mingdao field mapping targets.
 - Added read-only Test Connection for Mingdao worksheet metadata and configured field ID verification.
 - Added Attendance Synchronization summary including status, API URL, Worksheet ID, token status, configured fields, last test time, and last test result.

@@ -58,15 +58,22 @@ assert test_result["success"] is False
 assert test_result["message"] == "Validation failed."
 PY
 
-  log "Verifying Integration page and documentation"
+  log "Verifying System Settings sub pages and documentation"
   compose exec -T api python - <<'PY'
 import urllib.request
 
-page = urllib.request.urlopen("http://127.0.0.1:8000/settings/integration", timeout=10).read().decode("utf-8")
-assert "Attendance Synchronization" in page
-assert "Mingdao Attendance OpenAPI URL" in page
-assert "Test Connection" in page
-assert "attendance_event.id" in page
+inbound_page = urllib.request.urlopen("http://127.0.0.1:8000/settings/integration", timeout=10).read().decode("utf-8")
+assert "Inbound API" in inbound_page
+assert "Mingdao Configuration Guide" in inbound_page
+assert "API Token" in inbound_page
+assert "Attendance Synchronization" not in inbound_page
+
+attendance_page = urllib.request.urlopen("http://127.0.0.1:8000/settings/attendance-sync", timeout=10).read().decode("utf-8")
+assert "Attendance Synchronization" in attendance_page
+assert "Mingdao Attendance OpenAPI URL" in attendance_page
+assert "Test Connection" in attendance_page
+assert "attendance_event.id" in attendance_page
+assert "Mingdao Configuration Guide" not in attendance_page
 
 doc = urllib.request.urlopen("http://127.0.0.1:8000/settings/integration/documentation", timeout=10).read().decode("utf-8")
 assert "Attendance Synchronization Configuration" in doc
@@ -76,8 +83,8 @@ PY
 
   echo "========================================"
   echo "DT013.1 Attendance Integration Config Ready"
-  echo "Page: /settings/integration"
-  echo "Section: Attendance Synchronization"
+  echo "Inbound API Page: /settings/integration"
+  echo "Attendance Sync Page: /settings/attendance-sync"
   echo "No attendance records uploaded"
   echo "========================================"
 }

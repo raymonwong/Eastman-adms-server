@@ -351,7 +351,18 @@ def _integration_payload(request: Request, *, show_token: bool = False) -> dict[
 
 @router.get("/settings/integration", response_class=HTMLResponse)
 def integration_page(request: Request):
-    return templates.TemplateResponse("integration.html", {"request": request, "data": _integration_payload(request)})
+    return templates.TemplateResponse(
+        "integration.html",
+        {"request": request, "data": _integration_payload(request), "page_mode": "inbound"},
+    )
+
+
+@router.get("/settings/attendance-sync", response_class=HTMLResponse)
+def attendance_sync_page(request: Request):
+    return templates.TemplateResponse(
+        "integration.html",
+        {"request": request, "data": _integration_payload(request), "page_mode": "attendance"},
+    )
 
 
 @router.get("/api/settings/integration")

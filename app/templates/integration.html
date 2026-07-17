@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>System Settings - Integration</title>
+  <title>{% if page_mode == 'attendance' %}Attendance Synchronization{% else %}Inbound API{% endif %} - System Settings</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <style>
@@ -70,6 +70,10 @@
     .notice { color: var(--yellow); background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.24); border-radius: 7px; padding: 10px; }
     .copy-feedback { color: var(--green); font-size: 12px; min-height: 18px; }
 
+    .settings-group-label { color: var(--muted); font-size: 11px; font-weight: 900; padding: 10px 8px 4px; text-transform: uppercase; letter-spacing: 0.02em; }
+    .settings-sub-link { padding-left: 18px; font-size: 11px; }
+    .attendance-page .grid-main { grid-template-columns: minmax(0, 1fr); }
+
     @media (max-width: 900px) {
       .app-frame { grid-template-columns: 1fr; }
       .sidebar { position: static; height: auto; display: flex; overflow-x: auto; gap: 8px; }
@@ -78,7 +82,7 @@
     }
   </style>
 </head>
-<body>
+<body class="{{ page_mode|default('inbound') }}-page">
   <div class="app-frame">
     <aside class="sidebar">
       <div class="brand">
@@ -89,21 +93,29 @@
       <a class="nav-link-console" href="/dms"><i data-lucide="monitor-cog" class="icon"></i><span>Device Management<br><span class="zh-sub">设备管理</span></span></a>
       <a class="nav-link-console" href="/users"><i data-lucide="users" class="icon"></i><span>ADMS Users<br><span class="zh-sub">用户列表</span></span></a>
       <span class="nav-link-console"><i data-lucide="square-terminal" class="icon"></i><span>Protocol Console<br><span class="zh-sub">协议控制台 · 开发中</span></span></span>
-      <a class="nav-link-console active" href="/settings/integration"><i data-lucide="settings" class="icon"></i><span>System Settings<br><span class="zh-sub">系统设置 · Integration</span></span></a>
+      <div class="settings-group-label">System Settings <span class="zh-sub">/ 系统配置</span></div>
+      <a class="nav-link-console settings-sub-link {% if page_mode == 'inbound' %}active{% endif %}" href="/settings/integration"><i data-lucide="cable" class="icon"></i><span>Inbound API<br><span class="zh-sub">对外 API</span></span></a>
+      <a class="nav-link-console settings-sub-link {% if page_mode == 'attendance' %}active{% endif %}" href="/settings/attendance-sync"><i data-lucide="clipboard-check" class="icon"></i><span>Attendance Sync<br><span class="zh-sub">考勤同步</span></span></a>
       <div class="sidebar-version">v1.0.0</div>
     </aside>
 
     <main class="shell">
       <section class="page-head">
         <div>
-          <h1 class="page-title">Integration <span class="zh-sub">/ 系统集成</span></h1>
-          <div class="page-subtitle">External system configuration, documentation, testing, and runtime status <span class="zh-sub">/ 外部系统配置、文档、测试与运行状态</span></div>
+          {% if page_mode == 'attendance' %}
+          <h1 class="page-title">Attendance Synchronization <span class="zh-sub">/ 考勤同步配置</span></h1>
+          <div class="page-subtitle">Configure future ADMS attendance uploads to Mingdao. No attendance records are uploaded in DT013.1. <span class="zh-sub">/ 配置未来 ADMS 上传考勤到明道；DT013.1 不上传考勤记录。</span></div>
+          {% else %}
+          <h1 class="page-title">Inbound API <span class="zh-sub">/ 对外 API</span></h1>
+          <div class="page-subtitle">Mingdao pushes employee data into ADMS through authenticated REST APIs. <span class="zh-sub">/ 明道通过鉴权 REST API 将员工资料推送到 ADMS。</span></div>
+          {% endif %}
         </div>
         <span id="topStatus" class="status-pill">Loading <span class="zh-sub">/ 加载中</span></span>
       </section>
 
       <div class="grid-main">
         <div>
+          {% if page_mode == 'inbound' %}
           <section class="panel">
             <div class="panel-header">
               <span>Mingdao Integration <span class="zh-sub">/ 明道集成</span></span>
@@ -152,7 +164,9 @@
               </div>
             </div>
           </section>
+          {% endif %}
 
+          {% if page_mode == 'attendance' %}
           <section class="panel">
             <div class="panel-header">Attendance Synchronization <span class="zh-sub">/ 考勤同步配置</span></div>
             <div class="panel-body">
@@ -215,7 +229,9 @@
               <pre id="attendanceTestResult" class="mt-3">Not tested.</pre>
             </div>
           </section>
+          {% endif %}
 
+          {% if page_mode == 'attendance' %}
           <section class="panel">
             <div class="panel-header">Attendance Synchronization Summary <span class="zh-sub">/ 考勤同步摘要</span></div>
             <div class="panel-body">
@@ -232,7 +248,9 @@
               </div>
             </div>
           </section>
+          {% endif %}
 
+          {% if page_mode == 'inbound' %}
           <section class="panel">
             <div class="panel-header">
               <span>Mingdao Configuration Guide <span class="zh-sub">/ 明道配置指南</span></span>
@@ -270,8 +288,10 @@
               <div id="configFeedback" class="copy-feedback"></div>
             </div>
           </section>
+          {% endif %}
         </div>
 
+        {% if page_mode == 'inbound' %}
         <div>
           <section class="panel">
             <div class="panel-header">Integration Test <span class="zh-sub">/ 集成测试</span></div>
@@ -341,8 +361,10 @@
             </div>
           </section>
         </div>
+        {% endif %}
       </div>
 
+      {% if page_mode == 'inbound' %}
       <section class="panel guide">
         <div class="panel-header">Integration Guide <span class="zh-sub">/ 集成指南</span></div>
         <div class="panel-body">
@@ -401,14 +423,7 @@ X-API-Key: &lt;API_TOKEN&gt;</pre>
   -> Attendance Device</pre>
           <p>When a user is created or changed, ADMS creates or updates one <code>PENDING</code> sync record per registered device. Online devices receive user commands through ADMS GETREQUEST. Offline devices remain <code>PENDING</code> and can be synchronized after reconnect.</p>
 
-          <h3>6. Attendance Synchronization Configuration <span class="zh-sub">/ 考勤同步配置</span></h3>
-          <p>DT013.1 only stores configuration for future attendance synchronization. It does not upload attendance data. Mingdao OpenAPI connection uses official <code>HAP-Appkey</code> and <code>HAP-Sign</code> headers. The existing ADMS API Token is reused for ADMS-side protection and is not duplicated.</p>
-          <pre>HAP-Appkey: &lt;AppKey&gt;
-HAP-Sign: &lt;Sign&gt;</pre>
-          <p>Connection test reads worksheet metadata only, using <code>GET /v3/app/worksheets/{worksheet_id}</code>. It validates the OpenAPI URL, authentication, worksheet ID, and configured field IDs without writing attendance records.</p>
-          <p>Duplicate prevention for DT014: use <code>attendance_event.id</code> as the local idempotency key. Before retrying any Mingdao write, DT014 must check local sync state and must not upload the same attendance event twice.</p>
-
-          <h3>7. Troubleshooting <span class="zh-sub">/ 故障排查</span></h3>
+          <h3>6. Troubleshooting <span class="zh-sub">/ 故障排查</span></h3>
           <ul>
             <li><strong>401 Unauthorized:</strong> Token is missing, default, or invalid.</li>
             <li><strong>404 API Not Found:</strong> Confirm the path starts with <code>/api/v1</code>.</li>
@@ -419,6 +434,31 @@ HAP-Sign: &lt;Sign&gt;</pre>
           </ul>
         </div>
       </section>
+      {% endif %}
+
+      {% if page_mode == 'attendance' %}
+      <section class="panel guide">
+        <div class="panel-header">Attendance Sync Guide <span class="zh-sub">/ 考勤同步说明</span></div>
+        <div class="panel-body">
+          <h3>1. Purpose <span class="zh-sub">/ 用途</span></h3>
+          <p>This page stores the Mingdao OpenAPI configuration required by future DT014 Attendance Synchronization. DT013.1 only validates and saves configuration. It does not upload attendance records.</p>
+
+          <h3>2. Mingdao OpenAPI Authentication <span class="zh-sub">/ 明道 OpenAPI 鉴权</span></h3>
+          <p>The connection test uses Mingdao OpenAPI headers copied from Mingdao: <code>HAP-Appkey</code> and <code>HAP-Sign</code>.</p>
+          <pre>HAP-Appkey: &lt;AppKey&gt;
+HAP-Sign: &lt;Sign&gt;</pre>
+
+          <h3>3. Worksheet and Field Mapping <span class="zh-sub">/ 工作表与字段映射</span></h3>
+          <p>Configure the Mingdao Attendance Worksheet ID and target field IDs for Employee Record ID, Check Time, Device Name, and Device SN. The ADMS source fields are fixed; only Mingdao target field IDs are editable.</p>
+
+          <h3>4. Duplicate Prevention <span class="zh-sub">/ 防重复上传</span></h3>
+          <p>DT014 must use <code>attendance_event.id</code> as the local idempotency key. Before retrying any Mingdao write, DT014 must check local sync state and must not upload the same attendance event twice.</p>
+
+          <h3>5. Documentation <span class="zh-sub">/ 文档</span></h3>
+          <p><a class="btn btn-outline-info btn-console" href="/settings/integration/documentation" target="_blank" rel="noopener">Open Integration Documentation <span class="zh-sub">/ 打开集成文档</span></a></p>
+        </div>
+      </section>
+      {% endif %}
     </main>
   </div>
 
@@ -431,8 +471,19 @@ HAP-Sign: &lt;Sign&gt;</pre>
       return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
     }
 
+    function byId(id) {
+      return document.getElementById(id);
+    }
+
     function setText(id, value) {
-      document.getElementById(id).textContent = value || '-';
+      const element = byId(id);
+      if (!element) return;
+      element.textContent = value || '-';
+    }
+
+    function on(id, eventName, handler) {
+      const element = byId(id);
+      if (element) element.addEventListener(eventName, handler);
     }
 
     function render(data) {
@@ -452,25 +503,28 @@ HAP-Sign: &lt;Sign&gt;</pre>
       setText('lastResponseCode', data.last_api_response_code);
       setText('totalRequests', data.total_api_requests);
       setText('guideRequestUrl', `${data.api_base_url}/users`);
-      const tokenInput = document.getElementById('tokenInput');
-      tokenInput.value = tokenVisible ? (data.token_value || '') : data.token_masked;
-      tokenInput.type = tokenVisible ? 'text' : 'password';
+      const tokenInput = byId('tokenInput');
+      if (tokenInput) {
+        tokenInput.value = tokenVisible ? (data.token_value || '') : data.token_masked;
+        tokenInput.type = tokenVisible ? 'text' : 'password';
+      }
       renderAttendanceConfig(data.attendance_sync || {});
       renderGuideJson();
       renderCurl();
     }
 
     function renderAttendanceConfig(config) {
-      document.getElementById('attendanceEnabled').value = config.enabled ? 'true' : 'false';
-      document.getElementById('attendanceOpenapiUrl').value = config.openapi_url || '';
-      document.getElementById('attendanceAppKey').value = config.app_key || '';
-      document.getElementById('attendanceSign').value = config.sign || '';
-      document.getElementById('attendanceWorksheetId').value = config.worksheet_id || '';
+      if (!byId('attendanceEnabled')) return;
+      byId('attendanceEnabled').value = config.enabled ? 'true' : 'false';
+      byId('attendanceOpenapiUrl').value = config.openapi_url || '';
+      byId('attendanceAppKey').value = config.app_key || '';
+      byId('attendanceSign').value = config.sign || '';
+      byId('attendanceWorksheetId').value = config.worksheet_id || '';
       const fields = config.configured_fields || {};
-      document.getElementById('attendanceEmployeeRecordField').value = fields['Employee Record ID'] || '';
-      document.getElementById('attendanceCheckTimeField').value = fields['Check Time'] || '';
-      document.getElementById('attendanceDeviceNameField').value = fields['Device Name'] || '';
-      document.getElementById('attendanceDeviceSnField').value = fields['Device SN'] || '';
+      byId('attendanceEmployeeRecordField').value = fields['Employee Record ID'] || '';
+      byId('attendanceCheckTimeField').value = fields['Check Time'] || '';
+      byId('attendanceDeviceNameField').value = fields['Device Name'] || '';
+      byId('attendanceDeviceSnField').value = fields['Device SN'] || '';
 
       setText('attendanceSummaryStatus', config.enabled ? 'Enabled / 启用' : 'Disabled / 停用');
       setText('attendanceSummaryUrl', config.openapi_url || '-');
@@ -487,15 +541,15 @@ HAP-Sign: &lt;Sign&gt;</pre>
 
     function attendancePayload() {
       return {
-        enabled: document.getElementById('attendanceEnabled').value === 'true',
-        openapi_url: document.getElementById('attendanceOpenapiUrl').value.trim(),
-        app_key: document.getElementById('attendanceAppKey').value.trim(),
-        sign: document.getElementById('attendanceSign').value.trim(),
-        worksheet_id: document.getElementById('attendanceWorksheetId').value.trim(),
-        employee_record_id_field_id: document.getElementById('attendanceEmployeeRecordField').value.trim(),
-        check_time_field_id: document.getElementById('attendanceCheckTimeField').value.trim(),
-        device_name_field_id: document.getElementById('attendanceDeviceNameField').value.trim(),
-        device_sn_field_id: document.getElementById('attendanceDeviceSnField').value.trim(),
+        enabled: byId('attendanceEnabled').value === 'true',
+        openapi_url: byId('attendanceOpenapiUrl').value.trim(),
+        app_key: byId('attendanceAppKey').value.trim(),
+        sign: byId('attendanceSign').value.trim(),
+        worksheet_id: byId('attendanceWorksheetId').value.trim(),
+        employee_record_id_field_id: byId('attendanceEmployeeRecordField').value.trim(),
+        check_time_field_id: byId('attendanceCheckTimeField').value.trim(),
+        device_name_field_id: byId('attendanceDeviceNameField').value.trim(),
+        device_sn_field_id: byId('attendanceDeviceSnField').value.trim(),
       };
     }
 
@@ -513,7 +567,8 @@ HAP-Sign: &lt;Sign&gt;</pre>
     }
 
     function renderGuideJson() {
-      document.getElementById('guideJsonExample').textContent = JSON.stringify(requestJsonExample(), null, 2);
+      const guideJsonExample = byId('guideJsonExample');
+      if (guideJsonExample) guideJsonExample.textContent = JSON.stringify(requestJsonExample(), null, 2);
     }
 
     function mingdaoConfigurationText() {
@@ -529,9 +584,11 @@ HAP-Sign: &lt;Sign&gt;</pre>
     }
 
     function renderCurl() {
+      const curlExample = byId('curlExample');
+      if (!curlExample) return;
       const apiUrl = currentData.api_base_url || '';
-      const token = tokenVisible ? document.getElementById('tokenInput').value : '<API_TOKEN>';
-      document.getElementById('curlExample').textContent = `curl -X POST "${apiUrl}/users" \\
+      const token = tokenVisible && byId('tokenInput') ? byId('tokenInput').value : '<API_TOKEN>';
+      curlExample.textContent = `curl -X POST "${apiUrl}/users" \\
   -H "Authorization: Bearer ${token}" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -559,35 +616,35 @@ HAP-Sign: &lt;Sign&gt;</pre>
       setTimeout(() => setText(feedbackId, ''), 1800);
     }
 
-    document.getElementById('refreshBtn').addEventListener('click', () => refresh(tokenVisible));
-    document.getElementById('showBtn').addEventListener('click', async () => {
+    on('refreshBtn', 'click', () => refresh(tokenVisible));
+    on('showBtn', 'click', async () => {
       tokenVisible = !tokenVisible;
-      document.getElementById('showBtn').innerHTML = tokenVisible ? 'Hide <span class="zh-sub">/ 隐藏</span>' : 'Show <span class="zh-sub">/ 显示</span>';
+      byId('showBtn').innerHTML = tokenVisible ? 'Hide <span class="zh-sub">/ 隐藏</span>' : 'Show <span class="zh-sub">/ 显示</span>';
       await refresh(tokenVisible);
     });
-    document.getElementById('copyTokenBtn').addEventListener('click', async () => {
+    on('copyTokenBtn', 'click', async () => {
       if (!tokenVisible) {
         await refresh(true);
         tokenVisible = true;
-        document.getElementById('showBtn').innerHTML = 'Hide <span class="zh-sub">/ 隐藏</span>';
+        byId('showBtn').innerHTML = 'Hide <span class="zh-sub">/ 隐藏</span>';
       }
-      await copyText(document.getElementById('tokenInput').value, 'tokenFeedback');
+      await copyText(byId('tokenInput').value, 'tokenFeedback');
     });
-    document.getElementById('copyCurlBtn').addEventListener('click', () => copyText(document.getElementById('curlExample').textContent, 'curlFeedback'));
-    document.getElementById('copyConfigBtn').addEventListener('click', () => copyText(mingdaoConfigurationText(), 'configFeedback'));
-    document.getElementById('generateBtn').addEventListener('click', async () => {
+    on('copyCurlBtn', 'click', () => copyText(byId('curlExample').textContent, 'curlFeedback'));
+    on('copyConfigBtn', 'click', () => copyText(mingdaoConfigurationText(), 'configFeedback'));
+    on('generateBtn', 'click', async () => {
       const response = await fetch('/api/settings/integration/token/generate', {method: 'POST'});
       const data = await response.json();
       tokenVisible = true;
-      document.getElementById('showBtn').innerHTML = 'Hide <span class="zh-sub">/ 隐藏</span>';
-      const input = document.getElementById('tokenInput');
+      byId('showBtn').innerHTML = 'Hide <span class="zh-sub">/ 隐藏</span>';
+      const input = byId('tokenInput');
       input.type = 'text';
       input.value = data.token;
       renderCurl();
       setText('tokenFeedback', 'New token generated. Click Save to apply. / 新令牌已生成，请点击保存。');
     });
-    document.getElementById('saveBtn').addEventListener('click', async () => {
-      const token = document.getElementById('tokenInput').value.trim();
+    on('saveBtn', 'click', async () => {
+      const token = byId('tokenInput').value.trim();
       const response = await fetch('/api/settings/integration/token/save', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -601,17 +658,17 @@ HAP-Sign: &lt;Sign&gt;</pre>
       setText('tokenFeedback', `${data.message} env_file_saved=${data.env_file_saved}`);
       await refresh(tokenVisible);
     });
-    document.getElementById('healthBtn').addEventListener('click', async () => {
+    on('healthBtn', 'click', async () => {
       const response = await fetch('/api/settings/integration/health', {cache: 'no-store'});
       const data = await response.json();
-      document.getElementById('healthResult').textContent = [
+      byId('healthResult').textContent = [
         `API Running: ${data.api}`,
         `Database Connected: ${data.database}`,
         `Authentication Enabled: ${data.authentication}`,
         `Ready for Mingdao Integration: ${data.ready}`,
       ].join('\n');
     });
-    document.getElementById('saveAttendanceBtn').addEventListener('click', async () => {
+    on('saveAttendanceBtn', 'click', async () => {
       const response = await fetch('/api/settings/integration/attendance', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -625,7 +682,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
       setText('attendanceFeedback', `${data.message} env_file_saved=${data.env_file_saved}`);
       await refresh(tokenVisible);
     });
-    document.getElementById('testAttendanceBtn').addEventListener('click', async () => {
+    on('testAttendanceBtn', 'click', async () => {
       const startedAt = performance.now();
       const response = await fetch('/api/settings/integration/attendance/test', {
         method: 'POST',
@@ -634,26 +691,26 @@ HAP-Sign: &lt;Sign&gt;</pre>
       });
       const data = await response.json();
       const elapsedMs = Math.round(performance.now() - startedAt);
-      document.getElementById('attendanceTestResult').textContent = JSON.stringify({
+      byId('attendanceTestResult').textContent = JSON.stringify({
         http_status: response.status,
         execution_time_ms: elapsedMs,
         ...data,
       }, null, 2);
       await refresh(tokenVisible);
     });
-    document.getElementById('sendTestBtn').addEventListener('click', async () => {
+    on('sendTestBtn', 'click', async () => {
       const startedAt = performance.now();
       const tokenResponse = await fetch('/api/settings/integration?show_token=true', {cache: 'no-store'});
       const tokenData = await tokenResponse.json();
       const payload = {
-        employee_record_id: document.getElementById('testEmployeeRecordId').value.trim(),
-        employee_id: document.getElementById('testEmployeeId').value.trim(),
-        pin: document.getElementById('testPin').value.trim(),
-        name: document.getElementById('testName').value.trim(),
-        department: document.getElementById('testDepartment').value.trim(),
+        employee_record_id: byId('testEmployeeRecordId').value.trim(),
+        employee_id: byId('testEmployeeId').value.trim(),
+        pin: byId('testPin').value.trim(),
+        name: byId('testName').value.trim(),
+        department: byId('testDepartment').value.trim(),
         card_no: '',
-        privilege: Number(document.getElementById('testPrivilege').value || 0),
-        enabled: document.getElementById('testEnabled').value === 'true',
+        privilege: Number(byId('testPrivilege').value || 0),
+        enabled: byId('testEnabled').value === 'true',
       };
       let statusCode = 0;
       let responseText = '';
@@ -678,7 +735,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
       } catch (_) {
         // Keep raw text when the response is not JSON.
       }
-      document.getElementById('apiTestResult').textContent = [
+      byId('apiTestResult').textContent = [
         `HTTP Status: ${statusCode || '-'}`,
         `Execution Time: ${elapsedMs} ms`,
         'Response JSON:',
