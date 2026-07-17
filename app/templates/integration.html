@@ -43,32 +43,83 @@
     .sidebar-version { position: absolute; bottom: 12px; left: 18px; color: var(--muted); font-size: 10px; }
 
     .shell { padding: 18px 26px 28px; }
+    .inbound-page .shell { max-width: 1360px; margin: 0 auto; width: 100%; }
     .page-head { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; margin-bottom: 14px; }
     .page-title { margin: 0; color: #f3f8ff; font-size: 24px; font-weight: 900; }
+    .page-subtitle { font-size: 12px; margin-top: 4px; }
+    .page-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+    .refresh-time { color: var(--muted); font-size: 11px; }
     .page-subtitle, .zh-sub { color: var(--muted); }
     .zh-sub { font-size: 0.86em; font-weight: 700; }
     .status-pill { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 999px; padding: 5px 10px; color: var(--green); background: rgba(43, 212, 125, 0.08); font-weight: 800; }
+    .badge-soft { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 8px; font-size: 12px; font-weight: 900; border: 1px solid var(--line); }
+    .badge-ok { color: var(--green); background: rgba(43, 212, 125, 0.10); border-color: rgba(43, 212, 125, 0.28); }
+    .badge-warn { color: var(--yellow); background: rgba(251, 191, 36, 0.10); border-color: rgba(251, 191, 36, 0.28); }
+    .badge-error { color: var(--red); background: rgba(255, 93, 108, 0.10); border-color: rgba(255, 93, 108, 0.28); }
+    .badge-method-post { color: #0f172a; background: var(--cyan); border-color: rgba(34, 211, 238, 0.7); }
+    .badge-method-get { color: #0f172a; background: var(--green); border-color: rgba(43, 212, 125, 0.7); }
+    .status-overview { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+    .status-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; min-width: 0; }
+    .status-card .label { font-size: 11px; }
+    .status-card .value { font-size: 13px; margin-top: 6px; }
+    .inbound-tabs { display: flex; gap: 8px; margin: 12px 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
+    .inbound-tab { border: 0; background: transparent; color: var(--muted); padding: 10px 12px; font-weight: 900; border-bottom: 2px solid transparent; white-space: nowrap; }
+    .inbound-tab.active { color: var(--text); border-bottom-color: var(--cyan); }
+    .inbound-tab:focus-visible, .btn-console:focus-visible, .form-control:focus, .form-select:focus { outline: 2px solid rgba(34, 211, 238, 0.55); outline-offset: 2px; box-shadow: none !important; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
 
     .grid-main { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr); gap: 12px; }
     .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; margin-bottom: 12px; }
     .panel-header { min-height: 38px; padding: 9px 14px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; color: var(--blue); font-weight: 900; }
     .panel-body { padding: 14px; }
     .info-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    .runtime-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .test-grid { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 12px; }
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .description-list { display: grid; grid-template-columns: 160px minmax(0, 1fr); gap: 8px 14px; align-items: start; }
+    .description-list dt { color: var(--muted); font-size: 12px; font-weight: 900; }
+    .description-list dd { margin: 0; word-break: break-word; }
     .info-item { background: var(--card); border: 1px solid rgba(255,255,255,0.08); border-radius: 7px; padding: 10px; min-height: 68px; }
     .label { color: var(--muted); font-size: 12px; font-weight: 800; }
+    .field-label { display: flex; align-items: baseline; gap: 5px; color: var(--muted); font-size: 12px; font-weight: 900; margin-bottom: 5px; white-space: nowrap; }
+    .required-mark { color: var(--red); }
+    .field-error { color: var(--red); font-size: 11px; margin-top: 4px; min-height: 14px; }
     .value { color: var(--text); font-size: 14px; margin-top: 5px; word-break: break-word; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
-    .token-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+    .token-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; }
     .form-control, .form-select, textarea { background: var(--card) !important; border-color: rgba(255,255,255,0.16) !important; color: var(--text) !important; }
+    .form-check-input { background-color: var(--card); border-color: rgba(255,255,255,0.28); }
+    .form-check-input:checked { background-color: var(--green); border-color: var(--green); }
     .btn-console { min-height: 32px; font-size: 13px; font-weight: 800; }
+    .btn-console:disabled { opacity: 0.45; cursor: not-allowed; }
     .button-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
     pre { background: #071019; color: #d7e8ff; border: 1px solid var(--line); border-radius: 7px; padding: 12px; white-space: pre-wrap; word-break: break-word; font-size: 12px; }
+    .code-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+    .code-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--line); color: var(--blue); font-weight: 900; font-size: 12px; }
+    .code-card pre { margin: 0; border: 0; border-radius: 0; max-height: 260px; overflow: auto; white-space: pre; }
+    .code-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .json-key { color: #93c5fd; }
+    .json-string { color: #86efac; }
+    .json-number, .json-boolean { color: #fbbf24; }
     .guide h3 { font-size: 16px; color: #f2f8ff; margin: 14px 0 8px; }
     .guide p, .guide li { color: #c6d5e4; }
     .guide code { color: #a8d7ff; }
     .table { --bs-table-bg: transparent; --bs-table-color: var(--text); --bs-table-border-color: var(--line); font-size: 13px; }
     .notice { color: var(--yellow); background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.24); border-radius: 7px; padding: 10px; }
+    .alert-token { color: #fde68a; background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.30); border-radius: var(--radius); padding: 10px; margin-top: 10px; }
     .copy-feedback { color: var(--green); font-size: 12px; min-height: 18px; }
+    .toast-stack { position: fixed; right: 18px; bottom: 18px; z-index: 9999; display: grid; gap: 8px; }
+    .toast-console { background: #102132; border: 1px solid var(--line); color: var(--text); border-radius: var(--radius); padding: 10px 12px; min-width: 240px; box-shadow: 0 14px 40px rgba(0,0,0,0.35); }
+    .step-flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; align-items: stretch; }
+    .step { border: 1px solid var(--line); background: var(--card); border-radius: var(--radius); padding: 10px; text-align: center; position: relative; }
+    .step:not(:last-child)::after { content: "→"; position: absolute; right: -10px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+    .details-box { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; color: var(--muted); font-size: 12px; display: none; }
+    .details-box.open { display: block; }
+    .accordion-lite details { border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); margin-bottom: 8px; padding: 10px 12px; }
+    .accordion-lite summary { cursor: pointer; color: var(--blue); font-weight: 900; }
+    .accordion-lite details > *:not(summary) { margin-top: 10px; }
+    .toast-stack { pointer-events: none; }
 
     .settings-group-label { color: var(--muted); font-size: 11px; font-weight: 900; padding: 10px 8px 4px; text-transform: uppercase; letter-spacing: 0.02em; }
     .settings-sub-link { padding-left: 18px; font-size: 11px; }
@@ -79,6 +130,20 @@
       .sidebar { position: static; height: auto; display: flex; overflow-x: auto; gap: 8px; }
       .brand, .sidebar-version { display: none; }
       .grid-main, .info-grid { grid-template-columns: 1fr; }
+      .status-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .runtime-grid, .test-grid, .form-grid { grid-template-columns: 1fr; }
+      .code-grid { grid-template-columns: 1fr; }
+      .description-list { grid-template-columns: 1fr; }
+      .token-row { grid-template-columns: 1fr; }
+      .step-flow { grid-template-columns: 1fr; }
+      .step:not(:last-child)::after { content: "↓"; right: 50%; top: auto; bottom: -15px; transform: translateX(50%); }
+    }
+
+    @media (max-width: 520px) {
+      .shell { padding: 14px 12px 20px; }
+      .page-head { flex-direction: column; }
+      .page-actions, .btn-console { width: 100%; justify-content: center; }
+      .status-overview { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -110,61 +175,248 @@
           <div class="page-subtitle">Mingdao pushes employee data into ADMS through authenticated REST APIs. <span class="zh-sub">/ 明道通过鉴权 REST API 将员工资料推送到 ADMS。</span></div>
           {% endif %}
         </div>
+        {% if page_mode == 'inbound' %}
+        <div class="page-actions">
+          <button id="refreshBtn" class="btn btn-outline-info btn-sm btn-console" type="button"><i data-lucide="refresh-cw" class="icon"></i> Refresh <span class="zh-sub">/ 刷新</span></button>
+          <span id="lastRefreshTime" class="refresh-time">Last refreshed / 最近刷新：-</span>
+        </div>
+        {% else %}
         <span id="topStatus" class="status-pill">Loading <span class="zh-sub">/ 加载中</span></span>
+        {% endif %}
       </section>
 
-      <div class="grid-main">
-        <div>
-          {% if page_mode == 'inbound' %}
-          <section class="panel">
-            <div class="panel-header">
-              <span>Mingdao Integration <span class="zh-sub">/ 明道集成</span></span>
-              <button id="refreshBtn" class="btn btn-outline-info btn-sm btn-console" type="button"><i data-lucide="refresh-cw" class="icon"></i> Refresh <span class="zh-sub">/ 刷新</span></button>
-            </div>
-            <div class="panel-body">
-              <div class="info-grid">
-                <div class="info-item"><div class="label">System Name <span class="zh-sub">/ 系统名称</span></div><div id="systemName" class="value">-</div></div>
-                <div class="info-item"><div class="label">Status <span class="zh-sub">/ 状态</span></div><div id="systemStatus" class="value">-</div></div>
-                <div class="info-item"><div class="label">API Base URL <span class="zh-sub">/ API 地址</span></div><div id="apiBaseUrl" class="value mono">-</div></div>
-                <div class="info-item"><div class="label">Authentication <span class="zh-sub">/ 鉴权方式</span></div><div id="authentication" class="value">-</div></div>
-              </div>
-            </div>
-          </section>
+      {% if page_mode == 'inbound' %}
+      <section class="status-overview">
+        <div class="status-card"><div class="label">Mingdao Integration <span class="zh-sub">/ 明道集成</span></div><div id="overviewIntegrationStatus" class="value">-</div></div>
+        <div class="status-card"><div class="label">API Service <span class="zh-sub">/ API 服务</span></div><div id="overviewApiStatus" class="value">-</div></div>
+        <div class="status-card"><div class="label">Authentication <span class="zh-sub">/ 鉴权</span></div><div id="overviewAuthStatus" class="value">-</div></div>
+        <div class="status-card"><div class="label">Last Response <span class="zh-sub">/ 最后响应码</span></div><div id="overviewLastResponseCode" class="value">-</div></div>
+        <div class="status-card"><div class="label">Total Requests <span class="zh-sub">/ 请求总数</span></div><div id="overviewTotalRequests" class="value mono">0</div></div>
+        <div class="status-card"><div class="label">Last Request <span class="zh-sub">/ 最后请求</span></div><div id="overviewLastRequest" class="value mono">-</div></div>
+      </section>
 
-          <section class="panel">
-            <div class="panel-header">API Token <span class="zh-sub">/ 接口令牌</span></div>
-            <div class="panel-body">
+      <nav class="inbound-tabs" aria-label="Inbound API sections">
+        <button class="inbound-tab active" type="button" data-tab="config">Configuration <span class="zh-sub">/ 配置</span></button>
+        <button class="inbound-tab" type="button" data-tab="runtime">Runtime <span class="zh-sub">/ 运行状态</span></button>
+        <button class="inbound-tab" type="button" data-tab="test">Integration Test <span class="zh-sub">/ 集成测试</span></button>
+        <button class="inbound-tab" type="button" data-tab="docs">API Docs <span class="zh-sub">/ API 文档</span></button>
+      </nav>
+
+      <section id="tab-config" class="tab-panel active">
+        <section class="panel">
+          <div class="panel-header">
+            <span>Mingdao Integration <span class="zh-sub">/ 明道集成</span></span>
+            <span id="integrationStateBadge" class="badge-soft badge-warn">Loading <span class="zh-sub">/ 加载中</span></span>
+          </div>
+          <div class="panel-body">
+            <dl class="description-list">
+              <dt>System Name <span class="zh-sub">/ 系统名称</span></dt><dd id="systemName">-</dd>
+              <dt>API Base URL <span class="zh-sub">/ API 地址</span></dt><dd><span id="apiBaseUrl" class="mono">-</span></dd>
+              <dt>Authentication <span class="zh-sub">/ 鉴权方式</span></dt><dd id="authentication">-</dd>
+            </dl>
+            <div class="mt-3">
+              <label class="field-label">API Token <span class="zh-sub">/ 接口令牌</span></label>
               <div class="token-row">
                 <input id="tokenInput" class="form-control mono" type="password" autocomplete="off" value="">
                 <button id="showBtn" class="btn btn-outline-light btn-console" type="button">Show <span class="zh-sub">/ 显示</span></button>
-              </div>
-              <div class="button-row">
                 <button id="copyTokenBtn" class="btn btn-outline-info btn-console" type="button">Copy <span class="zh-sub">/ 复制</span></button>
+              </div>
+              <div class="button-row justify-content-between">
                 <button id="generateBtn" class="btn btn-outline-warning btn-console" type="button">Generate New Token <span class="zh-sub">/ 生成新令牌</span></button>
-                <button id="saveBtn" class="btn btn-info btn-console" type="button">Save <span class="zh-sub">/ 保存</span></button>
+                <button id="saveBtn" class="btn btn-info btn-console" type="button" disabled>Save <span class="zh-sub">/ 保存</span></button>
               </div>
               <div id="tokenFeedback" class="copy-feedback mt-2"></div>
-              <div class="notice mt-2">API service restart is required before the new token becomes effective for future container restarts. <span class="zh-sub">/ 为保证容器重启后仍然生效，请同步更新 .env 并重启 API 服务。</span></div>
+              <div id="tokenUnsaved" class="label mt-2"></div>
+              <div class="alert-token">
+                <strong>Restart Notice <span class="zh-sub">/ 重启提示</span></strong><br>
+                Saving updates the current running API token immediately. To keep the same token after a future container restart, update <code>.env</code> and restart the API service. <span class="zh-sub">/ 点击保存后，当前运行实例立即使用新令牌；如需容器重启后仍保持一致，请同步更新 .env 并重启 API 服务。</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section id="tab-runtime" class="tab-panel">
+        <section class="panel">
+          <div class="panel-header">Runtime Information <span class="zh-sub">/ 运行信息</span></div>
+          <div class="panel-body">
+            <div class="info-grid runtime-grid">
+              <div class="info-item"><div class="label">Current API URL <span class="zh-sub">/ 当前 API URL</span></div><div class="value"><span id="runtimeApiUrl" class="mono">-</span></div><button id="copyApiUrlBtn" class="btn btn-outline-info btn-sm btn-console mt-2" type="button">Copy URL <span class="zh-sub">/ 复制地址</span></button></div>
+              <div class="info-item"><div class="label">Current API Token <span class="zh-sub">/ 当前令牌</span></div><div id="runtimeToken" class="value mono">-</div></div>
+              <div class="info-item"><div class="label">Current Server Time <span class="zh-sub">/ 当前服务器时间</span></div><div id="serverTime" class="value mono">-</div></div>
+              <div class="info-item"><div class="label">API Status <span class="zh-sub">/ API 状态</span></div><div id="apiStatus" class="value">-</div></div>
+              <div class="info-item"><div class="label">Authentication Status <span class="zh-sub">/ 鉴权状态</span></div><div id="authStatus" class="value">-</div></div>
+              <div class="info-item"><div class="label">Last API Request <span class="zh-sub">/ 最后 API 请求</span></div><div id="lastRequest" class="value mono">-</div></div>
+              <div class="info-item"><div class="label">Last Caller IP <span class="zh-sub">/ 最后调用 IP</span></div><div id="lastCallerIp" class="value mono">-</div></div>
+              <div class="info-item"><div class="label">Last API Response Code <span class="zh-sub">/ 最后响应码</span></div><div id="lastResponseCode" class="value mono">-</div></div>
+              <div class="info-item"><div class="label">Total API Requests <span class="zh-sub">/ API 请求总数</span></div><div id="totalRequests" class="value mono">0</div></div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section id="tab-test" class="tab-panel">
+        <div class="test-grid">
+          <section class="panel">
+            <div class="panel-header">
+              <span>Health Check <span class="zh-sub">/ 健康检查</span></span>
+              <span id="healthStateBadge" class="badge-soft badge-warn">Not Checked <span class="zh-sub">/ 未检查</span></span>
+            </div>
+            <div class="panel-body">
+              <button id="healthBtn" class="btn btn-success btn-console" type="button">Run Health Check <span class="zh-sub">/ 运行健康检查</span></button>
+              <pre id="healthResult" class="mt-3">Not checked.</pre>
             </div>
           </section>
 
           <section class="panel">
-            <div class="panel-header">Runtime Information <span class="zh-sub">/ 运行信息</span></div>
+            <div class="panel-header">API Test <span class="zh-sub">/ API 测试</span></div>
             <div class="panel-body">
-              <div class="info-grid">
-                <div class="info-item"><div class="label">Current API URL <span class="zh-sub">/ 当前 API URL</span></div><div id="runtimeApiUrl" class="value mono">-</div></div>
-                <div class="info-item"><div class="label">Current API Token <span class="zh-sub">/ 当前令牌</span></div><div id="runtimeToken" class="value mono">-</div></div>
-                <div class="info-item"><div class="label">Current Server Time <span class="zh-sub">/ 当前服务器时间</span></div><div id="serverTime" class="value mono">-</div></div>
-                <div class="info-item"><div class="label">API Status <span class="zh-sub">/ API 状态</span></div><div id="apiStatus" class="value">-</div></div>
-                <div class="info-item"><div class="label">Authentication Status <span class="zh-sub">/ 鉴权状态</span></div><div id="authStatus" class="value">-</div></div>
-                <div class="info-item"><div class="label">Last API Request <span class="zh-sub">/ 最后 API 请求</span></div><div id="lastRequest" class="value mono">-</div></div>
-                <div class="info-item"><div class="label">Last Caller IP <span class="zh-sub">/ 最后调用 IP</span></div><div id="lastCallerIp" class="value mono">-</div></div>
-                <div class="info-item"><div class="label">Last API Response Code <span class="zh-sub">/ 最后响应码</span></div><div id="lastResponseCode" class="value mono">-</div></div>
-                <div class="info-item"><div class="label">Total API Requests <span class="zh-sub">/ API 请求总数</span></div><div id="totalRequests" class="value mono">0</div></div>
+              <div class="form-grid">
+                <div>
+                  <label class="field-label">Employee Record ID <span class="zh-sub">/ 员工记录ID</span> <span class="required-mark">*</span></label>
+                  <input id="testEmployeeRecordId" class="form-control" value="659823456789">
+                  <div id="testEmployeeRecordIdError" class="field-error"></div>
+                </div>
+                <div>
+                  <label class="field-label">Employee ID <span class="zh-sub">/ 员工编号</span> <span class="required-mark">*</span></label>
+                  <input id="testEmployeeId" class="form-control" value="ESM0001">
+                  <div id="testEmployeeIdError" class="field-error"></div>
+                </div>
+                <div>
+                  <label class="field-label">Device PIN <span class="zh-sub">/ 打卡机编号</span> <span class="required-mark">*</span></label>
+                  <input id="testPin" class="form-control" value="1">
+                  <div id="testPinError" class="field-error"></div>
+                </div>
+                <div>
+                  <label class="field-label">Name <span class="zh-sub">/ 姓名</span> <span class="required-mark">*</span></label>
+                  <input id="testName" class="form-control" value="Integration Test">
+                  <div id="testNameError" class="field-error"></div>
+                </div>
+                <div>
+                  <label class="field-label">Department <span class="zh-sub">/ 部门</span></label>
+                  <input id="testDepartment" class="form-control" value="IT">
+                </div>
+                <div>
+                  <label class="field-label">Privilege <span class="zh-sub">/ 权限</span></label>
+                  <select id="testPrivilege" class="form-select">
+                    <option value="0">0 - Normal User / 普通用户</option>
+                    <option value="14">14 - Administrator / 管理员</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-label">Enabled <span class="zh-sub">/ 启用</span></label>
+                  <div class="form-check form-switch">
+                    <input id="testEnabled" class="form-check-input" type="checkbox" checked>
+                    <label class="form-check-label" for="testEnabled">Enabled <span class="zh-sub">/ 启用</span></label>
+                  </div>
+                </div>
               </div>
+              <button id="sendTestBtn" class="btn btn-info btn-console mt-3" type="button">Send Test Request <span class="zh-sub">/ 发送测试请求</span></button>
+              <pre id="apiTestResult" class="mt-3">Not tested.</pre>
             </div>
           </section>
-          {% endif %}
+        </div>
+      </section>
+
+      <section id="tab-docs" class="tab-panel">
+        <section class="panel">
+          <div class="panel-header">
+            <span>Mingdao Configuration <span class="zh-sub">/ 明道配置</span></span>
+            <button id="copyConfigBtn" class="btn btn-outline-info btn-sm btn-console" type="button">Copy Mingdao Configuration <span class="zh-sub">/ 复制明道配置</span></button>
+          </div>
+          <div class="panel-body">
+            <div class="info-grid">
+              <div class="info-item"><div class="label">Request URL <span class="zh-sub">/ 请求地址</span></div><div id="guideRequestUrl" class="value mono">-</div></div>
+              <div class="info-item"><div class="label">HTTP Method <span class="zh-sub">/ 请求方法</span></div><div class="value"><span class="badge-soft badge-method-post">POST</span></div></div>
+              <div class="info-item"><div class="label">Authorization Header <span class="zh-sub">/ 鉴权请求头</span></div><div class="value mono">Authorization: Bearer &lt;API_TOKEN&gt;</div></div>
+              <div class="info-item"><div class="label">Content-Type <span class="zh-sub">/ 内容类型</span></div><div class="value mono">application/json</div></div>
+            </div>
+            <div id="configFeedback" class="copy-feedback mt-2"></div>
+          </div>
+        </section>
+
+        <div class="code-grid">
+          <section class="code-card">
+            <div class="code-title">Request JSON Example <span class="zh-sub">/ 请求 JSON 示例</span><button class="btn btn-outline-info btn-sm btn-console copy-code" type="button" data-copy-target="guideJsonExample">Copy</button></div>
+            <pre id="guideJsonExample"></pre>
+          </section>
+          <section class="code-card">
+            <div class="code-title">Successful Response Example <span class="zh-sub">/ 成功响应示例</span><button class="btn btn-outline-info btn-sm btn-console copy-code" type="button" data-copy-target="successResponseExample">Copy</button></div>
+            <pre id="successResponseExample">{
+  "success": true,
+  "employee_id": "ESM0001",
+  "employee_record_id": "659823456789",
+  "pin": "1",
+  "message": "User synchronized successfully.",
+  "changed": true,
+  "sync_records": 1
+}</pre>
+          </section>
+          <section class="code-card">
+            <div class="code-title">Error Response Example <span class="zh-sub">/ 错误响应示例</span><button class="btn btn-outline-info btn-sm btn-console copy-code" type="button" data-copy-target="errorResponseExample">Copy</button></div>
+            <pre id="errorResponseExample">{
+  "detail": "Invalid Mingdao API token."
+}</pre>
+          </section>
+          <section class="code-card">
+            <div class="code-title">cURL POST /api/v1/users <button id="copyCurlBtn" class="btn btn-outline-info btn-sm btn-console" type="button">Copy</button></div>
+            <pre id="curlExample"></pre>
+            <div id="curlFeedback" class="copy-feedback px-2"></div>
+          </section>
+        </div>
+
+        <section class="panel guide mt-3">
+          <div class="panel-header">API Documentation <span class="zh-sub">/ API 文档</span></div>
+          <div class="panel-body">
+            <h3>Available APIs <span class="zh-sub">/ 当前可用接口</span></h3>
+            <div class="table-responsive">
+              <table class="table table-dark table-sm">
+                <thead><tr><th>Method</th><th>Endpoint</th><th>Purpose</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="badge-soft badge-method-post">POST</span></td><td><code>/api/v1/users</code></td><td>Create or update one Mingdao employee in ADMS.</td></tr>
+                  <tr><td><span class="badge-soft badge-method-post">POST</span></td><td><code>/api/v1/users/batch</code></td><td>Create or update up to 500 Mingdao employees in one request.</td></tr>
+                  <tr><td><span class="badge-soft badge-method-get">GET</span></td><td><code>/api/v1/users</code></td><td>List current Mingdao-sourced users.</td></tr>
+                  <tr><td><span class="badge-soft badge-method-get">GET</span></td><td><code>/api/v1/users/{employee_id}</code></td><td>Get one Mingdao-sourced user by employee ID.</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3>Synchronization Flow <span class="zh-sub">/ 同步流程</span></h3>
+            <div class="step-flow">
+              <div class="step">Mingdao</div>
+              <div class="step">REST API</div>
+              <div class="step">ADMS Server</div>
+              <div class="step">Attendance Device</div>
+            </div>
+
+            <div class="accordion-lite mt-3">
+              <details open><summary>1. System Overview <span class="zh-sub">/ 系统概览</span></summary><p>Mingdao is the master employee database. ADMS receives employee data from Mingdao through REST APIs, stores it in <code>device_user</code>, prepares per-device records in <code>device_user_sync</code>, and later communicates with attendance devices through ADMS GETREQUEST.</p></details>
+              <details><summary>2. Authentication <span class="zh-sub">/ 鉴权</span></summary><pre>Authorization: Bearer &lt;API_TOKEN&gt;
+X-API-Key: &lt;API_TOKEN&gt;</pre></details>
+              <details><summary>3. Mingdao Configuration Guide <span class="zh-sub">/ 明道配置说明</span></summary><p>Configure Mingdao HTTP request nodes with the API URL shown on this page. Use method <code>POST</code>, header <code>Content-Type: application/json</code>, and either <code>Authorization: Bearer &lt;API_TOKEN&gt;</code> or <code>X-API-Key: &lt;API_TOKEN&gt;</code>.</p></details>
+              <details><summary>4. Idempotency <span class="zh-sub">/ 幂等规则</span></summary><p>Repeated POST requests with unchanged payload do not create duplicate users or duplicate sync records.</p></details>
+              <details><summary>5. Troubleshooting <span class="zh-sub">/ 故障排查</span></summary>
+                <div class="table-responsive">
+                  <table class="table table-dark table-sm">
+                    <thead><tr><th>Error Code</th><th>Reason</th><th>Suggested Action</th></tr></thead>
+                    <tbody>
+                      <tr><td>401</td><td>Token missing or invalid.</td><td>Check Authorization or X-API-Key.</td></tr>
+                      <tr><td>404</td><td>API path is wrong.</td><td>Confirm the path starts with <code>/api/v1</code>.</td></tr>
+                      <tr><td>413</td><td>Batch exceeds 500 users.</td><td>Split the batch request.</td></tr>
+                      <tr><td>422</td><td>Invalid JSON, missing required field, or unsupported privilege.</td><td>Check request body and required fields.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </details>
+              <details><summary>6. Full Documentation <span class="zh-sub">/ 完整文档</span></summary><p><a class="btn btn-outline-info btn-console" href="/settings/integration/documentation" target="_blank" rel="noopener">Open Integration Documentation <span class="zh-sub">/ 打开集成文档</span></a></p></details>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      {% else %}
+      <div class="grid-main">
+        <div>
 
           {% if page_mode == 'attendance' %}
           <section class="panel">
@@ -257,191 +509,8 @@
             </div>
           </section>
           {% endif %}
-
-          {% if page_mode == 'inbound' %}
-          <section class="panel">
-            <div class="panel-header">
-              <span>Mingdao Configuration Guide <span class="zh-sub">/ 明道配置指南</span></span>
-              <button id="copyConfigBtn" class="btn btn-outline-info btn-sm btn-console" type="button">Copy Mingdao Configuration <span class="zh-sub">/ 复制明道配置</span></button>
-            </div>
-            <div class="panel-body">
-              <div class="info-grid">
-                <div class="info-item"><div class="label">Request URL <span class="zh-sub">/ 请求地址</span></div><div id="guideRequestUrl" class="value mono">-</div></div>
-                <div class="info-item"><div class="label">HTTP Method <span class="zh-sub">/ 请求方法</span></div><div class="value mono">POST</div></div>
-                <div class="info-item"><div class="label">Authorization Header <span class="zh-sub">/ 鉴权请求头</span></div><div class="value mono">Authorization: Bearer &lt;API_TOKEN&gt;</div></div>
-                <div class="info-item"><div class="label">Content-Type <span class="zh-sub">/ 内容类型</span></div><div class="value mono">application/json</div></div>
-              </div>
-              <div class="mt-3">
-                <div class="label">Request JSON Example <span class="zh-sub">/ 请求 JSON 示例</span></div>
-                <pre id="guideJsonExample"></pre>
-              </div>
-              <div class="mt-3">
-                <div class="label">Successful Response Example <span class="zh-sub">/ 成功响应示例</span></div>
-                <pre>{
-  "success": true,
-  "employee_id": "ESM0001",
-  "employee_record_id": "659823456789",
-  "pin": "1",
-  "message": "User synchronized successfully.",
-  "changed": true,
-  "sync_records": 1
-}</pre>
-              </div>
-              <div class="mt-3">
-                <div class="label">Error Response Example <span class="zh-sub">/ 错误响应示例</span></div>
-                <pre>{
-  "detail": "Invalid Mingdao API token."
-}</pre>
-              </div>
-              <div id="configFeedback" class="copy-feedback"></div>
-            </div>
-          </section>
-          {% endif %}
         </div>
-
-        {% if page_mode == 'inbound' %}
-        <div>
-          <section class="panel">
-            <div class="panel-header">Integration Test <span class="zh-sub">/ 集成测试</span></div>
-            <div class="panel-body">
-              <button id="healthBtn" class="btn btn-success btn-console" type="button">Health Check <span class="zh-sub">/ 健康检查</span></button>
-              <pre id="healthResult" class="mt-3">Not checked.</pre>
-            </div>
-          </section>
-
-          <section class="panel">
-            <div class="panel-header">HTTP Request Examples <span class="zh-sub">/ 请求示例</span></div>
-            <div class="panel-body">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <span class="label">cURL POST /api/v1/users</span>
-                <button id="copyCurlBtn" class="btn btn-outline-info btn-sm btn-console" type="button">Copy <span class="zh-sub">/ 复制</span></button>
-              </div>
-              <pre id="curlExample"></pre>
-              <div id="curlFeedback" class="copy-feedback"></div>
-            </div>
-          </section>
-
-          <section class="panel">
-            <div class="panel-header">API Test <span class="zh-sub">/ API 测试</span></div>
-            <div class="panel-body">
-              <div class="row g-2">
-                <div class="col-12 col-md-6">
-                  <label class="label">Employee ID <span class="zh-sub">/ 员工编号</span></label>
-                  <input id="testEmployeeId" class="form-control" value="ESM0001">
-                </div>
-                <div class="col-12 col-md-6">
-                  <label class="label">Employee Record ID <span class="zh-sub">/ 员工记录ID</span></label>
-                  <input id="testEmployeeRecordId" class="form-control" value="659823456789">
-                </div>
-                <div class="col-12 col-md-6">
-                  <label class="label">Device PIN <span class="zh-sub">/ 打卡机编号</span></label>
-                  <input id="testPin" class="form-control" value="1">
-                </div>
-                <div class="col-12 col-md-6">
-                  <label class="label">Name <span class="zh-sub">/ 姓名</span></label>
-                  <input id="testName" class="form-control" value="Integration Test">
-                </div>
-                <div class="col-12 col-md-6">
-                  <label class="label">Department <span class="zh-sub">/ 部门</span></label>
-                  <input id="testDepartment" class="form-control" value="IT">
-                </div>
-                <div class="col-12 col-md-3">
-                  <label class="label">Privilege <span class="zh-sub">/ 权限</span></label>
-                  <input id="testPrivilege" class="form-control" type="number" value="0">
-                </div>
-                <div class="col-12 col-md-3">
-                  <label class="label">Enabled <span class="zh-sub">/ 启用</span></label>
-                  <select id="testEnabled" class="form-select">
-                    <option value="true">true</option>
-                    <option value="false">false</option>
-                  </select>
-                </div>
-              </div>
-              <button id="sendTestBtn" class="btn btn-info btn-console mt-3" type="button">Send Test Request <span class="zh-sub">/ 发送测试请求</span></button>
-              <pre id="apiTestResult" class="mt-3">Not tested.</pre>
-            </div>
-          </section>
-
-          <section class="panel">
-            <div class="panel-header">Documentation <span class="zh-sub">/ 文档</span></div>
-            <div class="panel-body">
-              <a class="btn btn-outline-info btn-console" href="/settings/integration/documentation" target="_blank" rel="noopener">Open Integration Documentation <span class="zh-sub">/ 打开集成文档</span></a>
-            </div>
-          </section>
-        </div>
-        {% endif %}
       </div>
-
-      {% if page_mode == 'inbound' %}
-      <section class="panel guide">
-        <div class="panel-header">Integration Guide <span class="zh-sub">/ 集成指南</span></div>
-        <div class="panel-body">
-          <h3>1. System Overview <span class="zh-sub">/ 系统概览</span></h3>
-          <p>Mingdao is the master employee database. ADMS receives employee data from Mingdao through REST APIs, stores it in <code>device_user</code>, prepares per-device records in <code>device_user_sync</code>, and later communicates with attendance devices through ADMS GETREQUEST. Administrators must not edit ADMS database records directly.</p>
-          <pre>Mingdao
-  -> REST API
-  -> ADMS Server
-  -> Attendance Device</pre>
-
-          <h3>2. Authentication <span class="zh-sub">/ 鉴权</span></h3>
-          <p>Every Mingdao API request must include the current API token. The token is configured as <code>MINGDAO_API_TOKEN</code> in <code>.env</code>.</p>
-          <pre>Authorization: Bearer &lt;API_TOKEN&gt;
-X-API-Key: &lt;API_TOKEN&gt;</pre>
-
-          <h3>3. Available APIs <span class="zh-sub">/ 当前可用接口</span></h3>
-          <table class="table table-dark table-sm">
-            <thead><tr><th>API</th><th>Method</th><th>Purpose</th></tr></thead>
-            <tbody>
-              <tr><td><code>/api/v1/users</code></td><td>POST</td><td>Create or update one Mingdao employee in ADMS.</td></tr>
-              <tr><td><code>/api/v1/users/batch</code></td><td>POST</td><td>Create or update up to 500 Mingdao employees in one request.</td></tr>
-              <tr><td><code>/api/v1/users</code></td><td>GET</td><td>List current Mingdao-sourced users.</td></tr>
-              <tr><td><code>/api/v1/users/{employee_id}</code></td><td>GET</td><td>Get one Mingdao-sourced user by employee ID.</td></tr>
-            </tbody>
-          </table>
-
-          <h3>4. Mingdao Configuration Guide <span class="zh-sub">/ 明道配置说明</span></h3>
-          <p>Configure Mingdao HTTP request nodes with the API URL shown on this page. Use method <code>POST</code>, header <code>Content-Type: application/json</code>, and either <code>Authorization: Bearer &lt;API_TOKEN&gt;</code> or <code>X-API-Key: &lt;API_TOKEN&gt;</code>.</p>
-          <pre>{
-  "employee_record_id": "659823456789",
-  "employee_id": "ESM0001",
-  "pin": "1",
-  "name": "Raymon",
-  "department": "IT",
-  "card_no": "",
-  "privilege": 0,
-  "enabled": true
-}</pre>
-          <p>Successful response:</p>
-          <pre>{
-  "success": true,
-  "employee_id": "ESM0001",
-  "employee_record_id": "659823456789",
-  "pin": "1",
-  "message": "User synchronized successfully.",
-  "changed": true,
-  "sync_records": 1
-}</pre>
-          <p>Error response examples include <code>401 Unauthorized</code> for missing or invalid token, <code>413</code> when batch size exceeds 500 users, and <code>422</code> for invalid JSON, missing <code>employee_record_id</code>, or unsupported privilege.</p>
-
-          <h3>5. Synchronization Flow <span class="zh-sub">/ 同步流程</span></h3>
-          <pre>Mingdao
-  -> REST API
-  -> device_user
-  -> device_user_sync
-  -> Attendance Device</pre>
-          <p>When a user is created or changed, ADMS creates or updates one <code>PENDING</code> sync record per registered device. Online devices receive user commands through ADMS GETREQUEST. Offline devices remain <code>PENDING</code> and can be synchronized after reconnect.</p>
-
-          <h3>6. Troubleshooting <span class="zh-sub">/ 故障排查</span></h3>
-          <ul>
-            <li><strong>401 Unauthorized:</strong> Token is missing, default, or invalid.</li>
-            <li><strong>404 API Not Found:</strong> Confirm the path starts with <code>/api/v1</code>.</li>
-            <li><strong>API Timeout:</strong> Confirm ADMS server port <code>4370</code> is reachable.</li>
-            <li><strong>Device Offline:</strong> User sync remains <code>PENDING</code> until the device reconnects.</li>
-            <li><strong>No Online Device:</strong> Check Operation Monitor and device heartbeat.</li>
-            <li><strong>No API Request Received:</strong> Verify Mingdao request URL, headers, and network access.</li>
-          </ul>
-        </div>
-      </section>
       {% endif %}
 
       {% if page_mode == 'attendance' %}
@@ -474,6 +543,8 @@ HAP-Sign: &lt;Sign&gt;</pre>
     const initialData = {{ data | tojson }};
     let currentData = initialData;
     let tokenVisible = false;
+    let tokenDirty = false;
+    let tokenOriginalValue = '';
 
     function esc(value) {
       return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -494,6 +565,110 @@ HAP-Sign: &lt;Sign&gt;</pre>
       if (element) element.addEventListener(eventName, handler);
     }
 
+    function nowDubaiText() {
+      return formatDubaiTime(new Date().toISOString());
+    }
+
+    function formatDubaiTime(value) {
+      if (!value || value === '-') return '-';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Dubai',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      }).formatToParts(date).reduce((acc, part) => {
+        acc[part.type] = part.value;
+        return acc;
+      }, {});
+      return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}:${parts.second} (UTC+4)`;
+    }
+
+    function badge(label, state = 'ok') {
+      const className = state === 'ok' ? 'badge-ok' : state === 'error' ? 'badge-error' : 'badge-warn';
+      return `<span class="badge-soft ${className}">${label}</span>`;
+    }
+
+    function setBadge(id, label, state = 'ok') {
+      const element = byId(id);
+      if (!element) return;
+      element.className = `badge-soft ${state === 'ok' ? 'badge-ok' : state === 'error' ? 'badge-error' : 'badge-warn'}`;
+      element.innerHTML = label;
+    }
+
+    function setButtonLoading(button, loading, label) {
+      if (!button) return;
+      if (loading) {
+        button.dataset.originalLabel = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = label || 'Loading... <span class="zh-sub">/ 处理中</span>';
+      } else {
+        button.disabled = false;
+        if (button.dataset.originalLabel) button.innerHTML = button.dataset.originalLabel;
+      }
+    }
+
+    function ensureToastStack() {
+      let stack = document.querySelector('.toast-stack');
+      if (!stack) {
+        stack = document.createElement('div');
+        stack.className = 'toast-stack';
+        document.body.appendChild(stack);
+      }
+      return stack;
+    }
+
+    function showToast(message) {
+      const toast = document.createElement('div');
+      toast.className = 'toast-console';
+      toast.textContent = message;
+      ensureToastStack().appendChild(toast);
+      setTimeout(() => toast.remove(), 2400);
+    }
+
+    function updateSaveState() {
+      const saveBtn = byId('saveBtn');
+      const unsaved = byId('tokenUnsaved');
+      if (saveBtn) saveBtn.disabled = !tokenDirty;
+      if (unsaved) unsaved.textContent = tokenDirty ? 'Unsaved changes / 有未保存修改' : '';
+    }
+
+    function setFieldError(id, message) {
+      setText(`${id}Error`, message || '');
+    }
+
+    function validateApiTestPayload(payload) {
+      let valid = true;
+      [
+        ['testEmployeeRecordId', payload.employee_record_id, 'Employee Record ID is required / 员工记录ID必填'],
+        ['testEmployeeId', payload.employee_id, 'Employee ID is required / 员工编号必填'],
+        ['testPin', payload.pin, 'Device PIN is required / 打卡机编号必填'],
+        ['testName', payload.name, 'Name is required / 姓名必填'],
+      ].forEach(([id, value, message]) => {
+        const hasValue = Boolean(String(value || '').trim());
+        setFieldError(id, hasValue ? '' : message);
+        valid = valid && hasValue;
+      });
+      return valid;
+    }
+
+    function renderJsonBlock(id, value) {
+      const element = byId(id);
+      if (!element) return;
+      const text = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+      element.innerHTML = text.replace(/("(?:\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*"(?:\s*:)?|\btrue\b|\bfalse\b|\bnull\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, token => {
+        const escaped = esc(token);
+        if (/^"/.test(token) && /:$/.test(token)) return `<span class="json-key">${escaped}</span>`;
+        if (/^"/.test(token)) return `<span class="json-string">${escaped}</span>`;
+        return `<span class="json-number">${escaped}</span>`;
+      });
+    }
+
     function render(data) {
       currentData = data;
       setText('topStatus', `${data.system_name} ${data.status}`);
@@ -503,19 +678,37 @@ HAP-Sign: &lt;Sign&gt;</pre>
       setText('authentication', data.authentication);
       setText('runtimeApiUrl', data.api_base_url);
       setText('runtimeToken', data.token_masked);
-      setText('serverTime', data.server_time);
+      setText('serverTime', formatDubaiTime(data.server_time));
       setText('apiStatus', data.api_status);
       setText('authStatus', data.authentication_status);
-      setText('lastRequest', data.last_api_request_time);
+      setText('lastRequest', formatDubaiTime(data.last_api_request_time));
       setText('lastCallerIp', data.last_caller_ip);
       setText('lastResponseCode', data.last_api_response_code);
       setText('totalRequests', data.total_api_requests);
       setText('guideRequestUrl', `${data.api_base_url}/users`);
+      setText('lastRefreshTime', `Last refreshed / 最近刷新：${nowDubaiText()}`);
+      setText('overviewTotalRequests', data.total_api_requests ?? 0);
+      setText('overviewLastRequest', formatDubaiTime(data.last_api_request_time));
+      const responseCode = data.last_api_response_code || '-';
+      const responseState = String(responseCode).startsWith('2') ? 'ok' : responseCode === '-' ? 'warn' : 'error';
+      const integrationEnabled = String(data.status || '').toLowerCase() === 'enabled';
+      const apiRunning = String(data.api_status || '').toLowerCase() === 'running';
+      const authEnabled = String(data.authentication_status || '').toLowerCase() === 'enabled';
+      setBadge('overviewIntegrationStatus', integrationEnabled ? 'Enabled <span class="zh-sub">/ 启用</span>' : 'Disabled <span class="zh-sub">/ 停用</span>', integrationEnabled ? 'ok' : 'warn');
+      setBadge('overviewApiStatus', apiRunning ? 'Running <span class="zh-sub">/ 运行中</span>' : esc(data.api_status || 'Unknown'), apiRunning ? 'ok' : 'error');
+      setBadge('overviewAuthStatus', authEnabled ? 'Enabled <span class="zh-sub">/ 启用</span>' : 'Check <span class="zh-sub">/ 检查</span>', authEnabled ? 'ok' : 'warn');
+      setBadge('overviewLastResponseCode', esc(responseCode), responseState);
+      setBadge('integrationStateBadge', integrationEnabled ? 'Enabled <span class="zh-sub">/ 启用</span>' : 'Disabled <span class="zh-sub">/ 停用</span>', integrationEnabled ? 'ok' : 'warn');
       const tokenInput = byId('tokenInput');
       if (tokenInput) {
-        tokenInput.value = tokenVisible ? (data.token_value || '') : data.token_masked;
+        if (!tokenDirty) {
+          tokenInput.value = tokenVisible ? (data.token_value || '') : data.token_masked;
+          tokenOriginalValue = tokenVisible ? (data.token_value || '') : '';
+        }
         tokenInput.type = tokenVisible ? 'text' : 'password';
+        tokenInput.readOnly = !tokenVisible;
       }
+      updateSaveState();
       renderAttendanceConfig(data.attendance_sync || {});
       renderGuideJson();
       renderCurl();
@@ -586,8 +779,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
     }
 
     function renderGuideJson() {
-      const guideJsonExample = byId('guideJsonExample');
-      if (guideJsonExample) guideJsonExample.textContent = JSON.stringify(requestJsonExample(), null, 2);
+      renderJsonBlock('guideJsonExample', requestJsonExample());
     }
 
     function mingdaoConfigurationText() {
@@ -632,38 +824,72 @@ HAP-Sign: &lt;Sign&gt;</pre>
     async function copyText(text, feedbackId) {
       await navigator.clipboard.writeText(text);
       setText(feedbackId, 'Copied / 已复制');
+      showToast('Copied / 已复制');
       setTimeout(() => setText(feedbackId, ''), 1800);
     }
 
-    on('refreshBtn', 'click', () => refresh(tokenVisible));
+    document.querySelectorAll('.inbound-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const name = tab.dataset.tab;
+        document.querySelectorAll('.inbound-tab').forEach(item => item.classList.toggle('active', item === tab));
+        document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.toggle('active', panel.id === `tab-${name}`));
+      });
+    });
+
+    document.querySelectorAll('.copy-code').forEach(button => {
+      button.addEventListener('click', () => {
+        const target = byId(button.dataset.copyTarget);
+        if (target) copyText(target.textContent, '');
+      });
+    });
+
+    on('refreshBtn', 'click', async () => {
+      const button = byId('refreshBtn');
+      setButtonLoading(button, true, 'Refreshing... <span class="zh-sub">/ 刷新中</span>');
+      try {
+        await refresh(tokenVisible);
+        showToast('Refreshed / 已刷新');
+      } finally {
+        setButtonLoading(button, false);
+      }
+    });
     on('showBtn', 'click', async () => {
       tokenVisible = !tokenVisible;
       byId('showBtn').innerHTML = tokenVisible ? 'Hide <span class="zh-sub">/ 隐藏</span>' : 'Show <span class="zh-sub">/ 显示</span>';
       await refresh(tokenVisible);
     });
     on('copyTokenBtn', 'click', async () => {
-      if (!tokenVisible) {
-        await refresh(true);
-        tokenVisible = true;
-        byId('showBtn').innerHTML = 'Hide <span class="zh-sub">/ 隐藏</span>';
-      }
-      await copyText(byId('tokenInput').value, 'tokenFeedback');
+      const response = await fetch('/api/settings/integration?show_token=true', {cache: 'no-store'});
+      const data = await response.json();
+      await copyText(data.token_value || '', 'tokenFeedback');
     });
     on('copyCurlBtn', 'click', () => copyText(byId('curlExample').textContent, 'curlFeedback'));
+    on('copyApiUrlBtn', 'click', () => copyText(byId('runtimeApiUrl').textContent, ''));
     on('copyConfigBtn', 'click', () => copyText(mingdaoConfigurationText(), 'configFeedback'));
+    on('tokenInput', 'input', () => {
+      tokenDirty = true;
+      updateSaveState();
+    });
     on('generateBtn', 'click', async () => {
+      if (!confirm('Generate a new API token? / 确认生成新令牌？')) return;
       const response = await fetch('/api/settings/integration/token/generate', {method: 'POST'});
       const data = await response.json();
       tokenVisible = true;
       byId('showBtn').innerHTML = 'Hide <span class="zh-sub">/ 隐藏</span>';
       const input = byId('tokenInput');
       input.type = 'text';
+      input.readOnly = false;
       input.value = data.token;
+      tokenDirty = true;
+      updateSaveState();
       renderCurl();
       setText('tokenFeedback', 'New token generated. Click Save to apply. / 新令牌已生成，请点击保存。');
+      showToast('New token generated / 新令牌已生成');
     });
     on('saveBtn', 'click', async () => {
       const token = byId('tokenInput').value.trim();
+      const button = byId('saveBtn');
+      setButtonLoading(button, true, 'Saving... <span class="zh-sub">/ 保存中</span>');
       const response = await fetch('/api/settings/integration/token/save', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -672,20 +898,44 @@ HAP-Sign: &lt;Sign&gt;</pre>
       const data = await response.json();
       if (!response.ok) {
         setText('tokenFeedback', data.detail || 'Save failed / 保存失败');
+        setButtonLoading(button, false);
+        updateSaveState();
         return;
       }
+      tokenDirty = false;
+      tokenOriginalValue = token;
       setText('tokenFeedback', `${data.message} env_file_saved=${data.env_file_saved}`);
+      showToast('Saved / 已保存');
+      setButtonLoading(button, false);
       await refresh(tokenVisible);
     });
     on('healthBtn', 'click', async () => {
-      const response = await fetch('/api/settings/integration/health', {cache: 'no-store'});
-      const data = await response.json();
-      byId('healthResult').textContent = [
-        `API Running: ${data.api}`,
-        `Database Connected: ${data.database}`,
-        `Authentication Enabled: ${data.authentication}`,
-        `Ready for Mingdao Integration: ${data.ready}`,
-      ].join('\n');
+      const button = byId('healthBtn');
+      const startedAt = performance.now();
+      setButtonLoading(button, true, 'Checking... <span class="zh-sub">/ 检查中</span>');
+      setBadge('healthStateBadge', 'Checking <span class="zh-sub">/ 检查中</span>', 'warn');
+      try {
+        const response = await fetch('/api/settings/integration/health', {cache: 'no-store'});
+        const data = await response.json();
+        const elapsedMs = Math.round(performance.now() - startedAt);
+        const ready = String(data.ready || '').toLowerCase() === 'ready';
+        setBadge('healthStateBadge', ready ? 'Success <span class="zh-sub">/ 成功</span>' : 'Failed <span class="zh-sub">/ 失败</span>', ready ? 'ok' : 'error');
+        byId('healthResult').textContent = [
+          `HTTP Status: ${response.status}`,
+          `Execution Time: ${elapsedMs} ms`,
+          `Check Time: ${nowDubaiText()}`,
+          '',
+          `API Running: ${data.api}`,
+          `Database Connected: ${data.database}`,
+          `Authentication Enabled: ${data.authentication}`,
+          `Ready for Mingdao Integration: ${data.ready}`,
+        ].join('\n');
+      } catch (error) {
+        setBadge('healthStateBadge', 'Failed <span class="zh-sub">/ 失败</span>', 'error');
+        byId('healthResult').textContent = String(error);
+      } finally {
+        setButtonLoading(button, false);
+      }
     });
     on('saveAttendanceBtn', 'click', async () => {
       const response = await fetch('/api/settings/integration/attendance', {
@@ -744,8 +994,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
     });
     on('sendTestBtn', 'click', async () => {
       const startedAt = performance.now();
-      const tokenResponse = await fetch('/api/settings/integration?show_token=true', {cache: 'no-store'});
-      const tokenData = await tokenResponse.json();
+      const button = byId('sendTestBtn');
       const payload = {
         employee_record_id: byId('testEmployeeRecordId').value.trim(),
         employee_id: byId('testEmployeeId').value.trim(),
@@ -754,11 +1003,18 @@ HAP-Sign: &lt;Sign&gt;</pre>
         department: byId('testDepartment').value.trim(),
         card_no: '',
         privilege: Number(byId('testPrivilege').value || 0),
-        enabled: byId('testEnabled').value === 'true',
+        enabled: byId('testEnabled').checked,
       };
+      if (!validateApiTestPayload(payload)) {
+        showToast('Please complete required fields / 请补全必填字段');
+        return;
+      }
+      setButtonLoading(button, true, 'Sending... <span class="zh-sub">/ 发送中</span>');
       let statusCode = 0;
       let responseText = '';
       try {
+        const tokenResponse = await fetch('/api/settings/integration?show_token=true', {cache: 'no-store'});
+        const tokenData = await tokenResponse.json();
         const response = await fetch(`${currentData.api_base_url}/users`, {
           method: 'POST',
           headers: {
@@ -785,6 +1041,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
         'Response JSON:',
         parsedResponse,
       ].join('\n');
+      setButtonLoading(button, false);
       await refresh(tokenVisible);
     });
 
