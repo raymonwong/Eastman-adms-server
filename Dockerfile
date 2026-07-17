@@ -12,6 +12,7 @@ COPY app/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
+COPY docs ./docs
 
 RUN mkdir -p /app/logs /app/backup && chown -R app:app /app
 
