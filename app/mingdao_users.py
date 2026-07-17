@@ -14,10 +14,15 @@ SUPPORTED_PRIVILEGES = {0, 1, 2, 3, 6, 10, 14}
 SYNC_PENDING = "PENDING"
 MAX_BATCH_USERS = 500
 DEFAULT_TOKEN_VALUES = {"", "changeme", "changeme-mingdao-token", "password", "123456", "please_change_me"}
-MINGDAO_API_RUNTIME_STATE: dict[str, str | None] = {"last_request_time": None, "last_caller_ip": None}
+MINGDAO_API_RUNTIME_STATE: dict[str, str | int | None] = {
+    "last_request_time": None,
+    "last_caller_ip": None,
+    "last_response_code": None,
+    "total_requests": 0,
+}
 
 
-def get_mingdao_api_runtime_state() -> dict[str, str | None]:
+def get_mingdao_api_runtime_state() -> dict[str, str | int | None]:
     return MINGDAO_API_RUNTIME_STATE.copy()
 
 
@@ -26,11 +31,13 @@ def require_mingdao_api_token(
     authorization: str | None = Header(default=None),
     x_api_key: str | None = Header(default=None, alias="X-API-Key"),
 ) -> None:
+    MINGDAO_API_RUNTIME_STATE["total_requests"] = int(MINGDAO_API_RUNTIME_STATE.get("total_requests") or 0) + 1
     MINGDAO_API_RUNTIME_STATE["last_request_time"] = datetime.now().isoformat(timespec="seconds")
     MINGDAO_API_RUNTIME_STATE["last_caller_ip"] = request.client.host if request.client else None
 
     expected_token = os.getenv("MINGDAO_API_TOKEN", "").strip()
     if expected_token.lower() in DEFAULT_TOKEN_VALUES:
+        MINGDAO_API_RUNTIME_STATE["last_response_code"] = 401
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Mingdao API token is not configured.",
@@ -43,8 +50,10 @@ def require_mingdao_api_token(
             bearer_token = parts[1].strip()
 
     if x_api_key == expected_token or bearer_token == expected_token:
+        MINGDAO_API_RUNTIME_STATE["last_response_code"] = 200
         return
 
+    MINGDAO_API_RUNTIME_STATE["last_response_code"] = 401
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid Mingdao API token.",

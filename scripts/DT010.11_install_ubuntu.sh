@@ -13,9 +13,10 @@ compose() {
 
 verify_integration_console() {
   log "Verifying System Settings Integration page"
-  compose exec -T api python -c "import urllib.request; html=urllib.request.urlopen('http://127.0.0.1:8000/settings/integration', timeout=5).read().decode(); assert 'Mingdao Integration' in html; assert 'Integration Guide' in html; assert 'HTTP Request Examples' in html"
-  compose exec -T api python -c "import json, urllib.request; data=json.loads(urllib.request.urlopen('http://127.0.0.1:8000/api/settings/integration', timeout=5).read()); assert data['system_name'] == 'Mingdao'; assert data['api_base_url'].endswith('/api/v1'); assert data['authentication'] == 'Bearer Token'; assert 'token_masked' in data"
+  compose exec -T api python -c "import urllib.request; html=urllib.request.urlopen('http://127.0.0.1:8000/settings/integration', timeout=5).read().decode(); assert 'Mingdao Integration' in html; assert 'Mingdao Configuration Guide' in html; assert 'HTTP Request Examples' in html; assert 'API Test' in html; assert 'Open Integration Documentation' in html"
+  compose exec -T api python -c "import json, urllib.request; data=json.loads(urllib.request.urlopen('http://127.0.0.1:8000/api/settings/integration', timeout=5).read()); assert data['system_name'] == 'Mingdao'; assert data['api_base_url'].endswith('/api/v1'); assert data['authentication'] == 'Bearer Token'; assert 'token_masked' in data and data['token_value'] == ''; assert 'last_api_response_code' in data; assert 'total_api_requests' in data"
   compose exec -T api python -c "import json, urllib.request; data=json.loads(urllib.request.urlopen('http://127.0.0.1:8000/api/settings/integration/health', timeout=5).read()); assert data['api'] == 'Running'; assert data['database'] == 'Connected'; assert data['authentication'] in ('Enabled','Disabled')"
+  compose exec -T api python -c "import urllib.request; doc=urllib.request.urlopen('http://127.0.0.1:8000/settings/integration/documentation', timeout=5).read().decode(); assert 'Mingdao API Integration' in doc; assert 'POST /api/v1/users' in doc"
 }
 
 verify_docs() {

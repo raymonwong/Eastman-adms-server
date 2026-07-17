@@ -2,6 +2,30 @@
 
 ## Version
 
+DT010.12
+
+## Date
+
+2026-07-17
+
+## Development Task
+
+DT010.12 Integration Center Enhancement
+
+## Description
+
+- Enhanced the existing `/settings/integration` page without changing the page layout or existing Communication Console behavior.
+- Kept API token masked by default and only revealed it through the Show action.
+- Continued generating API Base URL dynamically from the current request host.
+- Added Mingdao Configuration Guide section with request URL, method, authorization header, content type, request JSON, success response, and error response examples.
+- Added Copy Mingdao Configuration action for administrator setup.
+- Added API Test form that calls the current `POST /api/v1/users` endpoint with the configured token and displays HTTP status, response JSON, and execution time.
+- Added runtime statistics for last API response code and total API request count.
+- Added Open Integration Documentation button for `docs/Mingdao_API_Integration.md`.
+- Kept attendance upload, GETREQUEST, parser logic, synchronization logic, and existing Console behavior unchanged.
+
+## Version
+
 DT010.11
 
 ## Date

@@ -4,7 +4,7 @@ from pathlib import Path
 import secrets
 
 from fastapi import APIRouter, HTTPException, Request, status
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
@@ -32,9 +32,7 @@ def _is_auth_enabled(token: str) -> bool:
 def _mask_token(token: str) -> str:
     if not token:
         return "Not Configured"
-    if len(token) <= 8:
-        return "*" * len(token)
-    return f"{token[:4]}{'*' * 12}{token[-4:]}"
+    return "*" * max(len(token), 32)
 
 
 def _api_base_url(request: Request) -> str:
@@ -106,6 +104,8 @@ def _integration_payload(request: Request, *, show_token: bool = False) -> dict[
         "authentication_status": health["authentication"],
         "last_api_request_time": runtime.get("last_request_time") or "No API requests have been received.",
         "last_caller_ip": runtime.get("last_caller_ip") or "-",
+        "last_api_response_code": runtime.get("last_response_code") or "-",
+        "total_api_requests": runtime.get("total_requests") or 0,
         "health": health,
     }
 
@@ -145,3 +145,11 @@ def save_token(payload: TokenSaveRequest) -> dict[str, object]:
 @router.get("/api/settings/integration/health")
 def integration_health() -> dict[str, str]:
     return _health_status()
+
+
+@router.get("/settings/integration/documentation", response_class=PlainTextResponse)
+def integration_documentation() -> str:
+    document_path = Path(__file__).resolve().parents[1] / "docs" / "Mingdao_API_Integration.md"
+    if not document_path.exists():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Integration documentation not found.")
+    return document_path.read_text(encoding="utf-8")

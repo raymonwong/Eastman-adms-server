@@ -2,7 +2,7 @@
 
 ## Current Development Task
 
-DT010.11
+DT010.12
 
 ## Status
 
@@ -10,7 +10,7 @@ Waiting for Review
 
 ## Summary
 
-DT010.11 adds the Communication Console System Settings Integration page for Mingdao API configuration, documentation, runtime status, and integration testing. It does not change ADMS protocol handling or Mingdao synchronization logic.
+DT010.12 enhances the existing Communication Console System Settings Integration page with safer token display, Mingdao configuration copy support, API testing, runtime API statistics, and a documentation shortcut. It does not change ADMS protocol handling or Mingdao synchronization logic.
 
 ## Completed
 
@@ -90,6 +90,12 @@ DT010.11 adds the Communication Console System Settings Integration page for Min
 - Added permanent Integration Guide in the Console page.
 - Added `docs/Mingdao_API_Integration.md`.
 - Added `scripts/DT010.11_install_ubuntu.sh`.
+- Enhanced Integration page so the API token is masked by default and only shown through the Show action.
+- Added Mingdao Configuration Guide section directly on the Integration page.
+- Added Copy Mingdao Configuration action.
+- Added API Test form for `POST /api/v1/users`.
+- Added runtime statistics for last API response code and total API request count.
+- Added Open Integration Documentation action.
 - Updated README, CHANGELOG, and project status documentation.
 
 ## Not Included
@@ -118,4 +124,4 @@ DT010.11 adds the Communication Console System Settings Integration page for Min
 
 ## Next Development Task
 
-DT010.11 Review, then DT010.2 user command delivery
+DT010.12 Review, then DT010.2 user command delivery

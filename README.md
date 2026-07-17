@@ -207,6 +207,8 @@ http://<Server Address>:4370/settings/integration
 docs/Mingdao_API_Integration.md
 ```
 
+DT010.12 增强现有 Integration 页面，不改变布局和既有 Console 功能。API Token 默认全掩码显示，只有点击 Show 才显示完整令牌；API Base URL 继续根据当前访问 Host 动态生成；页面新增 Mingdao Configuration Guide、Copy Mingdao Configuration、API Test、Last API Response Code、Total API Requests 和 Open Integration Documentation。
+
 开发环境如需重建数据库，可执行：
 
 ```bash

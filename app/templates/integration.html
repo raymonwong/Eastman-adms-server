@@ -146,7 +146,45 @@
                 <div class="info-item"><div class="label">Authentication Status <span class="zh-sub">/ 鉴权状态</span></div><div id="authStatus" class="value">-</div></div>
                 <div class="info-item"><div class="label">Last API Request <span class="zh-sub">/ 最后 API 请求</span></div><div id="lastRequest" class="value mono">-</div></div>
                 <div class="info-item"><div class="label">Last Caller IP <span class="zh-sub">/ 最后调用 IP</span></div><div id="lastCallerIp" class="value mono">-</div></div>
+                <div class="info-item"><div class="label">Last API Response Code <span class="zh-sub">/ 最后响应码</span></div><div id="lastResponseCode" class="value mono">-</div></div>
+                <div class="info-item"><div class="label">Total API Requests <span class="zh-sub">/ API 请求总数</span></div><div id="totalRequests" class="value mono">0</div></div>
               </div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">
+              <span>Mingdao Configuration Guide <span class="zh-sub">/ 明道配置指南</span></span>
+              <button id="copyConfigBtn" class="btn btn-outline-info btn-sm btn-console" type="button">Copy Mingdao Configuration <span class="zh-sub">/ 复制明道配置</span></button>
+            </div>
+            <div class="panel-body">
+              <div class="info-grid">
+                <div class="info-item"><div class="label">Request URL <span class="zh-sub">/ 请求地址</span></div><div id="guideRequestUrl" class="value mono">-</div></div>
+                <div class="info-item"><div class="label">HTTP Method <span class="zh-sub">/ 请求方法</span></div><div class="value mono">POST</div></div>
+                <div class="info-item"><div class="label">Authorization Header <span class="zh-sub">/ 鉴权请求头</span></div><div class="value mono">Authorization: Bearer &lt;API_TOKEN&gt;</div></div>
+                <div class="info-item"><div class="label">Content-Type <span class="zh-sub">/ 内容类型</span></div><div class="value mono">application/json</div></div>
+              </div>
+              <div class="mt-3">
+                <div class="label">Request JSON Example <span class="zh-sub">/ 请求 JSON 示例</span></div>
+                <pre id="guideJsonExample"></pre>
+              </div>
+              <div class="mt-3">
+                <div class="label">Successful Response Example <span class="zh-sub">/ 成功响应示例</span></div>
+                <pre>{
+  "success": true,
+  "employee_id": "10001",
+  "message": "User synchronized successfully.",
+  "changed": true,
+  "sync_records": 1
+}</pre>
+              </div>
+              <div class="mt-3">
+                <div class="label">Error Response Example <span class="zh-sub">/ 错误响应示例</span></div>
+                <pre>{
+  "detail": "Invalid Mingdao API token."
+}</pre>
+              </div>
+              <div id="configFeedback" class="copy-feedback"></div>
             </div>
           </section>
         </div>
@@ -169,6 +207,46 @@
               </div>
               <pre id="curlExample"></pre>
               <div id="curlFeedback" class="copy-feedback"></div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">API Test <span class="zh-sub">/ API 测试</span></div>
+            <div class="panel-body">
+              <div class="row g-2">
+                <div class="col-12 col-md-6">
+                  <label class="label">Employee ID <span class="zh-sub">/ 员工编号</span></label>
+                  <input id="testEmployeeId" class="form-control" value="DT01012_TEST">
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="label">Name <span class="zh-sub">/ 姓名</span></label>
+                  <input id="testName" class="form-control" value="Integration Test">
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="label">Department <span class="zh-sub">/ 部门</span></label>
+                  <input id="testDepartment" class="form-control" value="IT">
+                </div>
+                <div class="col-12 col-md-3">
+                  <label class="label">Privilege <span class="zh-sub">/ 权限</span></label>
+                  <input id="testPrivilege" class="form-control" type="number" value="0">
+                </div>
+                <div class="col-12 col-md-3">
+                  <label class="label">Enabled <span class="zh-sub">/ 启用</span></label>
+                  <select id="testEnabled" class="form-select">
+                    <option value="true">true</option>
+                    <option value="false">false</option>
+                  </select>
+                </div>
+              </div>
+              <button id="sendTestBtn" class="btn btn-info btn-console mt-3" type="button">Send Test Request <span class="zh-sub">/ 发送测试请求</span></button>
+              <pre id="apiTestResult" class="mt-3">Not tested.</pre>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">Documentation <span class="zh-sub">/ 文档</span></div>
+            <div class="panel-body">
+              <a class="btn btn-outline-info btn-console" href="/settings/integration/documentation" target="_blank" rel="noopener">Open Integration Documentation <span class="zh-sub">/ 打开集成文档</span></a>
             </div>
           </section>
         </div>
@@ -269,10 +347,41 @@ X-API-Key: &lt;API_TOKEN&gt;</pre>
       setText('authStatus', data.authentication_status);
       setText('lastRequest', data.last_api_request_time);
       setText('lastCallerIp', data.last_caller_ip);
+      setText('lastResponseCode', data.last_api_response_code);
+      setText('totalRequests', data.total_api_requests);
+      setText('guideRequestUrl', `${data.api_base_url}/users`);
       const tokenInput = document.getElementById('tokenInput');
       tokenInput.value = tokenVisible ? (data.token_value || '') : data.token_masked;
       tokenInput.type = tokenVisible ? 'text' : 'password';
+      renderGuideJson();
       renderCurl();
+    }
+
+    function requestJsonExample() {
+      return {
+        employee_id: '10001',
+        name: 'Raymon',
+        department: 'IT',
+        card_no: '',
+        privilege: 0,
+        enabled: true,
+      };
+    }
+
+    function renderGuideJson() {
+      document.getElementById('guideJsonExample').textContent = JSON.stringify(requestJsonExample(), null, 2);
+    }
+
+    function mingdaoConfigurationText() {
+      return [
+        `Request URL: ${currentData.api_base_url}/users`,
+        'HTTP Method: POST',
+        'Authorization Header: Authorization: Bearer <API_TOKEN>',
+        'Content-Type: application/json',
+        '',
+        'Request JSON Example:',
+        JSON.stringify(requestJsonExample(), null, 2),
+      ].join('\n');
     }
 
     function renderCurl() {
@@ -319,6 +428,7 @@ X-API-Key: &lt;API_TOKEN&gt;</pre>
       await copyText(document.getElementById('tokenInput').value, 'tokenFeedback');
     });
     document.getElementById('copyCurlBtn').addEventListener('click', () => copyText(document.getElementById('curlExample').textContent, 'curlFeedback'));
+    document.getElementById('copyConfigBtn').addEventListener('click', () => copyText(mingdaoConfigurationText(), 'configFeedback'));
     document.getElementById('generateBtn').addEventListener('click', async () => {
       const response = await fetch('/api/settings/integration/token/generate', {method: 'POST'});
       const data = await response.json();
@@ -354,6 +464,49 @@ X-API-Key: &lt;API_TOKEN&gt;</pre>
         `Authentication Enabled: ${data.authentication}`,
         `Ready for Mingdao Integration: ${data.ready}`,
       ].join('\n');
+    });
+    document.getElementById('sendTestBtn').addEventListener('click', async () => {
+      const startedAt = performance.now();
+      const tokenResponse = await fetch('/api/settings/integration?show_token=true', {cache: 'no-store'});
+      const tokenData = await tokenResponse.json();
+      const payload = {
+        employee_id: document.getElementById('testEmployeeId').value.trim(),
+        name: document.getElementById('testName').value.trim(),
+        department: document.getElementById('testDepartment').value.trim(),
+        card_no: '',
+        privilege: Number(document.getElementById('testPrivilege').value || 0),
+        enabled: document.getElementById('testEnabled').value === 'true',
+      };
+      let statusCode = 0;
+      let responseText = '';
+      try {
+        const response = await fetch(`${currentData.api_base_url}/users`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${tokenData.token_value}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+        statusCode = response.status;
+        responseText = await response.text();
+      } catch (error) {
+        responseText = String(error);
+      }
+      const elapsedMs = Math.round(performance.now() - startedAt);
+      let parsedResponse = responseText;
+      try {
+        parsedResponse = JSON.stringify(JSON.parse(responseText), null, 2);
+      } catch (_) {
+        // Keep raw text when the response is not JSON.
+      }
+      document.getElementById('apiTestResult').textContent = [
+        `HTTP Status: ${statusCode || '-'}`,
+        `Execution Time: ${elapsedMs} ms`,
+        'Response JSON:',
+        parsedResponse,
+      ].join('\n');
+      await refresh(tokenVisible);
     });
 
     render(initialData);
