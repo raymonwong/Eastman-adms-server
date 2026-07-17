@@ -46,6 +46,7 @@ import re
 import urllib.parse
 import urllib.request
 
+import app.main  # Initializes the database engine and binds SessionLocal.
 from app.database import SessionLocal
 from app.models import Device, DeviceUserSync
 
