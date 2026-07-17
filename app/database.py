@@ -25,6 +25,9 @@ def check_database_connection(engine: Engine) -> None:
 
 
 def create_database_tables(engine: Engine) -> None:
+    # Existing DT008 databases already have device_user but not DT010 columns.
+    # Prepare referenced columns before SQLAlchemy creates device_user_sync FKs.
+    ensure_dt010_1_user_sync_prerequisites(engine)
     # SQLAlchemy create_all is idempotent and only creates tables that do not exist.
     Base.metadata.create_all(bind=engine)
     ensure_dt003_columns(engine)
@@ -35,6 +38,40 @@ def create_database_tables(engine: Engine) -> None:
     ensure_dt008_tables(engine)
     ensure_dt009_6_device_management(engine)
     ensure_dt010_1_user_sync(engine)
+
+
+def ensure_dt010_1_user_sync_prerequisites(engine: Engine) -> None:
+    statements = (
+        "ALTER TABLE device_user MODIFY device_sn VARCHAR(64) NULL",
+        "ALTER TABLE device_user MODIFY pin VARCHAR(64) NULL",
+        "ALTER TABLE device_user MODIFY raw_request_id INT NULL",
+        "ALTER TABLE device_user MODIFY receive_time DATETIME NULL",
+        "ALTER TABLE device_user ADD COLUMN employee_id VARCHAR(64) NULL",
+        "ALTER TABLE device_user ADD COLUMN department VARCHAR(255) NULL",
+        "ALTER TABLE device_user ADD COLUMN card_no VARCHAR(64) NULL",
+        "ALTER TABLE device_user ADD COLUMN enabled BOOL NOT NULL DEFAULT 1",
+        "ALTER TABLE device_user ADD COLUMN last_device_sn VARCHAR(64) NULL",
+        "ALTER TABLE device_user ADD COLUMN last_device_user_upload_at DATETIME NULL",
+        "ALTER TABLE device_user ADD COLUMN last_device_raw_request_id INT NULL",
+        "CREATE UNIQUE INDEX uq_device_user_employee_id ON device_user (employee_id)",
+        "CREATE INDEX ix_device_user_employee_id ON device_user (employee_id)",
+    )
+
+    with engine.begin() as connection:
+        for statement in statements:
+            try:
+                connection.execute(text(statement))
+            except Exception as exc:
+                error_text = str(exc).lower()
+                if (
+                    "doesn't exist" in error_text
+                    or "unknown table" in error_text
+                    or "duplicate column" in error_text
+                    or "duplicate key name" in error_text
+                    or "already exists" in error_text
+                ):
+                    continue
+                raise
 
 
 def ensure_dt003_columns(engine: Engine) -> None:
