@@ -9,6 +9,7 @@ from app.database import check_database_connection, configure_session_factory, c
 from app.device_management import router as device_management_router
 from app.integration_settings import router as integration_settings_router
 from app.mingdao_users import router as mingdao_users_router
+from app.user_console import router as user_console_router
 from app.settings import Settings
 
 settings = Settings.from_env()
@@ -35,6 +36,7 @@ app.include_router(console_router)
 app.include_router(device_management_router)
 app.include_router(integration_settings_router)
 app.include_router(mingdao_users_router)
+app.include_router(user_console_router)
 
 
 @app.get("/health")

@@ -2,7 +2,7 @@
 
 ## Current Development Task
 
-DT010.13
+DT010.14
 
 ## Status
 
@@ -10,7 +10,7 @@ Waiting for Review
 
 ## Summary
 
-DT010.13 separates Mingdao/ERP employee IDs from attendance device PIN values. `employee_id` is retained as the Mingdao reference field, while `pin` is the device user number used by future attendance device update commands. The Mingdao user API now accepts `pin` and rejects duplicate PIN ownership across different employees.
+DT010.14 adds a read-only ADMS Users Console page. The page displays users stored in `device_user`, grouped by department, so administrators can verify which Mingdao/device users are currently present in ADMS without using SSH or MySQL.
 
 ## Completed
 
@@ -101,6 +101,11 @@ DT010.13 separates Mingdao/ERP employee IDs from attendance device PIN values. `
 - Added duplicate PIN ownership protection with HTTP `409 Conflict`.
 - Updated `/settings/integration` examples, cURL output, API Test form, README, and Mingdao integration documentation to show `employee_id` and `pin` separately.
 - Added `scripts/DT010.13_install_ubuntu.sh`.
+- Added `/users` as the read-only ADMS Users Console page.
+- Added `/api/adms-users` as the read-only ADMS user list endpoint.
+- Grouped ADMS users by department and displayed employee ID, device PIN, source, card number, privilege, enabled status, sync counts, last device upload, and updated time.
+- Added ADMS Users navigation from Operation Monitor, System Settings Integration, and Device Management.
+- Added `scripts/DT010.14_install_ubuntu.sh`.
 - Updated README, CHANGELOG, and project status documentation.
 
 ## Not Included
@@ -129,4 +134,4 @@ DT010.13 separates Mingdao/ERP employee IDs from attendance device PIN values. `
 
 ## Next Development Task
 
-DT010.13 Review, then DT010.2 user command delivery
+DT010.14 Review, then DT010.2 user command delivery

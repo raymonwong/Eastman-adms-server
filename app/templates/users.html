@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="zh-CN" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ADMS Users - Eastman ADMS Server</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #111821;
+      --card: #0d131b;
+      --line: rgba(255, 255, 255, 0.1);
+      --line-soft: rgba(255, 255, 255, 0.07);
+      --text: #d7e2ee;
+      --muted: #8394a8;
+      --blue: #8fb3d9;
+      --green: #24d685;
+      --orange: #f59f00;
+      --red: #ff4d4f;
+      --radius: 10px;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 14px;
+      line-height: 1.4;
+      overflow-x: hidden;
+    }
+
+    .app-frame {
+      display: grid;
+      grid-template-columns: 148px minmax(0, 1fr);
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      padding: 16px 10px;
+      background: #081019;
+      border-right: 1px solid var(--line);
+    }
+
+    .brand {
+      margin-bottom: 20px;
+      padding: 0 4px;
+    }
+
+    .brand-title {
+      color: #f2f7ff;
+      font-size: 13px;
+      font-weight: 900;
+      line-height: 1.15;
+    }
+
+    .brand-subtitle,
+    .sidebar-version,
+    .muted,
+    .zh-sub {
+      color: var(--muted);
+    }
+
+    .brand-subtitle {
+      margin-top: 5px;
+      font-size: 10px;
+      line-height: 1.25;
+    }
+
+    .nav-link-console {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 34px;
+      margin-bottom: 6px;
+      padding: 7px 8px;
+      border-radius: 8px;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .nav-link-console.active {
+      color: #f2f7ff;
+      background: rgba(23, 109, 196, 0.34);
+    }
+
+    .nav-link-console:hover {
+      color: #f2f7ff;
+      background: rgba(143, 179, 217, 0.12);
+    }
+
+    .sidebar-version {
+      position: absolute;
+      bottom: 14px;
+      left: 14px;
+      font-size: 10px;
+    }
+
+    .icon {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 1780px;
+      padding: 16px 24px 20px;
+    }
+
+    .page-head,
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    .page-head {
+      margin-bottom: 14px;
+      padding: 14px 16px;
+    }
+
+    .page-title {
+      margin: 0;
+      color: #f2f7ff;
+      font-size: 21px;
+      line-height: 1.15;
+      font-weight: 900;
+    }
+
+    .page-subtitle {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .zh-sub {
+      font-size: 0.86em;
+      font-weight: 700;
+    }
+
+    .panel {
+      overflow: hidden;
+    }
+
+    .panel-header {
+      min-height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 8px 14px;
+      border-bottom: 1px solid var(--line-soft);
+      color: var(--blue);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .panel-body {
+      padding: 14px;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(280px, 420px) 180px auto;
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 14px;
+    }
+
+    .form-control,
+    .form-select {
+      background: var(--card);
+      border-color: rgba(255, 255, 255, 0.14);
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+      background: var(--card);
+      border-color: var(--blue);
+      color: var(--text);
+      box-shadow: 0 0 0 0.15rem rgba(143, 179, 217, 0.15);
+    }
+
+    .field-label {
+      margin-bottom: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .metric {
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.075);
+      border-radius: var(--radius);
+      padding: 12px;
+    }
+
+    .metric-label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .metric-value {
+      margin-top: 6px;
+      color: #f2f7ff;
+      font-size: 22px;
+      font-weight: 900;
+    }
+
+    .department-group {
+      margin-bottom: 14px;
+      border: 1px solid var(--line-soft);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--card);
+    }
+
+    .department-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      color: var(--blue);
+      background: rgba(143, 179, 217, 0.08);
+      font-weight: 900;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      min-width: 1180px;
+    }
+
+    th {
+      color: var(--blue);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    td {
+      vertical-align: middle;
+      font-size: 13px;
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    .badge-enabled {
+      color: var(--green);
+      font-weight: 900;
+    }
+
+    .badge-disabled {
+      color: var(--red);
+      font-weight: 900;
+    }
+
+    .sync-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .sync-badge {
+      padding: 2px 6px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .sync-badge.pending { color: var(--orange); }
+    .sync-badge.synced { color: var(--green); }
+    .sync-badge.failed { color: var(--red); }
+
+    .table-state {
+      min-height: 180px;
+      display: grid;
+      gap: 8px;
+      place-items: center;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .table-state.error {
+      color: var(--red);
+    }
+
+    @media (max-width: 900px) {
+      .app-frame { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; display: flex; overflow-x: auto; gap: 8px; }
+      .brand, .sidebar-version { display: none; }
+      .toolbar, .summary-grid { grid-template-columns: 1fr; }
+      .shell { padding: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-frame">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-title">ADMS CONSOLE</div>
+        <div class="brand-subtitle">Attendance Data<br>Management Server</div>
+      </div>
+      <a class="nav-link-console" href="/console"><i data-lucide="layout-dashboard" class="icon"></i><span>Operation Monitor<br><span class="zh-sub">运行监控</span></span></a>
+      <a class="nav-link-console" href="/dms"><i data-lucide="monitor-cog" class="icon"></i><span>Device Management<br><span class="zh-sub">设备管理</span></span></a>
+      <a class="nav-link-console active" href="/users"><i data-lucide="users" class="icon"></i><span>ADMS Users<br><span class="zh-sub">用户列表</span></span></a>
+      <span class="nav-link-console"><i data-lucide="square-terminal" class="icon"></i><span>Protocol Console<br><span class="zh-sub">协议控制台 · 开发中</span></span></span>
+      <a class="nav-link-console" href="/settings/integration"><i data-lucide="settings" class="icon"></i><span>System Settings<br><span class="zh-sub">系统设置 · Integration</span></span></a>
+      <div class="sidebar-version">v1.0.0</div>
+    </aside>
+
+    <main class="container-fluid shell">
+      <section class="page-head">
+        <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+          <div>
+            <h1 class="page-title">ADMS Users <span class="zh-sub">/ 用户列表</span></h1>
+            <div class="page-subtitle">Read-only view of users stored in ADMS device_user <span class="zh-sub">/ 只读查看 ADMS 中保存的用户</span></div>
+          </div>
+          <button id="refreshBtn" type="button" class="btn btn-outline-info btn-sm"><i data-lucide="refresh-cw" class="icon"></i> Refresh <span class="zh-sub">/ 刷新</span></button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <span>User Overview <span class="zh-sub">/ 用户概览</span></span>
+          <span id="userCount" class="muted">-</span>
+        </div>
+        <div class="panel-body">
+          <div id="summaryGrid" class="summary-grid"></div>
+          <div class="toolbar">
+            <div>
+              <div class="field-label">Search <span class="zh-sub">/ 搜索</span></div>
+              <input id="searchInput" class="form-control" placeholder="Employee ID / PIN / Name / Department 搜索工号 / PIN / 姓名 / 部门">
+            </div>
+            <div>
+              <div class="field-label">Status <span class="zh-sub">/ 状态</span></div>
+              <select id="statusFilter" class="form-select">
+                <option value="all">All / 全部</option>
+                <option value="enabled">Enabled / 启用</option>
+                <option value="disabled">Disabled / 停用</option>
+              </select>
+            </div>
+            <div>
+              <div class="field-label">Grouping <span class="zh-sub">/ 分组</span></div>
+              <div class="muted">Grouped by Department <span class="zh-sub">/ 按部门分组</span></div>
+            </div>
+          </div>
+          <div id="usersContainer">
+            <div class="table-state">Loading...<br><span class="zh-sub">正在加载……</span></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    let users = [];
+
+    function esc(value) {
+      return String(value ?? '').replace(/[&<>"']/g, function (char) {
+        return ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[char];
+      });
+    }
+
+    function formatTime(value) {
+      return value ? String(value).replace('T', ' ').slice(0, 19) : '-';
+    }
+
+    function departmentName(user) {
+      return user.department || 'Not Set / 未设置';
+    }
+
+    function sourceName(user) {
+      return user.employee_id ? 'Mingdao / 明道' : 'Device Upload / 设备上传';
+    }
+
+    function filteredUsers() {
+      const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+      const status = document.getElementById('statusFilter').value;
+      return users.filter(function (user) {
+        if (status === 'enabled' && !user.enabled) return false;
+        if (status === 'disabled' && user.enabled) return false;
+        if (!keyword) return true;
+        return [user.employee_id, user.pin, user.name, user.department, user.card_no].some(function (value) {
+          return String(value || '').toLowerCase().includes(keyword);
+        });
+      });
+    }
+
+    function renderSummary(rows) {
+      const enabled = rows.filter(user => user.enabled).length;
+      const disabled = rows.length - enabled;
+      const departments = new Set(rows.map(departmentName)).size;
+      const pending = rows.reduce((total, user) => total + Number(user.pending_sync || 0), 0);
+      document.getElementById('summaryGrid').innerHTML = [
+        metric('Total Users', '用户总数', rows.length),
+        metric('Enabled', '启用', enabled),
+        metric('Disabled', '停用', disabled),
+        metric('Departments', '部门数', departments),
+        metric('Pending Sync', '待同步', pending),
+      ].join('');
+      document.getElementById('userCount').textContent = `${rows.length} / ${users.length}`;
+    }
+
+    function metric(label, zh, value) {
+      return `
+        <div class="metric">
+          <div class="metric-label">${label} <span class="zh-sub">/ ${zh}</span></div>
+          <div class="metric-value mono">${esc(value)}</div>
+        </div>
+      `;
+    }
+
+    function renderUsers() {
+      const rows = filteredUsers();
+      renderSummary(rows);
+      if (!rows.length) {
+        document.getElementById('usersContainer').innerHTML = '<div class="table-state">No users<br><span class="zh-sub">暂无用户</span></div>';
+        return;
+      }
+
+      const groups = new Map();
+      rows.forEach(function (user) {
+        const key = departmentName(user);
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(user);
+      });
+
+      const sortedGroups = Array.from(groups.entries()).sort(function (left, right) {
+        return left[0].localeCompare(right[0]);
+      });
+
+      document.getElementById('usersContainer').innerHTML = sortedGroups.map(function ([department, groupRows]) {
+        return `
+          <section class="department-group">
+            <div class="department-header">
+              <span>${esc(department)}</span>
+              <span class="muted">${groupRows.length} Users <span class="zh-sub">/ ${groupRows.length} 人</span></span>
+            </div>
+            <div class="table-wrap">
+              <table class="table table-dark table-hover align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Employee ID<br><span class="zh-sub">员工工号</span></th>
+                    <th>PIN<br><span class="zh-sub">打卡机编号</span></th>
+                    <th>Name<br><span class="zh-sub">姓名</span></th>
+                    <th>Source<br><span class="zh-sub">来源</span></th>
+                    <th>Card No<br><span class="zh-sub">卡号</span></th>
+                    <th>Privilege<br><span class="zh-sub">权限</span></th>
+                    <th>Status<br><span class="zh-sub">状态</span></th>
+                    <th>Sync<br><span class="zh-sub">同步</span></th>
+                    <th>Last Device<br><span class="zh-sub">最后设备</span></th>
+                    <th>Updated Time<br><span class="zh-sub">更新时间</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${groupRows.map(userRow).join('')}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        `;
+      }).join('');
+    }
+
+    function userRow(user) {
+      return `
+        <tr>
+          <td class="mono">${esc(user.employee_id || '-')}</td>
+          <td class="mono">${esc(user.pin || '-')}</td>
+          <td>${esc(user.name || '-')}</td>
+          <td>${esc(sourceName(user))}</td>
+          <td class="mono">${esc(user.card_no || '-')}</td>
+          <td class="mono">${esc(user.privilege || '0')}</td>
+          <td>${user.enabled ? '<span class="badge-enabled">Enabled / 启用</span>' : '<span class="badge-disabled">Disabled / 停用</span>'}</td>
+          <td>
+            <div class="sync-badges">
+              <span class="sync-badge pending">P ${esc(user.pending_sync || 0)}</span>
+              <span class="sync-badge synced">S ${esc(user.synced_sync || 0)}</span>
+              <span class="sync-badge failed">F ${esc(user.failed_sync || 0)}</span>
+            </div>
+          </td>
+          <td class="mono">${esc(user.last_device_sn || '-')}<br><span class="muted">${esc(formatTime(user.last_device_user_upload_at))}</span></td>
+          <td class="mono">${esc(formatTime(user.updated_at))}</td>
+        </tr>
+      `;
+    }
+
+    async function loadUsers() {
+      document.getElementById('usersContainer').innerHTML = '<div class="table-state">Loading...<br><span class="zh-sub">正在加载……</span></div>';
+      try {
+        const response = await fetch('/api/adms-users', {cache: 'no-store'});
+        if (!response.ok) {
+          throw new Error(`${response.status} ${response.statusText}`);
+        }
+        users = await response.json();
+        renderUsers();
+      } catch (error) {
+        document.getElementById('usersContainer').innerHTML = `
+          <div class="table-state error">
+            Load failed<br><span class="zh-sub">加载失败</span><br>
+            ${esc(error.message || error)}<br>
+            <button type="button" class="btn btn-sm btn-outline-info mt-2" onclick="loadUsers()">Reload <span class="zh-sub">/ 重新加载</span></button>
+          </div>
+        `;
+      }
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', loadUsers);
+    document.getElementById('searchInput').addEventListener('input', renderUsers);
+    document.getElementById('statusFilter').addEventListener('change', renderUsers);
+    document.addEventListener('DOMContentLoaded', function () {
+      loadUsers();
+      if (window.lucide) window.lucide.createIcons();
+    });
+  </script>
+</body>
+</html>

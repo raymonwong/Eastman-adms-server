@@ -2,6 +2,28 @@
 
 ## Version
 
+DT010.14
+
+## Date
+
+2026-07-17
+
+## Development Task
+
+DT010.14 ADMS Users Console
+
+## Description
+
+- Added a read-only ADMS Users Console page at `/users`.
+- Added `/api/adms-users` for reading users stored in `device_user`.
+- Grouped users by department, with empty departments displayed as `Not Set / 未设置`.
+- Displayed employee ID, device PIN, name, source, card number, privilege, enabled status, sync counts, last device upload, and updated time.
+- Added ADMS Users navigation from Operation Monitor, System Settings Integration, and Device Management.
+- Added `scripts/DT010.14_install_ubuntu.sh` without overwriting previous deployment scripts.
+- Kept database structure, Mingdao APIs, ADMS protocol, parser logic, command delivery, and business synchronization unchanged.
+
+## Version
+
 DT010.13
 
 ## Date
