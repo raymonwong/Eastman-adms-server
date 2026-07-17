@@ -43,7 +43,7 @@
     .sidebar-version { position: absolute; bottom: 12px; left: 18px; color: var(--muted); font-size: 10px; }
 
     .shell { padding: 18px 26px 28px; }
-    .inbound-page .shell { max-width: 1360px; margin: 0 auto; width: 100%; }
+    .inbound-page .shell, .attendance-page .shell { max-width: 1360px; margin: 0 auto; width: 100%; }
     .page-head { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; margin-bottom: 14px; }
     .page-title { margin: 0; color: #f3f8ff; font-size: 24px; font-weight: 900; }
     .page-subtitle { font-size: 12px; margin-top: 4px; }
@@ -120,6 +120,28 @@
     .accordion-lite summary { cursor: pointer; color: var(--blue); font-weight: 900; }
     .accordion-lite details > *:not(summary) { margin-top: 10px; }
     .toast-stack { pointer-events: none; }
+    .sync-overview { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+    .sync-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; min-width: 0; }
+    .sync-number { font-size: 22px; line-height: 1.1; font-weight: 900; margin-top: 5px; color: #f6fbff; }
+    .sync-number.pending { color: var(--yellow); }
+    .sync-number.syncing { color: var(--cyan); }
+    .sync-number.synced { color: var(--green); }
+    .sync-number.failed { color: var(--red); }
+    .attendance-config-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 0.68fr); gap: 12px; align-items: start; }
+    .step-panel .panel-header { justify-content: flex-start; gap: 10px; }
+    .step-number { width: 26px; height: 26px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: rgba(34, 211, 238, 0.14); color: var(--cyan); border: 1px solid rgba(34, 211, 238, 0.32); font-weight: 900; }
+    .help-text { color: var(--muted); font-size: 11px; margin-top: 5px; }
+    .credential-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; }
+    .mapping-table { min-width: 760px; margin-bottom: 0; }
+    .mapping-source { background: rgba(143, 179, 217, 0.08); border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; display: inline-block; }
+    .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .summary-field-list { display: grid; gap: 6px; }
+    .summary-field-row { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 5px; }
+    .info-alert { color: #bfdbfe; background: rgba(59, 130, 246, 0.10); border: 1px solid rgba(59, 130, 246, 0.30); border-radius: var(--radius); padding: 12px; }
+    .danger-alert { color: #fecdd3; background: rgba(255, 93, 108, 0.10); border: 1px solid rgba(255, 93, 108, 0.28); border-radius: var(--radius); padding: 10px; }
+    .result-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+    .result-chip { background: var(--card); border: 1px solid var(--line); border-radius: 7px; padding: 8px; }
+    .result-chip strong { display: block; font-size: 18px; margin-top: 4px; }
 
     .settings-group-label { color: var(--muted); font-size: 11px; font-weight: 900; padding: 10px 8px 4px; text-transform: uppercase; letter-spacing: 0.02em; }
     .settings-sub-link { padding-left: 18px; font-size: 11px; }
@@ -132,6 +154,8 @@
       .grid-main, .info-grid { grid-template-columns: 1fr; }
       .status-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .runtime-grid, .test-grid, .form-grid { grid-template-columns: 1fr; }
+      .sync-overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .attendance-config-grid, .summary-grid, .result-list { grid-template-columns: 1fr; }
       .code-grid { grid-template-columns: 1fr; }
       .description-list { grid-template-columns: 1fr; }
       .token-row { grid-template-columns: 1fr; }
@@ -144,6 +168,7 @@
       .page-head { flex-direction: column; }
       .page-actions, .btn-console { width: 100%; justify-content: center; }
       .status-overview { grid-template-columns: 1fr; }
+      .sync-overview { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -169,7 +194,7 @@
         <div>
           {% if page_mode == 'attendance' %}
           <h1 class="page-title">Attendance Synchronization <span class="zh-sub">/ 考勤同步配置</span></h1>
-          <div class="page-subtitle">Configure and run ADMS attendance uploads to Mingdao with local duplicate prevention. <span class="zh-sub">/ 配置并执行 ADMS 考勤上传到明道，使用本地机制防止重复上传。</span></div>
+          <div class="page-subtitle">Configure and run ADMS attendance uploads to Mingdao with local duplicate prevention. <span class="zh-sub">/ 配置 ADMS 考勤数据上传至明道，并通过本地幂等机制防止重复上传。</span></div>
           {% else %}
           <h1 class="page-title">Inbound API <span class="zh-sub">/ 对外 API</span></h1>
           <div class="page-subtitle">Mingdao pushes employee data into ADMS through authenticated REST APIs. <span class="zh-sub">/ 明道通过鉴权 REST API 将员工资料推送到 ADMS。</span></div>
@@ -181,7 +206,11 @@
           <span id="lastRefreshTime" class="refresh-time">Last refreshed / 最近刷新：-</span>
         </div>
         {% else %}
-        <span id="topStatus" class="status-pill">Loading <span class="zh-sub">/ 加载中</span></span>
+        <div class="page-actions">
+          <span id="attendanceGlobalStatus" class="badge-soft badge-warn">Loading <span class="zh-sub">/ 加载中</span></span>
+          <button id="refreshAttendanceBtn" class="btn btn-outline-info btn-sm btn-console" type="button"><i data-lucide="refresh-cw" class="icon"></i> Refresh Status <span class="zh-sub">/ 刷新状态</span></button>
+          <span id="attendanceLastRefreshTime" class="refresh-time">Last refreshed / 最近刷新：-</span>
+        </div>
         {% endif %}
       </section>
 
@@ -415,124 +444,202 @@ X-API-Key: &lt;API_TOKEN&gt;</pre></details>
       </section>
 
       {% else %}
-      <div class="grid-main">
+      <section class="sync-overview">
+        <div class="sync-card"><div class="label">Auto Sync <span class="zh-sub">/ 自动同步</span></div><div id="syncAutoStatus" class="sync-number">-</div></div>
+        <div class="sync-card"><div class="label">PENDING <span class="zh-sub">/ 待同步</span></div><div id="syncPending" class="sync-number pending">0</div></div>
+        <div class="sync-card"><div class="label">SYNCING <span class="zh-sub">/ 同步中</span></div><div id="syncSyncing" class="sync-number syncing">0</div></div>
+        <div class="sync-card"><div class="label">SYNCED <span class="zh-sub">/ 已同步</span></div><div id="syncSynced" class="sync-number synced">0</div></div>
+        <div class="sync-card"><div class="label">FAILED <span class="zh-sub">/ 失败</span></div><div id="syncFailed" class="sync-number failed">0</div></div>
+        <div class="sync-card"><div class="label">TOTAL <span class="zh-sub">/ 总计</span></div><div id="syncTotal" class="sync-number">0</div></div>
+        <div class="sync-card"><div class="label">Last Sync <span class="zh-sub">/ 最后同步</span></div><div id="syncLastTime" class="value mono">-</div></div>
+      </section>
+
+      <div class="attendance-config-grid">
         <div>
-
-          {% if page_mode == 'attendance' %}
-          <section class="panel">
-            <div class="panel-header">Attendance Synchronization <span class="zh-sub">/ 考勤同步配置</span></div>
+          <section class="panel step-panel">
+            <div class="panel-header"><span class="step-number">1</span><span>Mingdao Connection <span class="zh-sub">/ 明道连接配置</span></span></div>
             <div class="panel-body">
-              <div class="notice mb-3">
-                DT014 uploads saved ADMS attendance events to Mingdao. Each attendance_event.id can be uploaded only once. <span class="zh-sub">/ DT014 将已保存的 ADMS 考勤事件上传到明道；每个 attendance_event.id 只允许上传一次。</span>
+              <div class="mb-3">
+                <label class="field-label">Mingdao Attendance OpenAPI URL <span class="zh-sub">/ 明道考勤 OpenAPI URL</span> <span class="required-mark">*</span></label>
+                <input id="attendanceOpenapiUrl" class="form-control mono attendance-field" placeholder="https://api.mingdao.com">
+                <div class="help-text">Use the Mingdao OpenAPI base URL. <span class="zh-sub">/ 填写明道 OpenAPI 基础地址。</span></div>
+                <div id="attendanceOpenapiUrlError" class="field-error"></div>
               </div>
-              <div class="row g-2">
-                <div class="col-12 col-md-4">
-                  <label class="label">Enable Attendance Synchronization <span class="zh-sub">/ 启用考勤同步</span></label>
-                  <select id="attendanceEnabled" class="form-select">
-                    <option value="false">Disabled / 停用</option>
-                    <option value="true">Enabled / 启用</option>
-                  </select>
+              <div class="form-grid">
+                <div>
+                  <label class="field-label">AppKey <span class="zh-sub">/ 明道 AppKey</span> <span class="required-mark">*</span></label>
+                  <div class="credential-row">
+                    <input id="attendanceAppKey" class="form-control mono attendance-field" type="password" placeholder="Copied from Mingdao OpenAPI">
+                    <button id="showAttendanceAppKeyBtn" class="btn btn-outline-light btn-console" type="button">Show <span class="zh-sub">/ 显示</span></button>
+                    <button id="copyAttendanceAppKeyBtn" class="btn btn-outline-info btn-console" type="button">Copy <span class="zh-sub">/ 复制</span></button>
+                  </div>
+                  <div class="help-text">Copied from Mingdao OpenAPI. <span class="zh-sub">/ 从明道 OpenAPI 授权页面复制。</span></div>
+                  <div id="attendanceAppKeyError" class="field-error"></div>
                 </div>
-                <div class="col-12 col-md-8">
-                  <label class="label">Mingdao Attendance OpenAPI URL <span class="zh-sub">/ 明道考勤 OpenAPI URL</span></label>
-                  <input id="attendanceOpenapiUrl" class="form-control mono" placeholder="https://...">
-                </div>
-                <div class="col-12 col-md-6">
-                  <label class="label">AppKey <span class="zh-sub">/ 明道 AppKey</span></label>
-                  <input id="attendanceAppKey" class="form-control mono" placeholder="Copied from Mingdao OpenAPI">
-                </div>
-                <div class="col-12 col-md-6">
-                  <label class="label">Sign <span class="zh-sub">/ 明道 Sign</span></label>
-                  <input id="attendanceSign" class="form-control mono" type="password" placeholder="Copied from Mingdao OpenAPI">
-                </div>
-                <div class="col-12 col-md-6">
-                  <label class="label">Worksheet ID <span class="zh-sub">/ 工作表 ID</span></label>
-                  <input id="attendanceWorksheetId" class="form-control mono" placeholder="Mingdao attendance worksheet ID">
-                </div>
-                <div class="col-12 col-md-6">
-                  <label class="label">Retry Failed After Minutes <span class="zh-sub">/ 失败重试间隔分钟</span></label>
-                  <input id="attendanceRetryMinutes" class="form-control mono" type="number" min="1" max="10080" value="60">
+                <div>
+                  <label class="field-label">Sign <span class="zh-sub">/ 明道 Sign</span> <span class="required-mark">*</span></label>
+                  <div class="credential-row">
+                    <input id="attendanceSign" class="form-control mono attendance-field" type="password" placeholder="Copied from Mingdao OpenAPI">
+                    <button id="showAttendanceSignBtn" class="btn btn-outline-light btn-console" type="button">Show <span class="zh-sub">/ 显示</span></button>
+                    <button id="copyAttendanceSignBtn" class="btn btn-outline-info btn-console" type="button">Copy <span class="zh-sub">/ 复制</span></button>
+                  </div>
+                  <div class="help-text">Sensitive credential. It is hidden by default. <span class="zh-sub">/ 敏感凭证，默认隐藏。</span></div>
+                  <div id="attendanceSignError" class="field-error"></div>
                 </div>
               </div>
-
-              <div class="mt-3">
-                <div class="label mb-2">Field Mapping <span class="zh-sub">/ 字段映射</span></div>
-                <div class="row g-2">
-                  <div class="col-12 col-md-6">
-                    <label class="label">Employee Record ID -> Target Field ID <span class="zh-sub">/ 员工记录ID字段</span></label>
-                    <input id="attendanceEmployeeRecordField" class="form-control mono">
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <label class="label">Check Time -> Target Field ID <span class="zh-sub">/ 考勤时间字段</span></label>
-                    <input id="attendanceCheckTimeField" class="form-control mono">
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <label class="label">Device Name -> Target Field ID <span class="zh-sub">/ 设备名称字段</span></label>
-                    <input id="attendanceDeviceNameField" class="form-control mono">
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <label class="label">Device SN -> Target Field ID <span class="zh-sub">/ 设备序列号字段</span></label>
-                    <input id="attendanceDeviceSnField" class="form-control mono">
-                  </div>
-                </div>
-              </div>
-
-              <div class="button-row">
-                <button id="saveAttendanceBtn" class="btn btn-info btn-console" type="button">Save Attendance Config <span class="zh-sub">/ 保存考勤配置</span></button>
+              <div class="button-row justify-content-end">
                 <button id="testAttendanceBtn" class="btn btn-outline-success btn-console" type="button">Test Connection <span class="zh-sub">/ 测试连接</span></button>
-                <button id="syncAttendanceBtn" class="btn btn-outline-warning btn-console" type="button">Sync Now <span class="zh-sub">/ 立即同步</span></button>
               </div>
-              <div id="attendanceFeedback" class="copy-feedback mt-2"></div>
-              <pre id="attendanceTestResult" class="mt-3">Not tested.</pre>
-              <pre id="attendanceSyncResult" class="mt-3">Not synced.</pre>
+              <div id="attendanceTestStatus" class="mt-2"></div>
+              <pre id="attendanceTestResult" class="mt-3">Connection has not been tested. / 尚未测试连接。</pre>
             </div>
           </section>
-          {% endif %}
 
-          {% if page_mode == 'attendance' %}
+          <section class="panel step-panel">
+            <div class="panel-header"><span class="step-number">2</span><span>Worksheet and Field Mapping <span class="zh-sub">/ 工作表及字段映射</span></span><span id="mappingCompleteness" class="badge-soft badge-warn ms-auto">0/4</span></div>
+            <div class="panel-body">
+              <div class="mb-3">
+                <label class="field-label">Worksheet ID <span class="zh-sub">/ 工作表 ID</span> <span class="required-mark">*</span></label>
+                <input id="attendanceWorksheetId" class="form-control mono attendance-field" placeholder="Mingdao attendance worksheet ID">
+                <div id="attendanceWorksheetIdError" class="field-error"></div>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-dark table-sm mapping-table">
+                  <thead>
+                    <tr><th>ADMS Source Field <span class="zh-sub">/ ADMS 来源字段</span></th><th>Data Type <span class="zh-sub">/ 数据类型</span></th><th>Mingdao Target Field ID <span class="zh-sub">/ 明道目标字段 ID</span></th><th>Status <span class="zh-sub">/ 状态</span></th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td><span class="mapping-source mono">employee_record_id</span></td><td>Text / Relation ID <span class="zh-sub">/ 文本/关联标识</span></td><td><input id="attendanceEmployeeRecordField" class="form-control mono attendance-field mapping-field" data-label="Employee Record ID"></td><td id="mapStatusEmployeeRecord">-</td></tr>
+                    <tr><td><span class="mapping-source mono">check_time</span></td><td>DateTime <span class="zh-sub">/ 日期时间</span></td><td><input id="attendanceCheckTimeField" class="form-control mono attendance-field mapping-field" data-label="Check Time"></td><td id="mapStatusCheckTime">-</td></tr>
+                    <tr><td><span class="mapping-source mono">device_name</span></td><td>Text <span class="zh-sub">/ 文本</span></td><td><input id="attendanceDeviceNameField" class="form-control mono attendance-field mapping-field" data-label="Device Name"></td><td id="mapStatusDeviceName">-</td></tr>
+                    <tr><td><span class="mapping-source mono">device_sn</span></td><td>Text <span class="zh-sub">/ 文本</span></td><td><input id="attendanceDeviceSnField" class="form-control mono attendance-field mapping-field" data-label="Device SN"></td><td id="mapStatusDeviceSn">-</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div id="mappingError" class="field-error"></div>
+            </div>
+          </section>
+
+          <section class="panel step-panel">
+            <div class="panel-header"><span class="step-number">3</span><span>Synchronization Policy <span class="zh-sub">/ 同步策略</span></span></div>
+            <div class="panel-body">
+              <div class="form-grid">
+                <div>
+                  <label class="field-label">Enable Attendance Synchronization <span class="zh-sub">/ 启用考勤同步</span></label>
+                  <div class="form-check form-switch">
+                    <input id="attendanceEnabled" class="form-check-input attendance-field" type="checkbox">
+                    <label id="attendanceEnabledLabel" class="form-check-label" for="attendanceEnabled">Disabled / 停用</label>
+                  </div>
+                  <div class="help-text">Incomplete configuration blocks enabling sync. <span class="zh-sub">/ 配置不完整时不能启用同步。</span></div>
+                </div>
+                <div>
+                  <label class="field-label">Retry Failed After Minutes <span class="zh-sub">/ 失败重试间隔分钟</span></label>
+                  <div class="input-group">
+                    <input id="attendanceRetryMinutes" class="form-control mono attendance-field" type="number" min="1" max="10080" value="60">
+                    <span class="input-group-text">minutes / 分钟</span>
+                  </div>
+                  <div class="help-text">Only FAILED records retry after this interval. <span class="zh-sub">/ 仅 FAILED 状态记录按该间隔重试。</span></div>
+                  <div id="attendanceRetryMinutesError" class="field-error"></div>
+                </div>
+              </div>
+              <div id="attendanceConfigMissing" class="danger-alert mt-3" style="display:none;"></div>
+              <div class="button-row justify-content-between">
+                <span id="attendanceUnsaved" class="label"></span>
+                <button id="saveAttendanceBtn" class="btn btn-info btn-console" type="button" disabled>Save Attendance Config <span class="zh-sub">/ 保存考勤配置</span></button>
+              </div>
+              <div id="attendanceFeedback" class="copy-feedback mt-2"></div>
+            </div>
+          </section>
+        </div>
+
+        <div>
+          <section class="panel">
+            <div class="panel-header">Manual Synchronization <span class="zh-sub">/ 手动同步</span></div>
+            <div class="panel-body">
+              <div class="result-list">
+                <div class="result-chip"><div class="label">Pending <span class="zh-sub">/ 待同步</span></div><strong id="manualPending">0</strong></div>
+                <div class="result-chip"><div class="label">Missing Employee Record ID <span class="zh-sub">/ 缺少员工记录ID</span></div><strong id="manualMissingRecord">-</strong></div>
+                <div class="result-chip"><div class="label">Failed Retry <span class="zh-sub">/ 失败待重试</span></div><strong id="manualFailed">0</strong></div>
+              </div>
+              <div class="button-row justify-content-end">
+                <button id="syncAttendanceBtn" class="btn btn-outline-warning btn-console" type="button">Sync Now <span class="zh-sub">/ 立即同步</span></button>
+              </div>
+              <div id="syncDisabledReason" class="field-error"></div>
+              <pre id="attendanceSyncResult" class="mt-3">Manual synchronization has not been run. / 尚未手动同步。</pre>
+            </div>
+          </section>
+
           <section class="panel">
             <div class="panel-header">Attendance Synchronization Summary <span class="zh-sub">/ 考勤同步摘要</span></div>
             <div class="panel-body">
-              <div class="info-grid">
+              <div class="summary-grid">
                 <div class="info-item"><div class="label">Status <span class="zh-sub">/ 状态</span></div><div id="attendanceSummaryStatus" class="value">-</div></div>
                 <div class="info-item"><div class="label">API URL <span class="zh-sub">/ API 地址</span></div><div id="attendanceSummaryUrl" class="value mono">-</div></div>
                 <div class="info-item"><div class="label">Worksheet ID <span class="zh-sub">/ 工作表 ID</span></div><div id="attendanceSummaryWorksheet" class="value mono">-</div></div>
-                <div class="info-item"><div class="label">Token Status <span class="zh-sub">/ 令牌状态</span></div><div id="attendanceSummaryToken" class="value">-</div></div>
-                <div class="info-item"><div class="label">Configured Fields <span class="zh-sub">/ 已配置字段</span></div><div id="attendanceSummaryFields" class="value mono">-</div></div>
-                <div class="info-item"><div class="label">Last Test <span class="zh-sub">/ 最后测试</span></div><div id="attendanceSummaryTest" class="value mono">-</div></div>
-                <div class="info-item"><div class="label">Upload Status <span class="zh-sub">/ 上传状态</span></div><div id="attendanceSummaryUploadStatus" class="value mono">-</div></div>
-                <div class="info-item"><div class="label">Failed Retry Interval <span class="zh-sub">/ 失败重试间隔</span></div><div id="attendanceSummaryRetry" class="value mono">-</div></div>
-              </div>
-              <div class="notice mt-3">
-                Duplicate prevention: one ADMS attendance event can create at most one Mingdao row. The unique key is <code>attendance_mingdao_sync.attendance_event_id</code>. Records without an employee record ID stay pending and are not sent to Mingdao until the ID is available. <span class="zh-sub">/ 防重复上传：一条 ADMS 考勤事件最多创建一条明道记录，唯一键为 attendance_mingdao_sync.attendance_event_id。缺少员工档案记录 ID 的记录保持待同步，不会发送到明道；该 ID 补齐后再自动同步。</span>
+                <div class="info-item"><div class="label">Mingdao Credential Status <span class="zh-sub">/ 明道凭证状态</span></div><div id="attendanceSummaryCredential" class="value">-</div></div>
+                <div class="info-item"><div class="label">Last Connection Test <span class="zh-sub">/ 最后连接测试</span></div><div id="attendanceSummaryTest" class="value mono">-</div></div>
+                <div class="info-item"><div class="label">Last Synchronization <span class="zh-sub">/ 最后同步</span></div><div id="attendanceSummaryLastSync" class="value mono">-</div></div>
+                <div class="info-item"><div class="label">Retry Interval <span class="zh-sub">/ 重试间隔</span></div><div id="attendanceSummaryRetry" class="value mono">-</div></div>
+                <div class="info-item"><div class="label">Configured Fields <span class="zh-sub">/ 已配置字段</span></div><div id="attendanceSummaryFields" class="summary-field-list">-</div></div>
               </div>
             </div>
           </section>
-          {% endif %}
+
+          <section class="info-alert">
+            每条 ADMS 考勤事件最多在明道创建一条记录。系统使用本地幂等键防止重复上传；已同步记录不会再次上传。缺少 employee_record_id 的记录将保持待同步状态，待资料补齐后自动处理。
+            <details class="mt-2">
+              <summary>Technical Details <span class="zh-sub">/ 技术详情</span></summary>
+              <code>attendance_mingdao_sync.attendance_event_id</code> is the local idempotency key. <code>SYNCED</code> rows are never uploaded again.
+            </details>
+          </section>
         </div>
       </div>
       {% endif %}
 
       {% if page_mode == 'attendance' %}
       <section class="panel guide">
-        <div class="panel-header">Attendance Sync Guide <span class="zh-sub">/ 考勤同步说明</span></div>
+        <div class="panel-header">Help and Troubleshooting <span class="zh-sub">/ 帮助与故障排查</span></div>
         <div class="panel-body">
-          <h3>1. Purpose <span class="zh-sub">/ 用途</span></h3>
-          <p>This page stores Mingdao OpenAPI configuration and can manually upload saved ADMS attendance events to Mingdao. The local sync table prevents the same ADMS attendance event from being uploaded twice.</p>
-
-          <h3>2. Mingdao OpenAPI Authentication <span class="zh-sub">/ 明道 OpenAPI 鉴权</span></h3>
-          <p>The connection test uses Mingdao OpenAPI headers copied from Mingdao: <code>HAP-Appkey</code> and <code>HAP-Sign</code>.</p>
-          <pre>HAP-Appkey: &lt;AppKey&gt;
+          <div class="accordion-lite">
+            <details open>
+              <summary>1. Purpose <span class="zh-sub">/ 用途</span></summary>
+              <p>This page stores Mingdao OpenAPI configuration and can manually upload saved ADMS attendance events to Mingdao. The local sync table prevents the same ADMS attendance event from being uploaded twice.</p>
+            </details>
+            <details>
+              <summary>2. Mingdao OpenAPI Authentication <span class="zh-sub">/ 明道 OpenAPI 鉴权</span></summary>
+              <p>The connection test uses Mingdao OpenAPI headers copied from Mingdao.</p>
+              <section class="code-card">
+                <div class="code-title">Headers <button class="btn btn-outline-info btn-sm btn-console copy-code" type="button" data-copy-target="attendanceHeaderExample">Copy</button></div>
+                <pre id="attendanceHeaderExample">HAP-Appkey: &lt;AppKey&gt;
 HAP-Sign: &lt;Sign&gt;</pre>
-
-          <h3>3. Worksheet and Field Mapping <span class="zh-sub">/ 工作表与字段映射</span></h3>
-          <p>Configure the Mingdao Attendance Worksheet ID and target field IDs for Employee Record ID, Check Time, Device Name, and Device SN. The ADMS source fields are fixed; only Mingdao target field IDs are editable.</p>
-
-          <h3>4. Duplicate Prevention <span class="zh-sub">/ 防重复上传</span></h3>
-          <p>DT014 uses <code>attendance_event.id</code> as the local idempotency key through <code>attendance_mingdao_sync</code>. Records with <code>SYNCED</code> status are never uploaded again. New records sync automatically; records missing <code>employee_record_id</code> remain pending without calling Mingdao, and failed network/API writes retry after the configured interval in minutes.</p>
-
-          <h3>5. Documentation <span class="zh-sub">/ 文档</span></h3>
-          <p><a class="btn btn-outline-info btn-console" href="/settings/integration/documentation" target="_blank" rel="noopener">Open Integration Documentation <span class="zh-sub">/ 打开集成文档</span></a></p>
+              </section>
+            </details>
+            <details>
+              <summary>3. Worksheet and Field Mapping <span class="zh-sub">/ 工作表与字段映射</span></summary>
+              <p>Configure the Mingdao Attendance Worksheet ID and target field IDs for Employee Record ID, Check Time, Device Name, and Device SN. The ADMS source fields are fixed; only Mingdao target field IDs are editable.</p>
+            </details>
+            <details>
+              <summary>4. Duplicate Prevention <span class="zh-sub">/ 防重复上传</span></summary>
+              <p>ADMS uses the local attendance event ID as the idempotency key. Synced records are never uploaded again. Records missing employee_record_id remain pending until employee data is completed.</p>
+            </details>
+            <details>
+              <summary>5. Troubleshooting <span class="zh-sub">/ 故障排查</span></summary>
+              <div class="table-responsive">
+                <table class="table table-dark table-sm">
+                  <thead><tr><th>Issue</th><th>Reason</th><th>Suggested Action</th></tr></thead>
+                  <tbody>
+                    <tr><td>Connection test failed</td><td>URL, AppKey, Sign, Worksheet ID, or Field ID is wrong.</td><td>Check Mingdao OpenAPI settings and run the test again.</td></tr>
+                    <tr><td>Pending records remain</td><td>Device data exists but employee_record_id is missing.</td><td>Sync Mingdao users first, then retry attendance sync.</td></tr>
+                    <tr><td>Failed records remain</td><td>Mingdao API or network returned an error.</td><td>Check failure details and retry after the configured interval.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </details>
+            <details>
+              <summary>6. Documentation <span class="zh-sub">/ 文档</span></summary>
+              <p><a class="btn btn-outline-info btn-console" href="/settings/integration/documentation" target="_blank" rel="noopener">Open Integration Documentation <span class="zh-sub">/ 打开集成文档</span></a></p>
+            </details>
+          </div>
         </div>
       </section>
       {% endif %}
@@ -545,6 +652,10 @@ HAP-Sign: &lt;Sign&gt;</pre>
     let tokenVisible = false;
     let tokenDirty = false;
     let tokenOriginalValue = '';
+    let attendanceDirty = false;
+    let attendanceLastTestSuccess = false;
+    let attendanceLastSyncTime = '-';
+    let attendanceLastSyncResult = '-';
 
     function esc(value) {
       return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -642,6 +753,81 @@ HAP-Sign: &lt;Sign&gt;</pre>
       setText(`${id}Error`, message || '');
     }
 
+    function clearAttendanceErrors() {
+      [
+        'attendanceOpenapiUrl',
+        'attendanceAppKey',
+        'attendanceSign',
+        'attendanceWorksheetId',
+        'attendanceRetryMinutes',
+      ].forEach(id => setFieldError(id, ''));
+      setText('mappingError', '');
+    }
+
+    function attendanceMissingItems() {
+      const payload = attendancePayload();
+      const missing = [];
+      if (!payload.openapi_url) missing.push('Mingdao Attendance OpenAPI URL');
+      if (payload.openapi_url && !/^https?:\/\/[^\s]+$/i.test(payload.openapi_url)) missing.push('Valid OpenAPI URL');
+      if (!payload.app_key) missing.push('AppKey');
+      if (!payload.sign) missing.push('Sign');
+      if (!payload.worksheet_id) missing.push('Worksheet ID');
+      if (!payload.employee_record_id_field_id) missing.push('Employee Record ID field');
+      if (!payload.check_time_field_id) missing.push('Check Time field');
+      if (!payload.device_name_field_id) missing.push('Device Name field');
+      if (!payload.device_sn_field_id) missing.push('Device SN field');
+      if (!payload.retry_failed_after_minutes || payload.retry_failed_after_minutes < 1 || payload.retry_failed_after_minutes > 10080) missing.push('Retry interval 1-10080 minutes');
+      return missing;
+    }
+
+    function validateAttendanceConfig({forEnable = false} = {}) {
+      clearAttendanceErrors();
+      const payload = attendancePayload();
+      let valid = true;
+      if (!payload.openapi_url || !/^https?:\/\/[^\s]+$/i.test(payload.openapi_url)) {
+        setFieldError('attendanceOpenapiUrl', 'Valid OpenAPI URL is required / 请输入有效 OpenAPI URL');
+        valid = false;
+      }
+      if (!payload.app_key) {
+        setFieldError('attendanceAppKey', 'AppKey is required / AppKey 必填');
+        valid = false;
+      }
+      if (!payload.sign) {
+        setFieldError('attendanceSign', 'Sign is required / Sign 必填');
+        valid = false;
+      }
+      if (!payload.worksheet_id) {
+        setFieldError('attendanceWorksheetId', 'Worksheet ID is required / 工作表 ID 必填');
+        valid = false;
+      }
+      const mappingMissing = attendanceMissingItems().filter(item => item.includes('field'));
+      if (mappingMissing.length) {
+        setText('mappingError', `Missing mappings / 缺少映射：${mappingMissing.join(', ')}`);
+        valid = false;
+      }
+      if (!payload.retry_failed_after_minutes || payload.retry_failed_after_minutes < 1 || payload.retry_failed_after_minutes > 10080) {
+        setFieldError('attendanceRetryMinutes', 'Range must be 1-10080 minutes / 范围必须为 1-10080 分钟');
+        valid = false;
+      }
+      if (!valid && forEnable) {
+        const box = byId('attendanceConfigMissing');
+        if (box) {
+          box.style.display = 'block';
+          box.innerHTML = `Cannot enable synchronization. Missing / 不能启用同步，缺少：<br>${attendanceMissingItems().map(esc).join('<br>')}`;
+        }
+      }
+      return valid;
+    }
+
+    function setAttendanceDirty(value) {
+      attendanceDirty = value;
+      const saveBtn = byId('saveAttendanceBtn');
+      const unsaved = byId('attendanceUnsaved');
+      if (saveBtn) saveBtn.disabled = !attendanceDirty;
+      if (unsaved) unsaved.textContent = attendanceDirty ? 'Unsaved changes / 有未保存更改' : '';
+      updateManualSyncState();
+    }
+
     function validateApiTestPayload(payload) {
       let valid = true;
       [
@@ -716,10 +902,12 @@ HAP-Sign: &lt;Sign&gt;</pre>
 
     function renderAttendanceConfig(config) {
       if (!byId('attendanceEnabled')) return;
-      byId('attendanceEnabled').value = config.enabled ? 'true' : 'false';
+      byId('attendanceEnabled').checked = Boolean(config.enabled);
       byId('attendanceOpenapiUrl').value = config.openapi_url || '';
       byId('attendanceAppKey').value = config.app_key || '';
       byId('attendanceSign').value = config.sign || '';
+      byId('attendanceAppKey').type = 'password';
+      byId('attendanceSign').type = 'password';
       byId('attendanceWorksheetId').value = config.worksheet_id || '';
       byId('attendanceRetryMinutes').value = config.retry_failed_after_minutes || 60;
       const fields = config.configured_fields || {};
@@ -727,32 +915,161 @@ HAP-Sign: &lt;Sign&gt;</pre>
       byId('attendanceCheckTimeField').value = fields['Check Time'] || '';
       byId('attendanceDeviceNameField').value = fields['Device Name'] || '';
       byId('attendanceDeviceSnField').value = fields['Device SN'] || '';
+      byId('attendanceEnabledLabel').textContent = config.enabled ? 'Enabled / 启用' : 'Disabled / 停用';
+      attendanceLastTestSuccess = String(config.last_test_result || '').toLowerCase() === 'success';
+
+      const syncStatus = config.sync_status || {};
+      setText('syncAutoStatus', config.enabled ? 'ON' : 'OFF');
+      setText('syncPending', syncStatus.PENDING ?? 0);
+      setText('syncSyncing', syncStatus.SYNCING ?? 0);
+      setText('syncSynced', syncStatus.SYNCED ?? 0);
+      setText('syncFailed', syncStatus.FAILED ?? 0);
+      setText('syncTotal', syncStatus.TOTAL ?? 0);
+      setText('manualPending', syncStatus.PENDING ?? 0);
+      setText('manualFailed', syncStatus.FAILED ?? 0);
+      setText('manualMissingRecord', 'Shown after sync / 同步后显示');
+      setText('syncLastTime', attendanceLastSyncTime);
+      setText('attendanceLastRefreshTime', `Last refreshed / 最近刷新：${nowDubaiText()}`);
+
+      const missing = attendanceMissingItems();
+      const globalState = syncStatus.SYNCING > 0 ? ['Syncing <span class="zh-sub">/ 同步中</span>', 'warn']
+        : syncStatus.FAILED > 0 ? ['Exception <span class="zh-sub">/ 异常</span>', 'error']
+        : !config.enabled ? ['Disabled <span class="zh-sub">/ 已停用</span>', 'warn']
+        : missing.length ? ['Incomplete <span class="zh-sub">/ 配置不完整</span>', 'warn']
+        : ['Enabled <span class="zh-sub">/ 已启用</span>', 'ok'];
+      setBadge('attendanceGlobalStatus', globalState[0], globalState[1]);
+
+      updateMappingStatuses(fields);
+      updateManualSyncState();
 
       setText('attendanceSummaryStatus', config.enabled ? 'Enabled / 启用' : 'Disabled / 停用');
       setText('attendanceSummaryUrl', config.openapi_url || '-');
       setText('attendanceSummaryWorksheet', config.worksheet_id || '-');
-      setText('attendanceSummaryToken', config.token_status || '-');
-      setText('attendanceSummaryFields', [
-        `Employee Record ID=${fields['Employee Record ID'] || '-'}`,
-        `Check Time=${fields['Check Time'] || '-'}`,
-        `Device Name=${fields['Device Name'] || '-'}`,
-        `Device SN=${fields['Device SN'] || '-'}`,
+      setText('attendanceSummaryCredential', [
+        `AppKey ${config.app_key ? 'configured / 已配置' : 'missing / 缺失'}`,
+        `Sign ${config.sign ? 'configured / 已配置' : 'missing / 缺失'}`,
       ].join('\n'));
-      setText('attendanceSummaryTest', `${config.last_test_time || '-'}\n${config.last_test_result || 'Not Tested'}`);
+      renderSummaryFields(fields);
+      setText('attendanceSummaryTest', `${formatDubaiTime(config.last_test_time)}\n${config.last_test_result || 'Not Tested'}`);
+      setText('attendanceSummaryLastSync', `${attendanceLastSyncTime}\n${attendanceLastSyncResult}`);
       setText('attendanceSummaryRetry', `${config.retry_failed_after_minutes || 60} minutes`);
-      const syncStatus = config.sync_status || {};
-      setText('attendanceSummaryUploadStatus', [
-        `PENDING=${syncStatus.PENDING ?? 0}`,
-        `SYNCING=${syncStatus.SYNCING ?? 0}`,
-        `SYNCED=${syncStatus.SYNCED ?? 0}`,
-        `FAILED=${syncStatus.FAILED ?? 0}`,
-        `TOTAL=${syncStatus.TOTAL ?? 0}`,
-      ].join('\n'));
+      setAttendanceDirty(false);
+    }
+
+    function updateMappingStatuses(fields) {
+      const rows = [
+        ['Employee Record ID', 'mapStatusEmployeeRecord'],
+        ['Check Time', 'mapStatusCheckTime'],
+        ['Device Name', 'mapStatusDeviceName'],
+        ['Device SN', 'mapStatusDeviceSn'],
+      ];
+      let configured = 0;
+      rows.forEach(([label, id]) => {
+        const ok = Boolean(fields[label]);
+        configured += ok ? 1 : 0;
+        setBadge(id, ok ? 'Configured <span class="zh-sub">/ 已配置</span>' : 'Missing <span class="zh-sub">/ 缺失</span>', ok ? 'ok' : 'error');
+      });
+      const state = configured === 4 ? 'ok' : configured === 0 ? 'error' : 'warn';
+      setBadge('mappingCompleteness', `${configured}/4 configured <span class="zh-sub">/ 已配置</span>`, state);
+    }
+
+    function renderSummaryFields(fields) {
+      const container = byId('attendanceSummaryFields');
+      if (!container) return;
+      container.innerHTML = ['Employee Record ID', 'Check Time', 'Device Name', 'Device SN'].map(label => {
+        const value = fields[label] || '-';
+        const state = value === '-' ? badge('Missing / 缺失', 'error') : badge('Configured / 已配置', 'ok');
+        return `<div class="summary-field-row"><span>${esc(label)}</span><span class="mono">${esc(value)}</span><span>${state}</span></div>`;
+      }).join('');
+    }
+
+    function updateManualSyncState() {
+      const button = byId('syncAttendanceBtn');
+      if (!button) return;
+      const config = attendancePayload();
+      const reasons = [];
+      if (attendanceDirty) reasons.push('Save configuration first / 请先保存配置');
+      if (!config.enabled) reasons.push('Synchronization is disabled / 同步未启用');
+      if (attendanceMissingItems().length) reasons.push('Configuration incomplete / 配置不完整');
+      if (!attendanceLastTestSuccess) reasons.push('Connection test has not succeeded in this page session / 本页面会话中连接测试尚未成功');
+      button.disabled = reasons.length > 0;
+      setText('syncDisabledReason', reasons.join('\n'));
+    }
+
+    function refreshAttendanceMappingFromInputs() {
+      const fields = {
+        'Employee Record ID': byId('attendanceEmployeeRecordField')?.value.trim() || '',
+        'Check Time': byId('attendanceCheckTimeField')?.value.trim() || '',
+        'Device Name': byId('attendanceDeviceNameField')?.value.trim() || '',
+        'Device SN': byId('attendanceDeviceSnField')?.value.trim() || '',
+      };
+      updateMappingStatuses(fields);
+      updateManualSyncState();
+    }
+
+    function setCredentialVisible(inputId, buttonId, visible) {
+      const input = byId(inputId);
+      const button = byId(buttonId);
+      if (!input || !button) return;
+      input.type = visible ? 'text' : 'password';
+      button.innerHTML = visible ? 'Hide <span class="zh-sub">/ 隐藏</span>' : 'Show <span class="zh-sub">/ 显示</span>';
+    }
+
+    function renderAttendanceTestResult(data, httpStatus, elapsedMs) {
+      const success = Boolean(data.success);
+      const stateHtml = success
+        ? badge('Connection succeeded / 连接成功', 'ok')
+        : badge('Connection failed / 连接失败', 'error');
+      const errors = Array.isArray(data.errors) && data.errors.length ? `\nErrors:\n${data.errors.join('\n')}` : '';
+      const result = [
+        `Status: ${success ? 'Success' : 'Failed'}`,
+        `HTTP Status: ${data.http_status || httpStatus || '-'}`,
+        `Execution Time: ${elapsedMs} ms`,
+        `Test Time: ${nowDubaiText()}`,
+        `Message: ${data.message || '-'}`,
+        data.worksheet_name ? `Worksheet: ${data.worksheet_name}` : '',
+        data.field_count !== undefined ? `Field Count: ${data.field_count}` : '',
+        errors,
+      ].filter(Boolean).join('\n');
+      byId('attendanceTestStatus').innerHTML = stateHtml;
+      byId('attendanceTestResult').textContent = result;
+      attendanceLastTestSuccess = success;
+      updateManualSyncState();
+    }
+
+    function renderAttendanceSyncResult(data, elapsedMs) {
+      attendanceLastSyncTime = nowDubaiText();
+      attendanceLastSyncResult = data.message || (data.success ? 'Success' : 'Failed');
+      const waiting = (data.details || []).filter(item => item.status === 'WAITING_EMPLOYEE_RECORD_ID').length;
+      setText('manualMissingRecord', waiting);
+      const result = {
+        scanned_records: (data.uploaded || 0) + (data.failed || 0) + (data.skipped || 0),
+        created_pending: data.created_pending || 0,
+        success_count: data.uploaded || 0,
+        failed_count: data.failed || 0,
+        skipped_count: data.skipped || 0,
+        missing_employee_record_id_count: waiting,
+        execution_time_ms: elapsedMs,
+        message: data.message || '-',
+        details: data.details || [],
+        status: data.status || {},
+      };
+      byId('attendanceSyncResult').textContent = JSON.stringify(result, null, 2);
+      setText('attendanceSummaryLastSync', `${attendanceLastSyncTime}\n${attendanceLastSyncResult}`);
+      if (data.status) {
+        setText('syncPending', data.status.PENDING ?? 0);
+        setText('syncSyncing', data.status.SYNCING ?? 0);
+        setText('syncSynced', data.status.SYNCED ?? 0);
+        setText('syncFailed', data.status.FAILED ?? 0);
+        setText('syncTotal', data.status.TOTAL ?? 0);
+        setText('manualPending', data.status.PENDING ?? 0);
+        setText('manualFailed', data.status.FAILED ?? 0);
+      }
     }
 
     function attendancePayload() {
       return {
-        enabled: byId('attendanceEnabled').value === 'true',
+        enabled: byId('attendanceEnabled').checked,
         openapi_url: byId('attendanceOpenapiUrl').value.trim(),
         app_key: byId('attendanceAppKey').value.trim(),
         sign: byId('attendanceSign').value.trim(),
@@ -937,7 +1254,49 @@ HAP-Sign: &lt;Sign&gt;</pre>
         setButtonLoading(button, false);
       }
     });
+    on('refreshAttendanceBtn', 'click', async () => {
+      const button = byId('refreshAttendanceBtn');
+      setButtonLoading(button, true, 'Refreshing... <span class="zh-sub">/ 刷新中</span>');
+      try {
+        await refresh(tokenVisible);
+        showToast('Attendance status refreshed / 考勤同步状态已刷新');
+      } finally {
+        setButtonLoading(button, false);
+      }
+    });
+    let appKeyVisible = false;
+    let signVisible = false;
+    on('showAttendanceAppKeyBtn', 'click', () => {
+      appKeyVisible = !appKeyVisible;
+      setCredentialVisible('attendanceAppKey', 'showAttendanceAppKeyBtn', appKeyVisible);
+    });
+    on('showAttendanceSignBtn', 'click', () => {
+      signVisible = !signVisible;
+      setCredentialVisible('attendanceSign', 'showAttendanceSignBtn', signVisible);
+    });
+    on('copyAttendanceAppKeyBtn', 'click', () => copyText(byId('attendanceAppKey').value, 'attendanceFeedback'));
+    on('copyAttendanceSignBtn', 'click', () => copyText(byId('attendanceSign').value, 'attendanceFeedback'));
+    document.querySelectorAll('.attendance-field').forEach(input => {
+      input.addEventListener('input', () => {
+        setAttendanceDirty(true);
+        refreshAttendanceMappingFromInputs();
+        if (input.id === 'attendanceEnabled') {
+          byId('attendanceEnabledLabel').textContent = input.checked ? 'Enabled / 启用' : 'Disabled / 停用';
+        }
+      });
+      input.addEventListener('change', () => {
+        if (input.id === 'attendanceEnabled' && input.checked && !validateAttendanceConfig({forEnable: true})) {
+          input.checked = false;
+          byId('attendanceEnabledLabel').textContent = 'Disabled / 停用';
+        }
+        setAttendanceDirty(true);
+        refreshAttendanceMappingFromInputs();
+      });
+    });
     on('saveAttendanceBtn', 'click', async () => {
+      if (!validateAttendanceConfig({forEnable: byId('attendanceEnabled').checked})) return;
+      const button = byId('saveAttendanceBtn');
+      setButtonLoading(button, true, 'Saving... <span class="zh-sub">/ 保存中</span>');
       const response = await fetch('/api/settings/integration/attendance', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -946,31 +1305,47 @@ HAP-Sign: &lt;Sign&gt;</pre>
       const data = await response.json();
       if (!response.ok) {
         setText('attendanceFeedback', Array.isArray(data.detail) ? data.detail.join('\n') : (data.detail || 'Save failed / 保存失败'));
+        setButtonLoading(button, false);
+        updateManualSyncState();
         return;
       }
+      attendanceDirty = false;
       setText('attendanceFeedback', `${data.message} env_file_saved=${data.env_file_saved}`);
+      showToast('Attendance configuration saved / 考勤配置已保存');
+      setButtonLoading(button, false);
       await refresh(tokenVisible);
     });
     on('testAttendanceBtn', 'click', async () => {
+      if (!validateAttendanceConfig()) return;
       const startedAt = performance.now();
-      const response = await fetch('/api/settings/integration/attendance/test', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(attendancePayload()),
-      });
-      const data = await response.json();
-      const elapsedMs = Math.round(performance.now() - startedAt);
-      byId('attendanceTestResult').textContent = JSON.stringify({
-        http_status: response.status,
-        execution_time_ms: elapsedMs,
-        ...data,
-      }, null, 2);
-      await refresh(tokenVisible);
+      const button = byId('testAttendanceBtn');
+      setButtonLoading(button, true, 'Testing... <span class="zh-sub">/ 测试中</span>');
+      try {
+        const response = await fetch('/api/settings/integration/attendance/test', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(attendancePayload()),
+        });
+        const data = await response.json();
+        const elapsedMs = Math.round(performance.now() - startedAt);
+        renderAttendanceTestResult(data, response.status, elapsedMs);
+        setText('attendanceSummaryTest', `${nowDubaiText()}\n${data.last_test_result || data.message || '-'}`);
+      } catch (error) {
+        attendanceLastTestSuccess = false;
+        byId('attendanceTestStatus').innerHTML = badge('Connection failed / 连接失败', 'error');
+        byId('attendanceTestResult').textContent = String(error);
+        updateManualSyncState();
+      } finally {
+        setButtonLoading(button, false);
+      }
     });
     on('syncAttendanceBtn', 'click', async () => {
+      if (!validateAttendanceConfig()) return;
+      const pending = byId('manualPending')?.textContent || '0';
+      if (!confirm(`Run attendance sync now? Estimated pending records: ${pending}. / 确认立即同步？预计待处理记录：${pending}`)) return;
       const startedAt = performance.now();
       const button = byId('syncAttendanceBtn');
-      if (button) button.disabled = true;
+      setButtonLoading(button, true, 'Syncing... <span class="zh-sub">/ 同步中</span>');
       try {
         const response = await fetch('/api/settings/integration/attendance/sync', {
           method: 'POST',
@@ -978,18 +1353,16 @@ HAP-Sign: &lt;Sign&gt;</pre>
         });
         const data = await response.json();
         const elapsedMs = Math.round(performance.now() - startedAt);
-        byId('attendanceSyncResult').textContent = JSON.stringify({
-          http_status: response.status,
-          execution_time_ms: elapsedMs,
-          ...data,
-        }, null, 2);
+        renderAttendanceSyncResult(data, elapsedMs);
         setText('attendanceFeedback', data.message || 'Attendance sync finished / 考勤同步完成');
+        showToast('Attendance sync finished / 考勤同步完成');
         await refresh(tokenVisible);
       } catch (error) {
         byId('attendanceSyncResult').textContent = String(error);
         setText('attendanceFeedback', 'Attendance sync failed / 考勤同步失败');
       } finally {
-        if (button) button.disabled = false;
+        setButtonLoading(button, false);
+        updateManualSyncState();
       }
     });
     on('sendTestBtn', 'click', async () => {
@@ -1047,6 +1420,11 @@ HAP-Sign: &lt;Sign&gt;</pre>
 
     render(initialData);
     if (window.lucide) window.lucide.createIcons();
+    window.addEventListener('beforeunload', event => {
+      if (!attendanceDirty && !tokenDirty) return;
+      event.preventDefault();
+      event.returnValue = '';
+    });
   </script>
 </body>
 </html>
