@@ -219,15 +219,19 @@ Error response examples:
 {"detail":[{"msg":"Value error, unsupported privilege: 99"}]}
 ```
 
-## 5. Synchronization Flow
+## 5. User Synchronization Flow
 
-Current DT010.1 synchronization flow:
+Current DT011 synchronization flow:
 
 ```text
 Mingdao
   -> REST API
   -> device_user
   -> device_user_sync
+  -> /iclock/getrequest
+  -> DATA UPDATE USERINFO
+  -> Attendance Device
+  -> /iclock/devicecmd ACK
   -> Attendance Device
 ```
 
@@ -238,8 +242,11 @@ Online device:
 ```text
 Mingdao update
   -> PENDING sync record
-  -> Device GETREQUEST sees pending sync
-  -> Command delivery will be implemented in a later task
+  -> Device GETREQUEST
+  -> Server returns C:<sync_id>:DATA UPDATE USERINFO ...
+  -> sync_status = SYNCING
+  -> Device POST /iclock/devicecmd
+  -> sync_status = SYNCED or FAILED
 ```
 
 Offline device:
@@ -248,10 +255,64 @@ Offline device:
 Mingdao update
   -> PENDING sync record
   -> Device reconnects later
-  -> Automatic synchronization can be performed in a later task
+  -> Next GETREQUEST receives the pending command
 ```
 
-DT010.1 and DT010.11 do not implement actual user download commands.
+### Command Format
+
+DT011 sends one user command at a time during `/iclock/getrequest`:
+
+```text
+C:<sync_id>:DATA UPDATE USERINFO PIN=<pin>	Name=<name>	Pri=<privilege>	Passwd=	Card=<card_no>	Grp=1	TZ=0000000100000000	Verify=1	ViceCard=	StartDatetime=0	EndDatetime=0
+```
+
+`sync_id` is the `device_user_sync.id` value and is used to match the later device ACK.
+
+If the attendance device already has the same `PIN`, `DATA UPDATE USERINFO`
+updates the existing device user. ADMS still rejects duplicate `pin` values
+across different Mingdao employees to avoid overwriting the wrong person on the
+device.
+
+### ACK Format
+
+After executing a command, the device posts to:
+
+```text
+POST /iclock/devicecmd?SN=<device_sn>
+```
+
+The server accepts common ADMS ACK formats, including:
+
+```text
+ID=<sync_id>&Return=0
+```
+
+`Return=0`, `OK`, `SUCCESS`, or an empty result is treated as success. Other result values mark the sync as `FAILED`.
+
+### Sync Status
+
+| Status | Meaning |
+| --- | --- |
+| `PENDING` | User change is waiting for this device. |
+| `SYNCING` | Command has been returned to the device and ADMS is waiting for `/iclock/devicecmd`. |
+| `SYNCED` | Device acknowledged success. |
+| `FAILED` | Device returned an error or ADMS could not build the command. |
+
+### Retry
+
+`USER_SYNC_MAX_RETRY` controls retry limit. Default:
+
+```env
+USER_SYNC_MAX_RETRY=3
+```
+
+`USER_SYNC_ACK_TIMEOUT_SECONDS` controls how long a `SYNCING` command can wait before it is eligible for resend. Default:
+
+```env
+USER_SYNC_ACK_TIMEOUT_SECONDS=120
+```
+
+DT011 does not implement fingerprint, face, photo, password, or delete commands.
 
 ## 6. Troubleshooting
 

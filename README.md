@@ -184,12 +184,14 @@ DT009.6 为 `device` 增加设备管理配置字段：`location`、`record_atten
 
 DT009.8 将 Console 升级为多设备监控中心。Console 只显示 `show_in_console = true` 的设备，并在监控视图中优先显示 Device Name。DT009.82 将设备筛选收敛为所有设备或单台可显示设备。DT009.83 完成 Console P0/P1/P2 体验优化，统一筛选作用域、设备唯一显示、加载/失败状态、ATTLOG 主日志去重、事件日志操作控件、异常优先视图和设备状态总览筛选/搜索/排序。
 
-DT010.1 扩展 `device_user`，新增 `employee_id`、`department`、`card_no`、`enabled` 等 Mingdao 用户字段，并新增 `device_user_sync`。Mingdao 用户以 `employee_id` 作为唯一业务键；重复提交相同数据不会产生重复用户，也不会重复触发同步。用户新增或变更后，系统会为所有已登记设备创建或更新 `PENDING` 同步记录。当前阶段只准备同步状态和 GETREQUEST hook，不下发设备命令。
+DT010.1 扩展 `device_user`，新增 `employee_id`、`department`、`card_no`、`enabled` 等 Mingdao 用户字段，并新增 `device_user_sync`。Mingdao 用户以 `employee_id` 作为唯一业务键；重复提交相同数据不会产生重复用户，也不会重复触发同步。DT011 完成员工同步闭环：用户新增或变更后，系统会为所有已登记设备创建或更新 `PENDING` 同步记录；设备访问 `/iclock/getrequest` 时服务器返回 `DATA UPDATE USERINFO` 命令；设备通过 `/iclock/devicecmd` 回传执行结果后，`device_user_sync` 更新为 `SYNCED` 或 `FAILED`。
 
 DT010.1 Review Fix 增加 Mingdao API Token 鉴权。部署前必须在 `.env` 中配置：
 
 ```env
 MINGDAO_API_TOKEN=replace-with-a-secure-token
+USER_SYNC_MAX_RETRY=3
+USER_SYNC_ACK_TIMEOUT_SECONDS=120
 ```
 
 调用 Mingdao 用户 API 时支持以下任意一种方式：
@@ -223,7 +225,7 @@ DT010.14 增加只读 ADMS Users Console：
 http://<Server Address>:4370/users
 ```
 
-该页面从 `device_user` 读取用户，按部门分组展示，并显示 `employee_id`、`pin`、姓名、来源、卡号、权限、启用状态、同步统计、最后设备上传和更新时间。页面只用于查看，不修改用户、不下发设备命令、不改变 Mingdao API 或数据库结构。
+该页面从 `device_user` 读取用户，按部门分组展示，并显示 `employee_id`、`pin`、姓名、来源、卡号、权限、启用状态、每台设备同步状态、最后设备上传和更新时间。页面只用于查看，不修改用户、不改变 Mingdao API 或数据库结构。
 
 开发环境如需重建数据库，可执行：
 
@@ -366,7 +368,7 @@ GET /api/v1/users/{employee_id}
 }
 ```
 
-`employee_id` 保存 Mingdao/ERP 工号，例如 `ESM0001`；`pin` 保存打卡机用户编号，例如 `1`。`POST /api/v1/users` 使用 UPSERT 逻辑。如果 `employee_id` 已存在则更新，否则新增；如果字段没有变化，则返回成功但不重置 `device_user_sync`。如果其它员工已使用相同 `pin`，接口返回 `409 Conflict`，避免不同员工绑定同一个打卡机编号。`POST /api/v1/users/batch` 会逐条处理，单条失败不会影响后续用户。新增或变更用户后，系统会为每台已登记设备维护一条 `device_user_sync` 记录并设置为 `PENDING`。设备后续访问 `/iclock/getrequest` 时会检查该设备的 PENDING 用户同步记录，但 DT010.1 不下发真实命令，实际命令生成和 ACK 处理留到 DT010.2。
+`employee_id` 保存 Mingdao/ERP 工号，例如 `ESM0001`；`pin` 保存打卡机用户编号，例如 `1`。`POST /api/v1/users` 使用 UPSERT 逻辑。如果 `employee_id` 已存在则更新，否则新增；如果字段没有变化，则返回成功但不重置 `device_user_sync`。如果其它员工已使用相同 `pin`，接口返回 `409 Conflict`，避免不同员工绑定同一个打卡机编号。`POST /api/v1/users/batch` 会逐条处理，单条失败不会影响后续用户。新增或变更用户后，系统会为每台已登记设备维护一条 `device_user_sync` 记录并设置为 `PENDING`。设备后续访问 `/iclock/getrequest` 时会收到 `C:<sync_id>:DATA UPDATE USERINFO ...` 命令；如果打卡机已经存在相同 `PIN`，设备按 `DATA UPDATE USERINFO` 更新/覆盖该用户信息。设备执行后通过 `/iclock/devicecmd` 回传 `ID=<sync_id>&Return=0` 时，同步记录更新为 `SYNCED`。失败回执会记录为 `FAILED`，并按 `USER_SYNC_MAX_RETRY` 限制重试。
 
 设备同步状态：
 
@@ -416,9 +418,9 @@ http://<Server Address>:4370/iclock/cdata
 
 ## 8. 后续开发阶段
 
-DT010.1 完成后等待 Review，不进入 DT010.2。
+DT011 完成后等待 Review，不进入指纹、人脸、照片或 Command Queue 开发。
 
-明确禁止在 DT010.1 中加入：
+明确禁止在 DT011 中加入：
 
 - 考勤结果计算
 - 排班
@@ -426,8 +428,6 @@ DT010.1 完成后等待 Review，不进入 DT010.2。
 - 请假/补卡
 - 薪资
 - 统计
-- 用户下发
-- 设备命令
 - Command Queue
 - 动态 ATTLOGStamp
 - 动态 OPERLOGStamp

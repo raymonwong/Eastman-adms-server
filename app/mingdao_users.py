@@ -255,8 +255,10 @@ def _upsert_user(payload: UserSyncRequest) -> UserSyncResponse:
             user = DeviceUser(employee_id=employee_id)
             session.add(user)
             changed = True
+            event_type = "USER CREATE"
         else:
             changed = _has_user_changed(user, payload)
+            event_type = "USER DISABLE" if not payload.enabled else "USER UPDATE"
 
         if not changed:
             session.commit()
@@ -282,6 +284,15 @@ def _upsert_user(payload: UserSyncRequest) -> UserSyncResponse:
         sync_records = _prepare_device_sync_records(session, employee_id)
         session.commit()
 
+    _debug_log(
+        event_type,
+        {
+            "Employee ID": employee_id,
+            "PIN": pin,
+            "Name": payload.name,
+            "Sync Records": sync_records,
+        },
+    )
     _debug_log(
         "USER API",
         {

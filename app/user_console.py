@@ -29,25 +29,49 @@ class AdmsUserResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     pending_sync: int
+    syncing_sync: int
     synced_sync: int
     failed_sync: int
+    sync_details: list[dict[str, object | None]]
 
 
 def _sync_counts(session, employee_id: str | None) -> dict[str, int]:
     if not employee_id:
-        return {"PENDING": 0, "SYNCED": 0, "FAILED": 0}
+        return {"PENDING": 0, "SYNCING": 0, "SYNCED": 0, "FAILED": 0}
 
     rows = (
         session.query(DeviceUserSync.sync_status, DeviceUserSync.id)
         .filter(DeviceUserSync.employee_id == employee_id)
         .all()
     )
-    counts = {"PENDING": 0, "SYNCED": 0, "FAILED": 0}
+    counts = {"PENDING": 0, "SYNCING": 0, "SYNCED": 0, "FAILED": 0}
     for status, _ in rows:
         normalized = (status or "").upper()
         if normalized in counts:
             counts[normalized] += 1
     return counts
+
+
+def _sync_details(session, employee_id: str | None) -> list[dict[str, object | None]]:
+    if not employee_id:
+        return []
+
+    records = (
+        session.query(DeviceUserSync)
+        .filter(DeviceUserSync.employee_id == employee_id)
+        .order_by(DeviceUserSync.device_sn.asc())
+        .all()
+    )
+    return [
+        {
+            "device_sn": record.device_sn,
+            "sync_status": record.sync_status,
+            "retry_count": record.retry_count,
+            "last_sync_time": record.last_sync_time,
+            "last_error": record.last_error,
+        }
+        for record in records
+    ]
 
 
 def _user_to_response(session, user: DeviceUser) -> AdmsUserResponse:
@@ -66,8 +90,10 @@ def _user_to_response(session, user: DeviceUser) -> AdmsUserResponse:
         created_at=user.created_at,
         updated_at=user.updated_at,
         pending_sync=counts["PENDING"],
+        syncing_sync=counts["SYNCING"],
         synced_sync=counts["SYNCED"],
         failed_sync=counts["FAILED"],
+        sync_details=_sync_details(session, user.employee_id),
     )
 
 

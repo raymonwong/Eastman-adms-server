@@ -1,6 +1,9 @@
 import hashlib
 import json
-from datetime import UTC, datetime
+import os
+import re
+from datetime import UTC, datetime, timedelta
+from urllib.parse import parse_qs
 
 from fastapi import APIRouter, Request
 from fastapi.responses import PlainTextResponse
@@ -25,6 +28,7 @@ OPERATION_NAME_MAP = {
     "82": "Modify Cloud Server Address",
 }
 SYNC_DATA_TYPES = ("ATTLOG", "OPERLOG", "USER", "FINGER", "FACE", "PHOTO")
+SYNC_PENDING_STATUSES = ("PENDING", "FAILED")
 
 
 def _debug_log(event_type: str, fields: dict[str, object | None]) -> None:
@@ -257,28 +261,225 @@ def _get_device_sync_states(device_sn: str | None) -> dict[str, str | None]:
         return {state.data_type: state.device_stamp for state in states}
 
 
-def _check_pending_user_sync(device_sn: str | None) -> None:
+def _user_sync_max_retry() -> int:
+    try:
+        return max(1, int(os.getenv("USER_SYNC_MAX_RETRY", "3")))
+    except ValueError:
+        return 3
+
+
+def _user_sync_ack_timeout_seconds() -> int:
+    try:
+        return max(30, int(os.getenv("USER_SYNC_ACK_TIMEOUT_SECONDS", "120")))
+    except ValueError:
+        return 120
+
+
+def _command_value(value: object | None) -> str:
+    # ADMS command fields are tab-separated. Remove control characters only.
+    return str(value or "").replace("\t", " ").replace("\r", " ").replace("\n", " ").strip()
+
+
+def _build_userinfo_command(sync_record: DeviceUserSync, user: DeviceUser) -> str:
+    pin = _command_value(user.pin)
+    if not pin:
+        raise ValueError(f"Employee {sync_record.employee_id} has no device PIN")
+
+    # Disabled Mingdao users are not deleted in DT011; send them as normal users
+    # with no administrator privilege until a later explicit delete task exists.
+    privilege = "0" if not user.enabled else _command_value(user.privilege or "0")
+    card = _command_value(user.card_no or user.card)
+    fields = [
+        f"PIN={pin}",
+        f"Name={_command_value(user.name)}",
+        f"Pri={privilege}",
+        "Passwd=",
+        f"Card={card}",
+        "Grp=1",
+        "TZ=0000000100000000",
+        "Verify=1",
+        "ViceCard=",
+        "StartDatetime=0",
+        "EndDatetime=0",
+    ]
+    return f"C:{sync_record.id}:DATA UPDATE USERINFO " + "\t".join(fields)
+
+
+def _find_next_user_sync_command(device_sn: str | None, received_at: datetime) -> str | None:
     if not device_sn:
+        return None
+
+    with SessionLocal() as session:
+        timeout_before = received_at - timedelta(seconds=_user_sync_ack_timeout_seconds())
+        sync_record = (
+            session.query(DeviceUserSync)
+            .filter(DeviceUserSync.device_sn == device_sn)
+            .filter(
+                (DeviceUserSync.sync_status.in_(SYNC_PENDING_STATUSES))
+                | ((DeviceUserSync.sync_status == "SYNCING") & (DeviceUserSync.last_sync_time < timeout_before))
+            )
+            .order_by(DeviceUserSync.updated_at.asc(), DeviceUserSync.id.asc())
+            .first()
+        )
+
+        if sync_record is None:
+            return None
+
+        user = session.query(DeviceUser).filter(DeviceUser.employee_id == sync_record.employee_id).one_or_none()
+        if user is None:
+            sync_record.sync_status = "FAILED"
+            sync_record.last_error = "Mingdao user not found"
+            session.commit()
+            return None
+
+        current_status = (sync_record.sync_status or "").upper()
+        if current_status == "SYNCING":
+            sync_record.retry_count += 1
+            if sync_record.retry_count >= _user_sync_max_retry():
+                sync_record.sync_status = "FAILED"
+                sync_record.last_error = "Device command ACK timeout"
+                sync_record.last_sync_time = received_at
+                session.commit()
+                _debug_log(
+                    "USER SYNC FAILED",
+                    {
+                        "Device": device_sn,
+                        "Employee ID": sync_record.employee_id,
+                        "Reason": sync_record.last_error,
+                    },
+                )
+                return None
+            _debug_log(
+                "USER RETRY",
+                {
+                    "Device": device_sn,
+                    "Employee ID": sync_record.employee_id,
+                    "Retry Count": sync_record.retry_count,
+                    "Reason": "ACK timeout",
+                },
+            )
+
+        if current_status == "FAILED":
+            if sync_record.retry_count >= _user_sync_max_retry():
+                return None
+            _debug_log(
+                "USER RETRY",
+                {
+                    "Device": device_sn,
+                    "Employee ID": sync_record.employee_id,
+                    "Retry Count": sync_record.retry_count,
+                },
+            )
+
+        try:
+            command = _build_userinfo_command(sync_record, user)
+        except Exception as exc:
+            sync_record.sync_status = "FAILED"
+            sync_record.last_error = str(exc)
+            sync_record.last_sync_time = received_at
+            session.commit()
+            _debug_log(
+                "USER SYNC FAILED",
+                {
+                    "Device": device_sn,
+                    "Employee ID": sync_record.employee_id,
+                    "Reason": exc,
+                },
+            )
+            return None
+
+        sync_record.sync_status = "SYNCING"
+        sync_record.last_sync_time = received_at
+        sync_record.last_error = None
+        session.commit()
+
+    _debug_log(
+        "USER SYNC START",
+        {
+            "Device": device_sn,
+            "Command ID": command.split(":", 2)[1],
+            "Command": command,
+        },
+    )
+    return command
+
+
+def _parse_devicecmd_ack(body_text: str) -> dict[str, str]:
+    values: dict[str, str] = {}
+    parsed_query = parse_qs(body_text, keep_blank_values=True)
+    for key, items in parsed_query.items():
+        if items:
+            values[key.lower()] = items[-1]
+
+    for key, value in re.findall(r"([A-Za-z_]+)\s*=\s*([^\s&]+)", body_text):
+        values[key.lower()] = value
+
+    command_id_match = re.search(r"\bID\s*=\s*(\d+)", body_text, flags=re.IGNORECASE)
+    if command_id_match:
+        values["id"] = command_id_match.group(1)
+
+    return values
+
+
+def _devicecmd_success(values: dict[str, str]) -> bool:
+    result = values.get("return") or values.get("result") or values.get("status") or ""
+    normalized = result.strip().upper()
+    if not normalized:
+        return True
+    return normalized in {"0", "OK", "SUCCESS", "SUCCEEDED", "TRUE"}
+
+
+def _handle_devicecmd_ack(request: Request, context: dict[str, object], body: bytes) -> None:
+    body_text = _decode_body(body)
+    ack_source = body_text
+    if request.url.query:
+        ack_source = f"{body_text}&{request.url.query}" if body_text else request.url.query
+    values = _parse_devicecmd_ack(ack_source)
+    command_id = values.get("id") or values.get("cmdid") or values.get("command_id")
+
+    _debug_log(
+        "USER ACK RECEIVED",
+        {
+            "Device": context["device_sn"] or "",
+            "Command ID": command_id or "",
+            "Body": ack_source,
+        },
+    )
+
+    if not command_id or not command_id.isdigit():
         return
 
     with SessionLocal() as session:
-        pending_count = (
-            session.query(DeviceUserSync)
-            .filter(DeviceUserSync.device_sn == device_sn, DeviceUserSync.sync_status == "PENDING")
-            .count()
-        )
+        sync_record = session.get(DeviceUserSync, int(command_id))
+        if sync_record is None or sync_record.device_sn != context["device_sn"]:
+            return
 
-    if pending_count == 0:
-        return
+        if _devicecmd_success(values):
+            sync_record.sync_status = "SYNCED"
+            sync_record.last_error = None
+            sync_record.last_sync_time = context["received_at"]
+            event_type = "USER SYNC SUCCESS"
+            fields = {
+                "Device": sync_record.device_sn,
+                "Employee ID": sync_record.employee_id,
+                "Command ID": sync_record.id,
+            }
+        else:
+            sync_record.retry_count += 1
+            sync_record.sync_status = "FAILED"
+            sync_record.last_error = ack_source or "Device command failed"
+            sync_record.last_sync_time = context["received_at"]
+            event_type = "USER SYNC FAILED"
+            fields = {
+                "Device": sync_record.device_sn,
+                "Employee ID": sync_record.employee_id,
+                "Command ID": sync_record.id,
+                "Retry Count": sync_record.retry_count,
+                "Reason": sync_record.last_error,
+            }
+        session.commit()
 
-    _debug_log(
-        "USER SYNC PENDING",
-        {
-            "Device": device_sn,
-            "Pending Users": pending_count,
-            "TODO": "DT010.2 will build GETREQUEST user download commands.",
-        },
-    )
+    _debug_log(event_type, fields)
 
 
 def _update_device_sync_state(context: dict[str, object], data_type: str, device_stamp: str | None) -> None:
@@ -578,7 +779,11 @@ def _save_device_user(user: DeviceUser) -> int:
     with SessionLocal() as session:
         master_user = None
         if user.pin:
-            master_user = session.query(DeviceUser).filter(DeviceUser.employee_id == user.pin).one_or_none()
+            master_user = (
+                session.query(DeviceUser)
+                .filter(DeviceUser.pin == user.pin, DeviceUser.employee_id.is_not(None), DeviceUser.employee_id != "")
+                .one_or_none()
+            )
 
         if master_user is not None:
             master_user.last_device_sn = user.device_sn
@@ -791,7 +996,11 @@ async def iclock_getrequest(request: Request) -> PlainTextResponse:
             "Client IP": context["client_ip"] or "",
         },
     )
-    _check_pending_user_sync(context["device_sn"])
+    command = _find_next_user_sync_command(context["device_sn"], context["received_at"])
+    if command:
+        response_body = command
+        context["response_body"] = response_body
+        _update_raw_request_response(context["raw_request_id"], response_body, response_status_code)
     return PlainTextResponse(response_body, status_code=response_status_code, media_type="text/plain")
 
 
@@ -812,4 +1021,6 @@ async def iclock_devicecmd(request: Request) -> PlainTextResponse:
                 "Reason": exc,
             },
         )
+    _handle_devicecmd_ack(request, context, body)
+    _mark_raw_request_parsed(context["raw_request_id"])
     return PlainTextResponse(response_body, status_code=response_status_code, media_type="text/plain")

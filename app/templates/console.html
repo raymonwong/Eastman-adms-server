@@ -714,6 +714,7 @@
       USER: 'User Sync / 用户同步',
       'USER SAVED': 'User Sync / 用户同步',
       'USER SYNC PENDING': 'User Sync Pending / 用户待同步',
+      'USER SYNC START': 'User Sync Start / 用户同步开始',
       'USER SYNC WAITING': 'User Sync Waiting / 用户等待同步',
       'USER SYNC SUCCESS': 'User Sync Success / 用户同步成功',
       'USER SYNC FAILED': 'User Sync Failed / 用户同步失败',
@@ -730,6 +731,7 @@
       USER: 'badge-user',
       'USER SAVED': 'badge-user',
       'USER SYNC PENDING': 'badge-user',
+      'USER SYNC START': 'badge-user',
       'USER SYNC WAITING': 'badge-user',
       'USER SYNC SUCCESS': 'badge-user',
       'USER SYNC FAILED': 'badge-error',
@@ -796,7 +798,7 @@
       if (type === 'HEARTBEAT') return 'heartbeat';
       if (type === 'ATTLOG' || type === 'ATTLOG SAVED') return 'attendance';
       if (type === 'OPLOG' || type === 'OPLOG SAVED') return 'operation';
-      if (type === 'USER' || type === 'USER SAVED' || type === 'USER SYNC PENDING' || type === 'USER SYNC WAITING' || type === 'USER SYNC SUCCESS' || type === 'USER SYNC FAILED') return 'user';
+      if (type === 'USER' || type === 'USER SAVED' || type === 'USER SYNC PENDING' || type === 'USER SYNC START' || type === 'USER SYNC WAITING' || type === 'USER SYNC SUCCESS' || type === 'USER SYNC FAILED') return 'user';
       if (type === 'DEVICE ONLINE' || type === 'DEVICE OFFLINE' || type === 'HANDSHAKE') return 'important';
       if (type === 'ERROR') return 'error';
       return 'important';

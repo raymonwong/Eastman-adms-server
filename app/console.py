@@ -243,7 +243,7 @@ def _user_sync_event_type(sync_status: str | None) -> str:
     if status == "FAILED":
         return "USER SYNC FAILED"
     if status == "SYNCING":
-        return "USER SYNC WAITING"
+        return "USER SYNC START"
     return "USER SYNC PENDING"
 
 

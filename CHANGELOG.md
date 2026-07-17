@@ -2,6 +2,30 @@
 
 ## Version
 
+DT011
+
+## Date
+
+2026-07-17
+
+## Development Task
+
+DT011 Attendance Device User Synchronization Engine
+
+## Description
+
+- Added user synchronization engine for Mingdao-sourced users.
+- Added `/iclock/getrequest` command delivery using `C:<sync_id>:DATA UPDATE USERINFO ...`.
+- Added `/iclock/devicecmd` ACK handling to update `device_user_sync` to `SYNCED` or `FAILED`.
+- Added bounded retry configuration with `USER_SYNC_MAX_RETRY` and `USER_SYNC_ACK_TIMEOUT_SECONDS`.
+- Added user sync communication events: `USER CREATE`, `USER UPDATE`, `USER DISABLE`, `USER SYNC START`, `USER SYNC SUCCESS`, `USER SYNC FAILED`, `USER RETRY`, and `USER ACK RECEIVED`.
+- Added per-device synchronization details to the ADMS Users Console.
+- Added `scripts/DT011_install_ubuntu.sh` without overwriting previous deployment scripts.
+- Updated Mingdao integration documentation with user sync flow, command format, ACK handling, status values, and retry behavior.
+- Kept fingerprint, face, photo, password, delete commands, ERP logic, Mingdao attendance sync, and generic command queue out of scope.
+
+## Version
+
 DT010.14
 
 ## Date

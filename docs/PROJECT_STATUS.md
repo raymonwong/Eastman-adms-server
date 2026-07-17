@@ -2,15 +2,15 @@
 
 ## Current Development Task
 
-DT010.14
+DT011
 
 ## Status
 
-Waiting for Review
+Implemented - Waiting for Review
 
 ## Summary
 
-DT010.14 adds a read-only ADMS Users Console page. The page displays users stored in `device_user`, grouped by department, so administrators can verify which Mingdao/device users are currently present in ADMS without using SSH or MySQL.
+DT011 implements the attendance device user synchronization engine. Mingdao-sourced user changes now create per-device sync records, `/iclock/getrequest` delivers `DATA UPDATE USERINFO` commands, `/iclock/devicecmd` processes device ACK results, and the ADMS Users Console shows per-device sync status.
 
 ## Completed
 
@@ -79,7 +79,7 @@ DT010.14 adds a read-only ADMS Users Console page. The page displays users store
 - Added `device_user_sync` foreign keys and status validation constraints.
 - Added idempotent UPSERT behavior by `employee_id`.
 - Added per-device user sync record creation when a Mingdao user changes.
-- Added GETREQUEST pending user sync TODO hook for DT010.2.
+- Added GETREQUEST pending user sync hook for future command delivery.
 - Added Console user sync event display and separated device USER upload statistics from Mingdao user synchronization statistics.
 - Added `scripts/DT010.1_install_ubuntu.sh`.
 - Added `/settings/integration` under Communication Console System Settings.
@@ -106,6 +106,13 @@ DT010.14 adds a read-only ADMS Users Console page. The page displays users store
 - Grouped ADMS users by department and displayed employee ID, device PIN, source, card number, privilege, enabled status, sync counts, last device upload, and updated time.
 - Added ADMS Users navigation from Operation Monitor, System Settings Integration, and Device Management.
 - Added `scripts/DT010.14_install_ubuntu.sh`.
+- Added `/iclock/getrequest` user command delivery with `C:<sync_id>:DATA UPDATE USERINFO ...`.
+- Added `/iclock/devicecmd` ACK parsing for user synchronization.
+- Added `device_user_sync` transitions from `PENDING` to `SYNCING`, then `SYNCED` or `FAILED`.
+- Added bounded retry configuration with `USER_SYNC_MAX_RETRY` and `USER_SYNC_ACK_TIMEOUT_SECONDS`.
+- Added DT011 user sync events: `USER CREATE`, `USER UPDATE`, `USER DISABLE`, `USER SYNC START`, `USER SYNC SUCCESS`, `USER SYNC FAILED`, `USER RETRY`, and `USER ACK RECEIVED`.
+- Added per-device sync detail display in `/users`.
+- Added `scripts/DT011_install_ubuntu.sh`.
 - Updated README, CHANGELOG, and project status documentation.
 
 ## Not Included
@@ -114,18 +121,14 @@ DT010.14 adds a read-only ADMS Users Console page. The page displays users store
 - Permission system
 - Add Device
 - Delete Device
-- ADMS protocol changes
-- API response body changes
-- HTTP status changes
-- ATTLOG parser changes
-- OPERLOG parser changes
-- USER parser changes
-- Device Command Queue
-- Device command processing
-- User downlink
 - Fingerprint synchronization
 - Face synchronization
 - Photo synchronization
+- Password synchronization
+- User delete command
+- ATTLOG parser changes
+- OPERLOG parser changes
+- USER parser changes
 - Attendance synchronization to Mingdao/HAP
 - ERP business logic
 - Attendance result calculation
@@ -134,4 +137,4 @@ DT010.14 adds a read-only ADMS Users Console page. The page displays users store
 
 ## Next Development Task
 
-DT010.14 Review, then DT010.2 user command delivery
+DT011 Review, then DT012 fingerprint synchronization planning

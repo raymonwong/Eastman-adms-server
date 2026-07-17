@@ -333,8 +333,27 @@
     }
 
     .sync-badge.pending { color: var(--orange); }
+    .sync-badge.syncing { color: var(--blue); }
     .sync-badge.synced { color: var(--green); }
     .sync-badge.failed { color: var(--red); }
+
+    .sync-details {
+      margin-top: 4px;
+      display: grid;
+      gap: 2px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.25;
+    }
+
+    .sync-detail-status {
+      font-weight: 900;
+    }
+
+    .sync-detail-status.PENDING { color: var(--orange); }
+    .sync-detail-status.SYNCING { color: var(--blue); }
+    .sync-detail-status.SYNCED { color: var(--green); }
+    .sync-detail-status.FAILED { color: var(--red); }
 
     .table-state {
       min-height: 180px;
@@ -459,7 +478,7 @@
       const enabled = rows.filter(user => user.enabled).length;
       const disabled = rows.length - enabled;
       const departments = new Set(rows.map(departmentName)).size;
-      const pending = rows.reduce((total, user) => total + Number(user.pending_sync || 0), 0);
+      const pending = rows.reduce((total, user) => total + Number(user.pending_sync || 0) + Number(user.syncing_sync || 0), 0);
       document.getElementById('summaryGrid').innerHTML = [
         metric('Total Users', '用户总数', rows.length, 'users', ''),
         metric('Enabled', '启用', enabled, 'user-check', 'success'),
@@ -548,13 +567,29 @@
           <td>
             <div class="sync-badges">
               <span class="sync-badge pending">P ${esc(user.pending_sync || 0)}</span>
+              <span class="sync-badge syncing">I ${esc(user.syncing_sync || 0)}</span>
               <span class="sync-badge synced">S ${esc(user.synced_sync || 0)}</span>
               <span class="sync-badge failed">F ${esc(user.failed_sync || 0)}</span>
             </div>
+            ${syncDetails(user)}
           </td>
           <td class="mono">${esc(user.last_device_sn || '-')}<br><span class="muted">${esc(formatTime(user.last_device_user_upload_at))}</span></td>
           <td class="mono">${esc(formatTime(user.updated_at))}</td>
         </tr>
+      `;
+    }
+
+    function syncDetails(user) {
+      const details = Array.isArray(user.sync_details) ? user.sync_details : [];
+      if (!details.length) return '';
+      return `
+        <div class="sync-details">
+          ${details.map(function (item) {
+            const status = String(item.sync_status || '').toUpperCase();
+            const retry = Number(item.retry_count || 0);
+            return `<div><span class="mono">${esc(item.device_sn || '-')}</span> · <span class="sync-detail-status ${esc(status)}">${esc(status || '-')}</span> · R${esc(retry)}</div>`;
+          }).join('')}
+        </div>
       `;
     }
 
