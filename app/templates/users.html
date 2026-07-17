@@ -536,7 +536,6 @@
                     <th>PIN<br><span class="zh-sub">打卡机编号</span></th>
                     <th>Name<br><span class="zh-sub">姓名</span></th>
                     <th>Source<br><span class="zh-sub">来源</span></th>
-                    <th>Card No<br><span class="zh-sub">卡号</span></th>
                     <th>Privilege<br><span class="zh-sub">权限</span></th>
                     <th>Status<br><span class="zh-sub">状态</span></th>
                     <th>Sync<br><span class="zh-sub">同步</span></th>
@@ -561,7 +560,6 @@
           <td class="mono">${esc(user.pin || '-')}</td>
           <td>${esc(user.name || '-')}</td>
           <td>${esc(sourceName(user))}</td>
-          <td class="mono">${esc(user.card_no || '-')}</td>
           <td class="mono">${esc(user.privilege || '0')}</td>
           <td>${user.enabled ? '<span class="badge-enabled">Enabled / 启用</span>' : '<span class="badge-disabled">Disabled / 停用</span>'}</td>
           <td>

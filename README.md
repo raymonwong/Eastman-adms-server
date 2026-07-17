@@ -225,7 +225,7 @@ DT010.14 增加只读 ADMS Users Console：
 http://<Server Address>:4370/users
 ```
 
-该页面从 `device_user` 读取用户，按部门分组展示，并显示 `employee_id`、`pin`、姓名、来源、卡号、权限、启用状态、每台设备同步状态、最后设备上传和更新时间。页面只用于查看，不修改用户、不改变 Mingdao API 或数据库结构。
+该页面从 `device_user` 读取用户，按部门分组展示，并显示 `employee_id`、`pin`、姓名、来源、权限、启用状态、每台设备同步状态、最后设备上传和更新时间。页面只用于查看，不修改用户、不改变 Mingdao API 或数据库结构。
 
 开发环境如需重建数据库，可执行：
 
@@ -368,7 +368,7 @@ GET /api/v1/users/{employee_id}
 }
 ```
 
-`employee_id` 保存 Mingdao/ERP 工号，例如 `ESM0001`；`pin` 保存打卡机用户编号，例如 `1`。`POST /api/v1/users` 使用 UPSERT 逻辑。如果 `employee_id` 已存在则更新，否则新增；如果字段没有变化，则返回成功但不重置 `device_user_sync`。如果其它员工已使用相同 `pin`，接口返回 `409 Conflict`，避免不同员工绑定同一个打卡机编号。`POST /api/v1/users/batch` 会逐条处理，单条失败不会影响后续用户。新增或变更用户后，系统会为每台已登记设备维护一条 `device_user_sync` 记录并设置为 `PENDING`。设备后续访问 `/iclock/getrequest` 时会收到 `C:<sync_id>:DATA UPDATE USERINFO ...` 命令；如果打卡机已经存在相同 `PIN`，设备按 `DATA UPDATE USERINFO` 更新/覆盖该用户信息。设备执行后通过 `/iclock/devicecmd` 回传 `ID=<sync_id>&Return=0` 时，同步记录更新为 `SYNCED`。失败回执会记录为 `FAILED`，并按 `USER_SYNC_MAX_RETRY` 限制重试。
+`employee_id` 保存 Mingdao/ERP 工号，例如 `ESM0001`；`pin` 保存打卡机用户编号，例如 `1`。`POST /api/v1/users` 使用 UPSERT 逻辑。如果 `employee_id` 已存在则更新，否则新增；如果字段没有变化，则返回成功但不重置 `device_user_sync`。如果其它员工已使用相同 `pin`，接口返回 `409 Conflict`，避免不同员工绑定同一个打卡机编号。`POST /api/v1/users/batch` 会逐条处理，单条失败不会影响后续用户。新增或变更用户后，系统会为每台 `record_attendance = TRUE` 的已登记设备维护一条 `device_user_sync` 记录并设置为 `PENDING`；`record_attendance = FALSE` 的设备不参与用户同步。设备后续访问 `/iclock/getrequest` 时会收到 `C:<sync_id>:DATA UPDATE USERINFO ...` 命令；如果打卡机已经存在相同 `PIN`，设备按 `DATA UPDATE USERINFO` 更新/覆盖该用户信息。设备执行后通过 `/iclock/devicecmd` 回传 `ID=<sync_id>&Return=0` 时，同步记录更新为 `SYNCED`。失败回执会记录为 `FAILED`，并按 `USER_SYNC_MAX_RETRY` 限制重试。
 
 设备同步状态：
 

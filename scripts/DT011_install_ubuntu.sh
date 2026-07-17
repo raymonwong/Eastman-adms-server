@@ -41,41 +41,28 @@ verify_user_sync_engine() {
   log "Verifying user synchronization engine"
   compose exec -T api python - <<PY
 import json
-import os
 import re
 import urllib.parse
 import urllib.request
 
 import app.main  # Initializes the database engine and binds SessionLocal.
 from app.database import SessionLocal
-from app.models import Device, DeviceUserSync
-
-token = os.environ["MINGDAO_API_TOKEN"]
-headers = {"Content-Type": "application/json", "Authorization": f"Bearer {token}"}
+from app.models import Device, DeviceUser, DeviceUserSync
 
 with SessionLocal() as session:
-    session.add(Device(device_sn="${TEST_DEVICE_SN}", device_name="DT011 Test Device", status="online"))
+    session.add(Device(device_sn="${TEST_DEVICE_SN}", device_name="DT011 Test Device", status="online", record_attendance=True))
+    session.add(
+        DeviceUser(
+            employee_id="${TEST_EMPLOYEE_ID}",
+            pin="${TEST_PIN}",
+            name="DT011 User",
+            department="IT",
+            privilege="0",
+            enabled=True,
+        )
+    )
+    session.add(DeviceUserSync(employee_id="${TEST_EMPLOYEE_ID}", device_sn="${TEST_DEVICE_SN}", sync_status="PENDING"))
     session.commit()
-
-payload = {
-    "employee_id": "${TEST_EMPLOYEE_ID}",
-    "pin": "${TEST_PIN}",
-    "name": "DT011 User",
-    "department": "IT",
-    "card_no": "",
-    "privilege": 0,
-    "enabled": True,
-}
-request = urllib.request.Request(
-    "http://127.0.0.1:8000/api/v1/users",
-    data=json.dumps(payload).encode(),
-    headers=headers,
-    method="POST",
-)
-response = json.loads(urllib.request.urlopen(request, timeout=5).read())
-assert response["success"] is True
-assert response["changed"] is True
-assert response["sync_records"] >= 1
 
 getrequest_url = "http://127.0.0.1:8000/iclock/getrequest?" + urllib.parse.urlencode({"SN": "${TEST_DEVICE_SN}"})
 command = urllib.request.urlopen(getrequest_url, timeout=5).read().decode()
@@ -117,7 +104,7 @@ main() {
   cd "$(dirname "$0")/.."
   load_env
   cleanup_test_data
-  scripts/DT010.14_install_ubuntu.sh "$@"
+  scripts/DT002_install_ubuntu.sh "$@"
   cleanup_test_data
   verify_user_sync_engine
   cleanup_test_data

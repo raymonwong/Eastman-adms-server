@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from app.database import SessionLocal
 from sqlalchemy import or_
 
-from app.models import DeviceUser, DeviceUserSync
+from app.models import Device, DeviceUser, DeviceUserSync
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
@@ -41,7 +41,9 @@ def _sync_counts(session, employee_id: str | None) -> dict[str, int]:
 
     rows = (
         session.query(DeviceUserSync.sync_status, DeviceUserSync.id)
+        .join(Device, Device.device_sn == DeviceUserSync.device_sn)
         .filter(DeviceUserSync.employee_id == employee_id)
+        .filter(Device.record_attendance.is_(True))
         .all()
     )
     counts = {"PENDING": 0, "SYNCING": 0, "SYNCED": 0, "FAILED": 0}
@@ -58,7 +60,9 @@ def _sync_details(session, employee_id: str | None) -> list[dict[str, object | N
 
     records = (
         session.query(DeviceUserSync)
+        .join(Device, Device.device_sn == DeviceUserSync.device_sn)
         .filter(DeviceUserSync.employee_id == employee_id)
+        .filter(Device.record_attendance.is_(True))
         .order_by(DeviceUserSync.device_sn.asc())
         .all()
     )

@@ -2,7 +2,7 @@
 
 ## Current Development Task
 
-DT011
+DT011.1
 
 ## Status
 
@@ -10,7 +10,7 @@ Implemented - Waiting for Review
 
 ## Summary
 
-DT011 implements the attendance device user synchronization engine. Mingdao-sourced user changes now create per-device sync records, `/iclock/getrequest` delivers `DATA UPDATE USERINFO` commands, `/iclock/devicecmd` processes device ACK results, and the ADMS Users Console shows per-device sync status.
+DT011.1 fixes user sync scope. Mingdao-sourced user changes now create sync records only for devices with `record_attendance = true`; devices that do not record attendance are skipped and hidden from user sync completion counts. When a device is changed back to record attendance, ADMS rebuilds missing `PENDING` sync records for all Mingdao users on that device.
 
 ## Completed
 
@@ -113,6 +113,11 @@ DT011 implements the attendance device user synchronization engine. Mingdao-sour
 - Added DT011 user sync events: `USER CREATE`, `USER UPDATE`, `USER DISABLE`, `USER SYNC START`, `USER SYNC SUCCESS`, `USER SYNC FAILED`, `USER RETRY`, and `USER ACK RECEIVED`.
 - Added per-device sync detail display in `/users`.
 - Added `scripts/DT011_install_ubuntu.sh`.
+- Limited Mingdao user sync generation and GETREQUEST delivery to devices with `record_attendance = true`.
+- Added automatic sync rebuild when a device changes from `record_attendance = false` to `true`.
+- Added automatic sync cleanup when a device changes from `record_attendance = true` to `false`.
+- Removed the Card No column from the ADMS Users Console.
+- Added `scripts/DT011.1_install_ubuntu.sh`.
 - Updated README, CHANGELOG, and project status documentation.
 
 ## Not Included
@@ -137,4 +142,4 @@ DT011 implements the attendance device user synchronization engine. Mingdao-sour
 
 ## Next Development Task
 
-DT011 Review, then DT012 fingerprint synchronization planning
+DT011.1 Review, then DT012 fingerprint synchronization planning

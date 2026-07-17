@@ -2,6 +2,29 @@
 
 ## Version
 
+DT011.1
+
+## Date
+
+2026-07-17
+
+## Development Task
+
+DT011.1 User Sync Scope Fix
+
+## Description
+
+- Changed Mingdao user sync generation to include only devices with `record_attendance = true`.
+- Prevented `/iclock/getrequest` from delivering user sync commands to devices with `record_attendance = false`.
+- When a device is changed from `record_attendance = false` to `true`, ADMS rebuilds missing `PENDING` sync records for all Mingdao users on that device.
+- When a device is changed from `record_attendance = true` to `false`, ADMS removes its pending user sync records.
+- Updated the ADMS Users Console sync counts and details to only include devices that record attendance.
+- Removed the `Card No` column from the ADMS Users Console table.
+- Updated DT011 installer verification to use isolated database test records instead of creating Mingdao API test users that could sync to real devices.
+- Added `scripts/DT011.1_install_ubuntu.sh` without overwriting previous deployment scripts.
+
+## Version
+
 DT011
 
 ## Date

@@ -235,7 +235,13 @@ Mingdao
   -> Attendance Device
 ```
 
-When a Mingdao user is created or changed, ADMS creates or updates one `device_user_sync` record for every registered device and sets it to `PENDING`.
+When a Mingdao user is created or changed, ADMS creates or updates one `device_user_sync` record for every participating registered device and sets it to `PENDING`.
+
+Only devices with `record_attendance = true` participate in Mingdao user
+synchronization. Devices with `record_attendance = false` continue to connect to
+ADMS, but they do not receive user sync records or USERINFO commands. If an
+administrator later changes the device back to `record_attendance = true`, ADMS
+rebuilds missing `PENDING` sync records for all Mingdao users on that device.
 
 Online device:
 

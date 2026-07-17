@@ -310,6 +310,10 @@ def _find_next_user_sync_command(device_sn: str | None, received_at: datetime) -
         return None
 
     with SessionLocal() as session:
+        device = session.query(Device).filter(Device.device_sn == device_sn).one_or_none()
+        if device is not None and not device.record_attendance:
+            return None
+
         timeout_before = received_at - timedelta(seconds=_user_sync_ack_timeout_seconds())
         sync_record = (
             session.query(DeviceUserSync)

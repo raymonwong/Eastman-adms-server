@@ -198,7 +198,15 @@ def _apply_user_payload(user: DeviceUser, payload: UserSyncRequest) -> None:
 
 def _prepare_device_sync_records(session, employee_id: str) -> int:
     sync_count = 0
-    devices = session.query(Device).order_by(Device.device_sn.asc()).all()
+    devices = session.query(Device).filter(Device.record_attendance.is_(True)).order_by(Device.device_sn.asc()).all()
+    inactive_devices = session.query(Device).filter(Device.record_attendance.is_(False)).all()
+    inactive_device_sns = [device.device_sn for device in inactive_devices]
+    if inactive_device_sns:
+        (
+            session.query(DeviceUserSync)
+            .filter(DeviceUserSync.employee_id == employee_id, DeviceUserSync.device_sn.in_(inactive_device_sns))
+            .delete(synchronize_session=False)
+        )
 
     for device in devices:
         sync_record = (

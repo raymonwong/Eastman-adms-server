@@ -7,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
 from app.database import SessionLocal
-from app.models import Device
+from app.models import Device, DeviceUser, DeviceUserSync
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
@@ -58,16 +58,52 @@ def _get_device(sn: str) -> DeviceResponse:
         return _device_to_response(device)
 
 
+def _rebuild_device_user_sync_records(session, device_sn: str) -> int:
+    sync_count = 0
+    users = (
+        session.query(DeviceUser)
+        .filter(DeviceUser.employee_id.is_not(None), DeviceUser.employee_id != "")
+        .order_by(DeviceUser.employee_id.asc())
+        .all()
+    )
+
+    for user in users:
+        sync_record = (
+            session.query(DeviceUserSync)
+            .filter(DeviceUserSync.employee_id == user.employee_id, DeviceUserSync.device_sn == device_sn)
+            .one_or_none()
+        )
+        if sync_record is None:
+            sync_record = DeviceUserSync(employee_id=user.employee_id, device_sn=device_sn)
+            session.add(sync_record)
+        sync_record.sync_status = "PENDING"
+        sync_record.retry_count = 0
+        sync_record.last_error = None
+        sync_count += 1
+    return sync_count
+
+
 def _update_device(sn: str, payload: DeviceUpdateRequest) -> DeviceResponse:
     with SessionLocal() as session:
         device = session.query(Device).filter(Device.device_sn == sn).one_or_none()
         if device is None:
             raise HTTPException(status_code=404, detail="Device not found")
 
+        previous_record_attendance = bool(device.record_attendance)
         device.device_name = payload.device_name.strip()
         device.location = payload.location.strip() if payload.location else None
         device.record_attendance = payload.record_attendance
         device.show_in_console = payload.show_in_console
+
+        if previous_record_attendance and not payload.record_attendance:
+            (
+                session.query(DeviceUserSync)
+                .filter(DeviceUserSync.device_sn == device.device_sn)
+                .delete(synchronize_session=False)
+            )
+        elif not previous_record_attendance and payload.record_attendance:
+            _rebuild_device_user_sync_records(session, device.device_sn)
+
         session.commit()
         session.refresh(device)
         return _device_to_response(device)
