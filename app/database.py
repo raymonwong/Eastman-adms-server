@@ -393,6 +393,7 @@ def ensure_dt010_1_user_sync(engine: Engine) -> None:
                 if (
                     "duplicate column" in error_text
                     or "duplicate key name" in error_text
+                    or "duplicate check constraint name" in error_text
                     or "already exists" in error_text
                     or "duplicate foreign key constraint name" in error_text
                 ):
