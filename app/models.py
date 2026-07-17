@@ -193,12 +193,14 @@ class DeviceUser(Base):
         Index("ix_device_user_device_sn", "device_sn"),
         Index("ix_device_user_pin", "pin"),
         Index("ix_device_user_employee_id", "employee_id"),
+        Index("ix_device_user_employee_record_id", "employee_record_id"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     device_sn: Mapped[str | None] = mapped_column(String(64), nullable=True)
     pin: Mapped[str | None] = mapped_column(String(64), nullable=True)
     employee_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    employee_record_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
     name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     department: Mapped[str | None] = mapped_column(String(255), nullable=True)
     privilege: Mapped[str | None] = mapped_column(String(32), nullable=True)

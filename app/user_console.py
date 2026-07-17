@@ -18,6 +18,7 @@ templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "tem
 class AdmsUserResponse(BaseModel):
     id: int
     employee_id: str | None
+    employee_record_id: str | None
     pin: str | None
     name: str | None
     department: str | None
@@ -83,6 +84,7 @@ def _user_to_response(session, user: DeviceUser) -> AdmsUserResponse:
     return AdmsUserResponse(
         id=user.id,
         employee_id=user.employee_id,
+        employee_record_id=user.employee_record_id,
         pin=user.pin,
         name=user.name,
         department=user.department,

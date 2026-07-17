@@ -64,6 +64,7 @@ Request body:
 
 ```json
 {
+  "employee_record_id": "659823456789",
   "employee_id": "ESM0001",
   "pin": "1",
   "name": "Raymon",
@@ -74,7 +75,9 @@ Request body:
 }
 ```
 
-`employee_id` is retained as the Mingdao/ERP employee number for reference and future business matching. `pin` is the attendance device user number and is the field that future device update commands must use. For example, `ESM0001` should be sent as `employee_id=ESM0001` and `pin=1`. If `pin` is omitted, ADMS keeps backward compatibility and uses `employee_id` as the PIN. In production integrations, send both fields.
+`employee_record_id` must be the Mingdao employee worksheet record ID. DT014 Attendance Synchronization will use this value to populate the Mingdao employee relation field directly, so Mingdao workflows will not be required to associate attendance records with employees.
+
+`employee_id` is retained as the Mingdao/ERP employee number for reference and future business matching. `pin` is the attendance device user number and is the field that future device update commands must use. For example, `ESM0001` should be sent as `employee_id=ESM0001` and `pin=1`. If `pin` is omitted, ADMS keeps backward compatibility and uses `employee_id` as the PIN. In production integrations, send all three identifiers: `employee_record_id`, `employee_id`, and `pin`.
 
 Response:
 
@@ -82,6 +85,7 @@ Response:
 {
   "success": true,
   "employee_id": "ESM0001",
+  "employee_record_id": "659823456789",
   "pin": "1",
   "message": "User synchronized successfully.",
   "changed": true,
@@ -108,6 +112,7 @@ Request body:
 ```json
 [
   {
+    "employee_record_id": "659823456789",
     "employee_id": "ESM0001",
     "pin": "1",
     "name": "Raymon",
@@ -182,6 +187,7 @@ Request JSON example:
 
 ```json
 {
+  "employee_record_id": "659823456789",
   "employee_id": "ESM0001",
   "pin": "1",
   "name": "Raymon",
@@ -198,6 +204,7 @@ Successful response example:
 {
   "success": true,
   "employee_id": "ESM0001",
+  "employee_record_id": "659823456789",
   "pin": "1",
   "message": "User synchronized successfully.",
   "changed": true,
@@ -213,6 +220,10 @@ Error response examples:
 
 ```json
 {"detail":"Batch size exceeds maximum limit of 500 users."}
+```
+
+```json
+{"detail":[{"msg":"Field required","loc":["body","employee_record_id"]}]}
 ```
 
 ```json

@@ -417,7 +417,7 @@
           <div class="toolbar">
             <div>
               <div class="field-label">Search <span class="zh-sub">/ 搜索</span></div>
-              <input id="searchInput" class="form-control" placeholder="Employee ID / PIN / Name / Department 搜索工号 / PIN / 姓名 / 部门">
+              <input id="searchInput" class="form-control" placeholder="Employee ID / Record ID / PIN / Name / Department 搜索工号 / 记录ID / PIN / 姓名 / 部门">
             </div>
             <div>
               <div class="field-label">Status <span class="zh-sub">/ 状态</span></div>
@@ -468,7 +468,7 @@
         if (status === 'enabled' && !user.enabled) return false;
         if (status === 'disabled' && user.enabled) return false;
         if (!keyword) return true;
-        return [user.employee_id, user.pin, user.name, user.department, user.card_no].some(function (value) {
+        return [user.employee_id, user.employee_record_id, user.pin, user.name, user.department, user.card_no].some(function (value) {
           return String(value || '').toLowerCase().includes(keyword);
         });
       });
@@ -533,6 +533,7 @@
                 <thead>
                   <tr>
                     <th>Employee ID<br><span class="zh-sub">员工工号</span></th>
+                    <th>Employee Record ID<br><span class="zh-sub">员工记录ID</span></th>
                     <th>PIN<br><span class="zh-sub">打卡机编号</span></th>
                     <th>Name<br><span class="zh-sub">姓名</span></th>
                     <th>Source<br><span class="zh-sub">来源</span></th>
@@ -557,6 +558,7 @@
       return `
         <tr>
           <td class="mono">${esc(user.employee_id || '-')}</td>
+          <td class="mono">${esc(user.employee_record_id || '-')}</td>
           <td class="mono">${esc(user.pin || '-')}</td>
           <td>${esc(user.name || '-')}</td>
           <td>${esc(sourceName(user))}</td>

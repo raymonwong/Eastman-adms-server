@@ -67,6 +67,7 @@ scripts/DT010.14_install_ubuntu.sh
 - 验证 `POST /api/v1/users/batch`
 - 验证 `GET /api/v1/users/{employee_id}`
 - 验证 `employee_id` 与 `pin` 分开保存
+- 验证 `employee_record_id` 字段、API 校验和用户页面展示
 - 验证重复 `pin` 返回 `409 Conflict`
 - 验证 `/users` 用户页面
 - 验证 `/api/adms-users` 用户读取接口
@@ -113,6 +114,7 @@ eastman-adms-server/
 │   ├── DT009.83_install_ubuntu.sh
 │   ├── DT010.1_install_ubuntu.sh
 │   ├── DT010.11_install_ubuntu.sh
+│   ├── DT010.12_install_ubuntu.sh
 │   ├── DT010.13_install_ubuntu.sh
 │   └── DT010.14_install_ubuntu.sh
 ├── docs/
@@ -184,7 +186,7 @@ DT009.6 为 `device` 增加设备管理配置字段：`location`、`record_atten
 
 DT009.8 将 Console 升级为多设备监控中心。Console 只显示 `show_in_console = true` 的设备，并在监控视图中优先显示 Device Name。DT009.82 将设备筛选收敛为所有设备或单台可显示设备。DT009.83 完成 Console P0/P1/P2 体验优化，统一筛选作用域、设备唯一显示、加载/失败状态、ATTLOG 主日志去重、事件日志操作控件、异常优先视图和设备状态总览筛选/搜索/排序。
 
-DT010.1 扩展 `device_user`，新增 `employee_id`、`department`、`card_no`、`enabled` 等 Mingdao 用户字段，并新增 `device_user_sync`。Mingdao 用户以 `employee_id` 作为唯一业务键；重复提交相同数据不会产生重复用户，也不会重复触发同步。DT011 完成员工同步闭环：用户新增或变更后，系统会为所有已登记设备创建或更新 `PENDING` 同步记录；设备访问 `/iclock/getrequest` 时服务器返回 `DATA UPDATE USERINFO` 命令；设备通过 `/iclock/devicecmd` 回传执行结果后，`device_user_sync` 更新为 `SYNCED` 或 `FAILED`。
+DT010.1 扩展 `device_user`，新增 `employee_id`、`department`、`card_no`、`enabled` 等 Mingdao 用户字段，并新增 `device_user_sync`。Mingdao 用户以 `employee_id` 作为唯一业务键；重复提交相同数据不会产生重复用户，也不会重复触发同步。DT010.12 增加 `employee_record_id`，保存 Mingdao 员工表记录 ID，供 DT014 考勤同步直接填写 Mingdao 员工关联字段。DT011 完成员工同步闭环：用户新增或变更后，系统会为所有已登记设备创建或更新 `PENDING` 同步记录；设备访问 `/iclock/getrequest` 时服务器返回 `DATA UPDATE USERINFO` 命令；设备通过 `/iclock/devicecmd` 回传执行结果后，`device_user_sync` 更新为 `SYNCED` 或 `FAILED`。
 
 DT010.1 Review Fix 增加 Mingdao API Token 鉴权。部署前必须在 `.env` 中配置：
 
@@ -225,7 +227,7 @@ DT010.14 增加只读 ADMS Users Console：
 http://<Server Address>:4370/users
 ```
 
-该页面从 `device_user` 读取用户，按部门分组展示，并显示 `employee_id`、`pin`、姓名、来源、权限、启用状态、每台设备同步状态、最后设备上传和更新时间。页面只用于查看，不修改用户、不改变 Mingdao API 或数据库结构。
+该页面从 `device_user` 读取用户，按部门分组展示，并显示 `employee_record_id`、`employee_id`、`pin`、姓名、来源、权限、启用状态、每台设备同步状态、最后设备上传和更新时间。页面只用于查看，不修改用户、不改变 Mingdao API 或数据库结构。
 
 开发环境如需重建数据库，可执行：
 
@@ -358,6 +360,7 @@ GET /api/v1/users/{employee_id}
 
 ```json
 {
+  "employee_record_id": "659823456789",
   "employee_id": "ESM0001",
   "pin": "1",
   "name": "Raymon",
@@ -368,7 +371,7 @@ GET /api/v1/users/{employee_id}
 }
 ```
 
-`employee_id` 保存 Mingdao/ERP 工号，例如 `ESM0001`；`pin` 保存打卡机用户编号，例如 `1`。`POST /api/v1/users` 使用 UPSERT 逻辑。如果 `employee_id` 已存在则更新，否则新增；如果字段没有变化，则返回成功但不重置 `device_user_sync`。如果其它员工已使用相同 `pin`，接口返回 `409 Conflict`，避免不同员工绑定同一个打卡机编号。`POST /api/v1/users/batch` 会逐条处理，单条失败不会影响后续用户。新增或变更用户后，系统会为每台 `record_attendance = TRUE` 的已登记设备维护一条 `device_user_sync` 记录并设置为 `PENDING`；`record_attendance = FALSE` 的设备不参与用户同步。设备后续访问 `/iclock/getrequest` 时会收到 `C:<sync_id>:DATA UPDATE USERINFO ...` 命令；如果打卡机已经存在相同 `PIN`，设备按 `DATA UPDATE USERINFO` 更新/覆盖该用户信息。设备执行后通过 `/iclock/devicecmd` 回传 `ID=<sync_id>&Return=0` 时，同步记录更新为 `SYNCED`。失败回执会记录为 `FAILED`，并按 `USER_SYNC_MAX_RETRY` 限制重试。
+`employee_record_id` 保存 Mingdao 员工表记录 ID，必须由 Mingdao 提供；DT014 考勤同步会用它直接填写 Mingdao 员工关联字段。`employee_id` 保存 Mingdao/ERP 工号，例如 `ESM0001`；`pin` 保存打卡机用户编号，例如 `1`。`POST /api/v1/users` 使用 UPSERT 逻辑。如果 `employee_id` 已存在则更新，包括同步更新 `employee_record_id`；如果字段没有变化，则返回成功但不重置 `device_user_sync`。如果其它员工已使用相同 `pin`，接口返回 `409 Conflict`，避免不同员工绑定同一个打卡机编号。`POST /api/v1/users/batch` 会逐条处理，单条失败不会影响后续用户。新增或变更用户后，系统会为每台 `record_attendance = TRUE` 的已登记设备维护一条 `device_user_sync` 记录并设置为 `PENDING`；`record_attendance = FALSE` 的设备不参与用户同步。设备后续访问 `/iclock/getrequest` 时会收到 `C:<sync_id>:DATA UPDATE USERINFO ...` 命令；如果打卡机已经存在相同 `PIN`，设备按 `DATA UPDATE USERINFO` 更新/覆盖该用户信息。设备执行后通过 `/iclock/devicecmd` 回传 `ID=<sync_id>&Return=0` 时，同步记录更新为 `SYNCED`。失败回执会记录为 `FAILED`，并按 `USER_SYNC_MAX_RETRY` 限制重试。
 
 设备同步状态：
 

@@ -47,6 +47,7 @@ def ensure_dt010_1_user_sync_prerequisites(engine: Engine) -> None:
         "ALTER TABLE device_user MODIFY raw_request_id INT NULL",
         "ALTER TABLE device_user MODIFY receive_time DATETIME NULL",
         "ALTER TABLE device_user ADD COLUMN employee_id VARCHAR(64) NULL",
+        "ALTER TABLE device_user ADD COLUMN employee_record_id VARCHAR(128) NULL",
         "ALTER TABLE device_user ADD COLUMN department VARCHAR(255) NULL",
         "ALTER TABLE device_user ADD COLUMN card_no VARCHAR(64) NULL",
         "ALTER TABLE device_user ADD COLUMN enabled BOOL NOT NULL DEFAULT 1",
@@ -55,6 +56,7 @@ def ensure_dt010_1_user_sync_prerequisites(engine: Engine) -> None:
         "ALTER TABLE device_user ADD COLUMN last_device_raw_request_id INT NULL",
         "CREATE UNIQUE INDEX uq_device_user_employee_id ON device_user (employee_id)",
         "CREATE INDEX ix_device_user_employee_id ON device_user (employee_id)",
+        "CREATE INDEX ix_device_user_employee_record_id ON device_user (employee_record_id)",
     )
 
     with engine.begin() as connection:
@@ -339,6 +341,7 @@ def ensure_dt010_1_user_sync(engine: Engine) -> None:
         "ALTER TABLE device_user MODIFY raw_request_id INT NULL",
         "ALTER TABLE device_user MODIFY receive_time DATETIME NULL",
         "ALTER TABLE device_user ADD COLUMN employee_id VARCHAR(64) NULL",
+        "ALTER TABLE device_user ADD COLUMN employee_record_id VARCHAR(128) NULL",
         "ALTER TABLE device_user ADD COLUMN department VARCHAR(255) NULL",
         "ALTER TABLE device_user ADD COLUMN card_no VARCHAR(64) NULL",
         "ALTER TABLE device_user ADD COLUMN enabled BOOL NOT NULL DEFAULT 1",
@@ -347,6 +350,7 @@ def ensure_dt010_1_user_sync(engine: Engine) -> None:
         "ALTER TABLE device_user ADD COLUMN last_device_raw_request_id INT NULL",
         "CREATE UNIQUE INDEX uq_device_user_employee_id ON device_user (employee_id)",
         "CREATE INDEX ix_device_user_employee_id ON device_user (employee_id)",
+        "CREATE INDEX ix_device_user_employee_record_id ON device_user (employee_record_id)",
         """
         CREATE TABLE IF NOT EXISTS device_user_sync (
             id INT NOT NULL AUTO_INCREMENT,

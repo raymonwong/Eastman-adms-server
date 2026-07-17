@@ -2,7 +2,7 @@
 
 ## Current Development Task
 
-DT011.1
+DT010.12 Employee Record ID
 
 ## Status
 
@@ -10,7 +10,7 @@ Implemented - Waiting for Review
 
 ## Summary
 
-DT011.1 fixes user sync scope. Mingdao-sourced user changes now create sync records only for devices with `record_attendance = true`; devices that do not record attendance are skipped and hidden from user sync completion counts. When a device is changed back to record attendance, ADMS rebuilds missing `PENDING` sync records for all Mingdao users on that device.
+DT010.12 extends the Mingdao user integration with `employee_record_id`. ADMS stores the Mingdao employee worksheet record ID in `device_user`, exposes it through the User API and ADMS Users Console, and documents that DT014 Attendance Synchronization will use this value to populate Mingdao employee relation fields directly.
 
 ## Completed
 
@@ -118,6 +118,13 @@ DT011.1 fixes user sync scope. Mingdao-sourced user changes now create sync reco
 - Added automatic sync cleanup when a device changes from `record_attendance = true` to `false`.
 - Removed the Card No column from the ADMS Users Console.
 - Added `scripts/DT011.1_install_ubuntu.sh`.
+- Added `employee_record_id` to `device_user`.
+- Required `employee_record_id` in `POST /api/v1/users` and `POST /api/v1/users/batch`.
+- Updated UPSERT behavior so existing users refresh `employee_record_id`.
+- Added `employee_record_id` to Mingdao User API responses and `/api/adms-users`.
+- Added Employee Record ID display and search support to `/users`.
+- Updated `/settings/integration` guide, cURL output, API Test form, and documentation examples.
+- Added `scripts/DT010.12_install_ubuntu.sh`.
 - Updated README, CHANGELOG, and project status documentation.
 
 ## Not Included

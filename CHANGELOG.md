@@ -2,6 +2,30 @@
 
 ## Version
 
+DT010.12 Employee Record ID
+
+## Date
+
+2026-07-17
+
+## Development Task
+
+DT010.12 Support Employee Record ID
+
+## Description
+
+- Extended `device_user` with `employee_record_id` for storing the Mingdao employee worksheet record ID.
+- Updated `POST /api/v1/users` and `POST /api/v1/users/batch` to require and store `employee_record_id`.
+- Updated UPSERT logic so existing Mingdao users also refresh `employee_record_id`.
+- Added User API responses and `/api/adms-users` output for `employee_record_id`.
+- Added Employee Record ID to the ADMS Users Console table and search scope.
+- Updated Integration page examples, API Test payload, cURL output, and Mingdao configuration guide.
+- Updated `docs/Mingdao_API_Integration.md` to explain that DT014 Attendance Synchronization will use `employee_record_id` as the direct Mingdao relation identifier.
+- Added `scripts/DT010.12_install_ubuntu.sh` without overwriting previous deployment scripts.
+- Kept GETREQUEST, ATTLOG, OPERLOG, USER parser, device synchronization logic, and existing Console behavior unchanged.
+
+## Version
+
 DT011.1
 
 ## Date

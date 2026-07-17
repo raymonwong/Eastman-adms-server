@@ -174,6 +174,7 @@
                 <pre>{
   "success": true,
   "employee_id": "ESM0001",
+  "employee_record_id": "659823456789",
   "pin": "1",
   "message": "User synchronized successfully.",
   "changed": true,
@@ -219,6 +220,10 @@
                 <div class="col-12 col-md-6">
                   <label class="label">Employee ID <span class="zh-sub">/ 员工编号</span></label>
                   <input id="testEmployeeId" class="form-control" value="ESM0001">
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="label">Employee Record ID <span class="zh-sub">/ 员工记录ID</span></label>
+                  <input id="testEmployeeRecordId" class="form-control" value="659823456789">
                 </div>
                 <div class="col-12 col-md-6">
                   <label class="label">Device PIN <span class="zh-sub">/ 打卡机编号</span></label>
@@ -287,6 +292,7 @@ X-API-Key: &lt;API_TOKEN&gt;</pre>
           <h3>4. Mingdao Configuration Guide <span class="zh-sub">/ 明道配置说明</span></h3>
           <p>Configure Mingdao HTTP request nodes with the API URL shown on this page. Use method <code>POST</code>, header <code>Content-Type: application/json</code>, and either <code>Authorization: Bearer &lt;API_TOKEN&gt;</code> or <code>X-API-Key: &lt;API_TOKEN&gt;</code>.</p>
           <pre>{
+  "employee_record_id": "659823456789",
   "employee_id": "ESM0001",
   "pin": "1",
   "name": "Raymon",
@@ -299,12 +305,13 @@ X-API-Key: &lt;API_TOKEN&gt;</pre>
           <pre>{
   "success": true,
   "employee_id": "ESM0001",
+  "employee_record_id": "659823456789",
   "pin": "1",
   "message": "User synchronized successfully.",
   "changed": true,
   "sync_records": 1
 }</pre>
-          <p>Error response examples include <code>401 Unauthorized</code> for missing or invalid token, <code>413</code> when batch size exceeds 500 users, and <code>422</code> for invalid JSON or unsupported privilege.</p>
+          <p>Error response examples include <code>401 Unauthorized</code> for missing or invalid token, <code>413</code> when batch size exceeds 500 users, and <code>422</code> for invalid JSON, missing <code>employee_record_id</code>, or unsupported privilege.</p>
 
           <h3>5. Synchronization Flow <span class="zh-sub">/ 同步流程</span></h3>
           <pre>Mingdao
@@ -367,6 +374,7 @@ X-API-Key: &lt;API_TOKEN&gt;</pre>
 
     function requestJsonExample() {
       return {
+        employee_record_id: '659823456789',
         employee_id: 'ESM0001',
         pin: '1',
         name: 'Raymon',
@@ -400,6 +408,7 @@ X-API-Key: &lt;API_TOKEN&gt;</pre>
   -H "Authorization: Bearer ${token}" \\
   -H "Content-Type: application/json" \\
   -d '{
+    "employee_record_id": "659823456789",
     "employee_id": "ESM0001",
     "pin": "1",
     "name": "Raymon",
@@ -480,6 +489,7 @@ X-API-Key: &lt;API_TOKEN&gt;</pre>
       const tokenResponse = await fetch('/api/settings/integration?show_token=true', {cache: 'no-store'});
       const tokenData = await tokenResponse.json();
       const payload = {
+        employee_record_id: document.getElementById('testEmployeeRecordId').value.trim(),
         employee_id: document.getElementById('testEmployeeId').value.trim(),
         pin: document.getElementById('testPin').value.trim(),
         name: document.getElementById('testName').value.trim(),

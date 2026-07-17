@@ -64,6 +64,7 @@ router = APIRouter(prefix="/api/v1", tags=["Mingdao Users"], dependencies=[Depen
 
 
 class UserSyncRequest(BaseModel):
+    employee_record_id: str = Field(min_length=1, max_length=128)
     employee_id: str = Field(min_length=1, max_length=64)
     pin: str | None = Field(default=None, max_length=64)
     name: str = Field(min_length=1, max_length=255)
@@ -72,7 +73,7 @@ class UserSyncRequest(BaseModel):
     privilege: int = Field(default=0, ge=0)
     enabled: bool = True
 
-    @field_validator("employee_id", "name")
+    @field_validator("employee_record_id", "employee_id", "name")
     @classmethod
     def strip_required_text(cls, value: str) -> str:
         cleaned = value.strip()
@@ -96,6 +97,7 @@ class UserSyncRequest(BaseModel):
 class UserSyncResponse(BaseModel):
     success: bool
     employee_id: str
+    employee_record_id: str
     pin: str | None = None
     message: str
     changed: bool = False
@@ -112,6 +114,7 @@ class UserBatchSyncResponse(BaseModel):
 
 class UserResponse(BaseModel):
     employee_id: str
+    employee_record_id: str | None
     pin: str | None
     name: str
     department: str | None
@@ -148,6 +151,7 @@ def _user_to_response(user: DeviceUser) -> UserResponse:
         raise ValueError("DeviceUser is missing employee_id")
     return UserResponse(
         employee_id=user.employee_id,
+        employee_record_id=user.employee_record_id,
         pin=user.pin,
         name=user.name or "",
         department=user.department,
@@ -164,6 +168,7 @@ def _has_user_changed(user: DeviceUser, payload: UserSyncRequest) -> bool:
     return any(
         (
             user.name != payload.name.strip(),
+            user.employee_record_id != payload.employee_record_id.strip(),
             user.department != _clean_text(payload.department),
             user.card_no != _clean_text(payload.card_no),
             user.card != _clean_text(payload.card_no),
@@ -186,6 +191,9 @@ def _apply_user_payload(user: DeviceUser, payload: UserSyncRequest) -> None:
     pin = _payload_pin(payload)
     card_no = _clean_text(payload.card_no)
     user.employee_id = employee_id
+    # DT014 attendance synchronization will use this Mingdao record ID as the
+    # primary relation identifier when populating Mingdao employee relations.
+    user.employee_record_id = payload.employee_record_id.strip()
     user.pin = pin
     user.name = payload.name.strip()
     user.department = _clean_text(payload.department)
@@ -282,6 +290,7 @@ def _upsert_user(payload: UserSyncRequest) -> UserSyncResponse:
             return UserSyncResponse(
                 success=True,
                 employee_id=employee_id,
+                employee_record_id=payload.employee_record_id.strip(),
                 pin=pin,
                 message="User already up to date.",
                 changed=False,
@@ -323,6 +332,7 @@ def _upsert_user(payload: UserSyncRequest) -> UserSyncResponse:
     return UserSyncResponse(
         success=True,
         employee_id=employee_id,
+        employee_record_id=payload.employee_record_id.strip(),
         pin=pin,
         message="User synchronized successfully.",
         changed=True,
