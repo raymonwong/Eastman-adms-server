@@ -2,7 +2,7 @@
 
 ## Current Development Task
 
-DT010.12 Employee Record ID
+DT013.1 Mingdao Attendance Integration Configuration
 
 ## Status
 
@@ -10,7 +10,7 @@ Implemented - Waiting for Review
 
 ## Summary
 
-DT010.12 extends the Mingdao user integration with `employee_record_id`. ADMS stores the Mingdao employee worksheet record ID in `device_user`, exposes it through the User API and ADMS Users Console, and documents that DT014 Attendance Synchronization will use this value to populate Mingdao employee relation fields directly.
+DT013.1 adds the Mingdao Attendance Synchronization configuration center inside the existing Communication Console -> System Settings -> Integration page. It stores the OpenAPI URL, AppKey, Sign, Worksheet ID, and field mappings needed by future DT014 Attendance Synchronization. It does not upload attendance records.
 
 ## Completed
 
@@ -125,6 +125,12 @@ DT010.12 extends the Mingdao user integration with `employee_record_id`. ADMS st
 - Added Employee Record ID display and search support to `/users`.
 - Updated `/settings/integration` guide, cURL output, API Test form, and documentation examples.
 - Added `scripts/DT010.12_install_ubuntu.sh`.
+- Added Attendance Synchronization configuration section to `/settings/integration`.
+- Added configurable Mingdao Attendance OpenAPI URL, AppKey, Sign, Worksheet ID, and fixed ADMS-to-Mingdao field mapping targets.
+- Added read-only Test Connection for Mingdao worksheet metadata and configured field ID verification.
+- Added Attendance Synchronization summary including status, API URL, Worksheet ID, token status, configured fields, last test time, and last test result.
+- Added DT014 duplicate-prevention design based on `attendance_event.id` as the local idempotency key.
+- Added `scripts/DT013.1_install_ubuntu.sh`.
 - Updated README, CHANGELOG, and project status documentation.
 
 ## Not Included

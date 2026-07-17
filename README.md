@@ -4,7 +4,7 @@
 
 Eastman ADMS Server 是用于后续接入考勤设备、考勤平台和明道云/HAP 的服务端项目。
 
-Development Task 010.14 增加 ADMS Users Console：通过 `/users` 只读查看 ADMS `device_user` 中的用户，并按部门分组展示员工工号、打卡机 PIN、姓名、同步状态和最后更新时间。
+Development Task 013.1 增加 Mingdao Attendance Integration Configuration：在现有 `/settings/integration` 中配置未来 DT014 考勤同步所需的明道云 OpenAPI URL、AppKey、Sign、Worksheet ID 和字段映射。本阶段只做配置中心，不上传考勤数据。
 
 本阶段不修改 ADMS 协议、HTTP 返回格式、ATTLOG/OPLOG/USER Parser、考勤上传逻辑、明道云考勤同步或任何 ERP 业务逻辑。
 
@@ -26,7 +26,7 @@ Development Task 010.14 增加 ADMS Users Console：通过 `/users` 只读查看
 在项目根目录执行：
 
 ```bash
-scripts/DT010.14_install_ubuntu.sh
+scripts/DT013.1_install_ubuntu.sh
 ```
 
 安装脚本会自动完成：
@@ -71,6 +71,8 @@ scripts/DT010.14_install_ubuntu.sh
 - 验证重复 `pin` 返回 `409 Conflict`
 - 验证 `/users` 用户页面
 - 验证 `/api/adms-users` 用户读取接口
+- 验证 Attendance Synchronization 配置接口
+- 验证 Attendance Synchronization 页面配置区和文档说明
 - 失败时输出容器状态和最近 100 行容器日志
 
 部署成功后会输出：
@@ -116,7 +118,8 @@ eastman-adms-server/
 │   ├── DT010.11_install_ubuntu.sh
 │   ├── DT010.12_install_ubuntu.sh
 │   ├── DT010.13_install_ubuntu.sh
-│   └── DT010.14_install_ubuntu.sh
+│   ├── DT010.14_install_ubuntu.sh
+│   └── DT013.1_install_ubuntu.sh
 ├── docs/
 │   ├── Architecture.md
 │   ├── Deploy.md
@@ -218,6 +221,8 @@ docs/Mingdao_API_Integration.md
 ```
 
 DT010.12 增强现有 Integration 页面，不改变布局和既有 Console 功能。API Token 默认全掩码显示，只有点击 Show 才显示完整令牌；API Base URL 继续根据当前访问 Host 动态生成；页面新增 Mingdao Configuration Guide、Copy Mingdao Configuration、API Test、Last API Response Code、Total API Requests 和 Open Integration Documentation。
+
+DT013.1 在现有 `/settings/integration` 页面增加 Attendance Synchronization 配置中心，用于 DT014。配置项包括启用状态、明道云考勤 OpenAPI URL、AppKey、Sign、Worksheet ID、Employee Record ID、Check Time、Device Name 和 Device SN 的目标字段 ID。Test Connection 只读取明道云工作表结构，不写考勤记录。DT014 必须以 `attendance_event.id` 作为本地幂等键，避免同一条考勤重复上传到明道云。
 
 DT010.13 增加 Mingdao 用户 `pin` 字段支持。`employee_id` 仅作为 Mingdao/ERP 工号参考和人员关联字段保留在数据表中；`pin` 是未来下发/更新打卡机用户时使用的设备用户编号。不同 `employee_id` 不允许使用相同 `pin`，重复时接口返回 `409 Conflict`。旧请求如果未传 `pin`，系统仍兼容使用 `employee_id` 作为默认 PIN。
 

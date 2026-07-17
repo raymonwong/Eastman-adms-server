@@ -331,7 +331,87 @@ USER_SYNC_ACK_TIMEOUT_SECONDS=120
 
 DT011 does not implement fingerprint, face, photo, password, or delete commands.
 
-## 6. Troubleshooting
+## 6. Attendance Synchronization Configuration
+
+DT013.1 adds the configuration center for future attendance synchronization. It does not upload attendance data and does not create Mingdao attendance records.
+
+Location:
+
+```text
+Communication Console
+  -> System Settings
+  -> Integration
+  -> Attendance Synchronization
+```
+
+### Configuration Items
+
+| Item | Purpose |
+| --- | --- |
+| Enable Attendance Synchronization | Enables or disables future DT014 attendance synchronization. DT013.1 only stores this value. |
+| Mingdao Attendance OpenAPI URL | Complete Mingdao OpenAPI base URL or worksheet schema URL. Do not hardcode it in code. |
+| AppKey | Mingdao OpenAPI AppKey copied from Mingdao OpenAPI authorization page. |
+| Sign | Mingdao OpenAPI Sign copied from Mingdao OpenAPI authorization page. |
+| Worksheet ID | Mingdao Attendance worksheet ID copied from Mingdao OpenAPI documentation. |
+| Employee Record ID Target Field ID | Target Mingdao field ID for the employee relation/record ID. |
+| Check Time Target Field ID | Target Mingdao field ID for attendance check time. |
+| Device Name Target Field ID | Target Mingdao field ID for ADMS device name. |
+| Device SN Target Field ID | Target Mingdao field ID for ADMS device serial number. |
+
+Mingdao OpenAPI authentication uses the official headers:
+
+```http
+HAP-Appkey: <AppKey>
+HAP-Sign: <Sign>
+```
+
+The existing ADMS `MINGDAO_API_TOKEN` is reused as the ADMS-side API protection token. DT013.1 does not create a second ADMS token.
+
+### Connection Test
+
+The Test Connection button performs a read-only worksheet metadata check.
+
+It builds the worksheet schema URL as:
+
+```text
+<Mingdao Attendance OpenAPI URL>/v3/app/worksheets/<Worksheet ID>
+```
+
+If the configured OpenAPI URL already contains `/v3/app/worksheets/` or `{worksheet_id}`, ADMS uses it directly or substitutes `{worksheet_id}`.
+
+The connection test verifies:
+
+- OpenAPI URL is valid.
+- AppKey and Sign are present.
+- Worksheet ID is present.
+- Mingdao OpenAPI is reachable.
+- Worksheet metadata returns successfully.
+- Configured target field IDs exist in the returned worksheet metadata.
+
+The connection test does not write attendance records.
+
+### Duplicate Prevention Design for DT014
+
+DT014 must not upload duplicate attendance records to Mingdao.
+
+The required duplicate prevention rule is:
+
+```text
+One ADMS attendance_event.id -> at most one Mingdao attendance record
+```
+
+DT014 should use `attendance_event.id` as the local idempotency key before writing to Mingdao. Before retrying any failed write, DT014 must check existing local sync state and must not push the same attendance event twice.
+
+Future DT014 implementation should store the Mingdao target record ID after successful upload, so retry logic can safely distinguish:
+
+- Not uploaded yet.
+- Uploaded successfully.
+- Failed and eligible for retry.
+- Already uploaded and must be skipped.
+
+This design is intentional because device-level duplicate protection and ATTLOG parser uniqueness are not sufficient to protect downstream Mingdao writes during network retries.
+
+## 7. Troubleshooting
 
 ### 401 Unauthorized
 

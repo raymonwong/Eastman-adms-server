@@ -2,6 +2,29 @@
 
 ## Version
 
+DT013.1
+
+## Date
+
+2026-07-18
+
+## Development Task
+
+DT013.1 Mingdao Attendance Integration Configuration
+
+## Description
+
+- Added Attendance Synchronization configuration section to the existing `/settings/integration` page.
+- Added configurable Mingdao Attendance OpenAPI URL, AppKey, Sign, Worksheet ID, and target field IDs.
+- Stored attendance integration configuration in the existing `.env` Integration configuration path.
+- Added read-only Test Connection for Mingdao worksheet metadata using official `HAP-Appkey` and `HAP-Sign` headers.
+- Added Attendance Synchronization summary with status, API URL, Worksheet ID, token status, configured fields, last test time, and last test result.
+- Documented DT014 duplicate-prevention design: `attendance_event.id` is the local idempotency key and must prevent repeated Mingdao writes.
+- Added `scripts/DT013.1_install_ubuntu.sh` without overwriting previous deployment scripts.
+- Did not implement attendance synchronization, Mingdao attendance writes, ADMS protocol changes, parser changes, or business logic.
+
+## Version
+
 DT010.12 Employee Record ID
 
 ## Date

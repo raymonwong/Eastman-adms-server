@@ -154,6 +154,86 @@
           </section>
 
           <section class="panel">
+            <div class="panel-header">Attendance Synchronization <span class="zh-sub">/ 考勤同步配置</span></div>
+            <div class="panel-body">
+              <div class="notice mb-3">
+                Configuration center only. DT013.1 does not upload attendance records. DT014 will read these settings. <span class="zh-sub">/ 本阶段只做配置中心，不上传考勤；DT014 将读取这些配置。</span>
+              </div>
+              <div class="row g-2">
+                <div class="col-12 col-md-4">
+                  <label class="label">Enable Attendance Synchronization <span class="zh-sub">/ 启用考勤同步</span></label>
+                  <select id="attendanceEnabled" class="form-select">
+                    <option value="false">Disabled / 停用</option>
+                    <option value="true">Enabled / 启用</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-8">
+                  <label class="label">Mingdao Attendance OpenAPI URL <span class="zh-sub">/ 明道考勤 OpenAPI URL</span></label>
+                  <input id="attendanceOpenapiUrl" class="form-control mono" placeholder="https://...">
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="label">AppKey <span class="zh-sub">/ 明道 AppKey</span></label>
+                  <input id="attendanceAppKey" class="form-control mono" placeholder="Copied from Mingdao OpenAPI">
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="label">Sign <span class="zh-sub">/ 明道 Sign</span></label>
+                  <input id="attendanceSign" class="form-control mono" type="password" placeholder="Copied from Mingdao OpenAPI">
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="label">Worksheet ID <span class="zh-sub">/ 工作表 ID</span></label>
+                  <input id="attendanceWorksheetId" class="form-control mono" placeholder="Mingdao attendance worksheet ID">
+                </div>
+              </div>
+
+              <div class="mt-3">
+                <div class="label mb-2">Field Mapping <span class="zh-sub">/ 字段映射</span></div>
+                <div class="row g-2">
+                  <div class="col-12 col-md-6">
+                    <label class="label">Employee Record ID -> Target Field ID <span class="zh-sub">/ 员工记录ID字段</span></label>
+                    <input id="attendanceEmployeeRecordField" class="form-control mono">
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="label">Check Time -> Target Field ID <span class="zh-sub">/ 考勤时间字段</span></label>
+                    <input id="attendanceCheckTimeField" class="form-control mono">
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="label">Device Name -> Target Field ID <span class="zh-sub">/ 设备名称字段</span></label>
+                    <input id="attendanceDeviceNameField" class="form-control mono">
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="label">Device SN -> Target Field ID <span class="zh-sub">/ 设备序列号字段</span></label>
+                    <input id="attendanceDeviceSnField" class="form-control mono">
+                  </div>
+                </div>
+              </div>
+
+              <div class="button-row">
+                <button id="saveAttendanceBtn" class="btn btn-info btn-console" type="button">Save Attendance Config <span class="zh-sub">/ 保存考勤配置</span></button>
+                <button id="testAttendanceBtn" class="btn btn-outline-success btn-console" type="button">Test Connection <span class="zh-sub">/ 测试连接</span></button>
+              </div>
+              <div id="attendanceFeedback" class="copy-feedback mt-2"></div>
+              <pre id="attendanceTestResult" class="mt-3">Not tested.</pre>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-header">Attendance Synchronization Summary <span class="zh-sub">/ 考勤同步摘要</span></div>
+            <div class="panel-body">
+              <div class="info-grid">
+                <div class="info-item"><div class="label">Status <span class="zh-sub">/ 状态</span></div><div id="attendanceSummaryStatus" class="value">-</div></div>
+                <div class="info-item"><div class="label">API URL <span class="zh-sub">/ API 地址</span></div><div id="attendanceSummaryUrl" class="value mono">-</div></div>
+                <div class="info-item"><div class="label">Worksheet ID <span class="zh-sub">/ 工作表 ID</span></div><div id="attendanceSummaryWorksheet" class="value mono">-</div></div>
+                <div class="info-item"><div class="label">Token Status <span class="zh-sub">/ 令牌状态</span></div><div id="attendanceSummaryToken" class="value">-</div></div>
+                <div class="info-item"><div class="label">Configured Fields <span class="zh-sub">/ 已配置字段</span></div><div id="attendanceSummaryFields" class="value mono">-</div></div>
+                <div class="info-item"><div class="label">Last Test <span class="zh-sub">/ 最后测试</span></div><div id="attendanceSummaryTest" class="value mono">-</div></div>
+              </div>
+              <div class="notice mt-3">
+                Duplicate prevention for DT014: one ADMS attendance event must be uploaded only once. Use <code>attendance_event.id</code> as the local idempotency key and keep a Mingdao sync record before retrying. <span class="zh-sub">/ DT014 去重机制：同一条 ADMS 考勤事件只允许上传一次，使用 attendance_event.id 作为本地幂等键，并在重试前记录明道同步状态。</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel">
             <div class="panel-header">
               <span>Mingdao Configuration Guide <span class="zh-sub">/ 明道配置指南</span></span>
               <button id="copyConfigBtn" class="btn btn-outline-info btn-sm btn-console" type="button">Copy Mingdao Configuration <span class="zh-sub">/ 复制明道配置</span></button>
@@ -319,9 +399,16 @@ X-API-Key: &lt;API_TOKEN&gt;</pre>
   -> device_user
   -> device_user_sync
   -> Attendance Device</pre>
-          <p>When a user is created or changed, ADMS creates or updates one <code>PENDING</code> sync record per registered device. Online devices can be synchronized immediately in a future command-delivery task. Offline devices remain <code>PENDING</code> and can be synchronized after reconnect. DT010.11 does not implement command delivery.</p>
+          <p>When a user is created or changed, ADMS creates or updates one <code>PENDING</code> sync record per registered device. Online devices receive user commands through ADMS GETREQUEST. Offline devices remain <code>PENDING</code> and can be synchronized after reconnect.</p>
 
-          <h3>6. Troubleshooting <span class="zh-sub">/ 故障排查</span></h3>
+          <h3>6. Attendance Synchronization Configuration <span class="zh-sub">/ 考勤同步配置</span></h3>
+          <p>DT013.1 only stores configuration for future attendance synchronization. It does not upload attendance data. Mingdao OpenAPI connection uses official <code>HAP-Appkey</code> and <code>HAP-Sign</code> headers. The existing ADMS API Token is reused for ADMS-side protection and is not duplicated.</p>
+          <pre>HAP-Appkey: &lt;AppKey&gt;
+HAP-Sign: &lt;Sign&gt;</pre>
+          <p>Connection test reads worksheet metadata only, using <code>GET /v3/app/worksheets/{worksheet_id}</code>. It validates the OpenAPI URL, authentication, worksheet ID, and configured field IDs without writing attendance records.</p>
+          <p>Duplicate prevention for DT014: use <code>attendance_event.id</code> as the local idempotency key. Before retrying any Mingdao write, DT014 must check local sync state and must not upload the same attendance event twice.</p>
+
+          <h3>7. Troubleshooting <span class="zh-sub">/ 故障排查</span></h3>
           <ul>
             <li><strong>401 Unauthorized:</strong> Token is missing, default, or invalid.</li>
             <li><strong>404 API Not Found:</strong> Confirm the path starts with <code>/api/v1</code>.</li>
@@ -368,8 +455,48 @@ X-API-Key: &lt;API_TOKEN&gt;</pre>
       const tokenInput = document.getElementById('tokenInput');
       tokenInput.value = tokenVisible ? (data.token_value || '') : data.token_masked;
       tokenInput.type = tokenVisible ? 'text' : 'password';
+      renderAttendanceConfig(data.attendance_sync || {});
       renderGuideJson();
       renderCurl();
+    }
+
+    function renderAttendanceConfig(config) {
+      document.getElementById('attendanceEnabled').value = config.enabled ? 'true' : 'false';
+      document.getElementById('attendanceOpenapiUrl').value = config.openapi_url || '';
+      document.getElementById('attendanceAppKey').value = config.app_key || '';
+      document.getElementById('attendanceSign').value = config.sign || '';
+      document.getElementById('attendanceWorksheetId').value = config.worksheet_id || '';
+      const fields = config.configured_fields || {};
+      document.getElementById('attendanceEmployeeRecordField').value = fields['Employee Record ID'] || '';
+      document.getElementById('attendanceCheckTimeField').value = fields['Check Time'] || '';
+      document.getElementById('attendanceDeviceNameField').value = fields['Device Name'] || '';
+      document.getElementById('attendanceDeviceSnField').value = fields['Device SN'] || '';
+
+      setText('attendanceSummaryStatus', config.enabled ? 'Enabled / 启用' : 'Disabled / 停用');
+      setText('attendanceSummaryUrl', config.openapi_url || '-');
+      setText('attendanceSummaryWorksheet', config.worksheet_id || '-');
+      setText('attendanceSummaryToken', config.token_status || '-');
+      setText('attendanceSummaryFields', [
+        `Employee Record ID=${fields['Employee Record ID'] || '-'}`,
+        `Check Time=${fields['Check Time'] || '-'}`,
+        `Device Name=${fields['Device Name'] || '-'}`,
+        `Device SN=${fields['Device SN'] || '-'}`,
+      ].join('\n'));
+      setText('attendanceSummaryTest', `${config.last_test_time || '-'}\n${config.last_test_result || 'Not Tested'}`);
+    }
+
+    function attendancePayload() {
+      return {
+        enabled: document.getElementById('attendanceEnabled').value === 'true',
+        openapi_url: document.getElementById('attendanceOpenapiUrl').value.trim(),
+        app_key: document.getElementById('attendanceAppKey').value.trim(),
+        sign: document.getElementById('attendanceSign').value.trim(),
+        worksheet_id: document.getElementById('attendanceWorksheetId').value.trim(),
+        employee_record_id_field_id: document.getElementById('attendanceEmployeeRecordField').value.trim(),
+        check_time_field_id: document.getElementById('attendanceCheckTimeField').value.trim(),
+        device_name_field_id: document.getElementById('attendanceDeviceNameField').value.trim(),
+        device_sn_field_id: document.getElementById('attendanceDeviceSnField').value.trim(),
+      };
     }
 
     function requestJsonExample() {
@@ -483,6 +610,36 @@ X-API-Key: &lt;API_TOKEN&gt;</pre>
         `Authentication Enabled: ${data.authentication}`,
         `Ready for Mingdao Integration: ${data.ready}`,
       ].join('\n');
+    });
+    document.getElementById('saveAttendanceBtn').addEventListener('click', async () => {
+      const response = await fetch('/api/settings/integration/attendance', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(attendancePayload()),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setText('attendanceFeedback', Array.isArray(data.detail) ? data.detail.join('\n') : (data.detail || 'Save failed / 保存失败'));
+        return;
+      }
+      setText('attendanceFeedback', `${data.message} env_file_saved=${data.env_file_saved}`);
+      await refresh(tokenVisible);
+    });
+    document.getElementById('testAttendanceBtn').addEventListener('click', async () => {
+      const startedAt = performance.now();
+      const response = await fetch('/api/settings/integration/attendance/test', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(attendancePayload()),
+      });
+      const data = await response.json();
+      const elapsedMs = Math.round(performance.now() - startedAt);
+      document.getElementById('attendanceTestResult').textContent = JSON.stringify({
+        http_status: response.status,
+        execution_time_ms: elapsedMs,
+        ...data,
+      }, null, 2);
+      await refresh(tokenVisible);
     });
     document.getElementById('sendTestBtn').addEventListener('click', async () => {
       const startedAt = performance.now();
