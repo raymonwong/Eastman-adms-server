@@ -65,6 +65,7 @@ router = APIRouter(prefix="/api/v1", tags=["Mingdao Users"], dependencies=[Depen
 
 class UserSyncRequest(BaseModel):
     employee_id: str = Field(min_length=1, max_length=64)
+    pin: str | None = Field(default=None, max_length=64)
     name: str = Field(min_length=1, max_length=255)
     department: str | None = Field(default=None, max_length=255)
     card_no: str | None = Field(default=None, max_length=64)
@@ -79,7 +80,7 @@ class UserSyncRequest(BaseModel):
             raise ValueError("value must not be empty")
         return cleaned
 
-    @field_validator("department", "card_no")
+    @field_validator("pin", "department", "card_no")
     @classmethod
     def strip_optional_text(cls, value: str | None) -> str | None:
         return _clean_text(value)
@@ -95,6 +96,7 @@ class UserSyncRequest(BaseModel):
 class UserSyncResponse(BaseModel):
     success: bool
     employee_id: str
+    pin: str | None = None
     message: str
     changed: bool = False
     sync_records: int = 0
@@ -110,6 +112,7 @@ class UserBatchSyncResponse(BaseModel):
 
 class UserResponse(BaseModel):
     employee_id: str
+    pin: str | None
     name: str
     department: str | None
     card_no: str | None
@@ -145,6 +148,7 @@ def _user_to_response(user: DeviceUser) -> UserResponse:
         raise ValueError("DeviceUser is missing employee_id")
     return UserResponse(
         employee_id=user.employee_id,
+        pin=user.pin,
         name=user.name or "",
         department=user.department,
         card_no=user.card_no,
@@ -156,6 +160,7 @@ def _user_to_response(user: DeviceUser) -> UserResponse:
 
 
 def _has_user_changed(user: DeviceUser, payload: UserSyncRequest) -> bool:
+    pin = _payload_pin(payload)
     return any(
         (
             user.name != payload.name.strip(),
@@ -164,16 +169,24 @@ def _has_user_changed(user: DeviceUser, payload: UserSyncRequest) -> bool:
             user.card != _clean_text(payload.card_no),
             user.privilege != str(payload.privilege),
             bool(user.enabled) != payload.enabled,
-            user.pin != payload.employee_id.strip(),
+            user.pin != pin,
         )
     )
 
 
+def _payload_pin(payload: UserSyncRequest) -> str:
+    # Mingdao employee_id is the business key. Device PIN is the terminal-side
+    # user identifier used for future attendance device updates. employee_id is
+    # retained only as Mingdao/ERP reference data, e.g. ESM0001 -> PIN 1.
+    return (payload.pin or payload.employee_id).strip()
+
+
 def _apply_user_payload(user: DeviceUser, payload: UserSyncRequest) -> None:
     employee_id = payload.employee_id.strip()
+    pin = _payload_pin(payload)
     card_no = _clean_text(payload.card_no)
     user.employee_id = employee_id
-    user.pin = employee_id
+    user.pin = pin
     user.name = payload.name.strip()
     user.department = _clean_text(payload.department)
     user.card_no = card_no
@@ -218,9 +231,26 @@ def _prepare_device_sync_records(session, employee_id: str) -> int:
 
 def _upsert_user(payload: UserSyncRequest) -> UserSyncResponse:
     employee_id = payload.employee_id.strip()
+    pin = _payload_pin(payload)
 
     with SessionLocal() as session:
         user = session.query(DeviceUser).filter(DeviceUser.employee_id == employee_id).one_or_none()
+        pin_owner = (
+            session.query(DeviceUser)
+            .filter(
+                DeviceUser.pin == pin,
+                DeviceUser.employee_id.is_not(None),
+                DeviceUser.employee_id != "",
+                DeviceUser.employee_id != employee_id,
+            )
+            .first()
+        )
+        if pin_owner is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=f"PIN {pin} is already used by employee {pin_owner.employee_id}.",
+            )
+
         if user is None:
             user = DeviceUser(employee_id=employee_id)
             session.add(user)
@@ -234,6 +264,7 @@ def _upsert_user(payload: UserSyncRequest) -> UserSyncResponse:
                 "USER UPSERT",
                 {
                     "Employee ID": employee_id,
+                    "PIN": pin,
                     "Name": payload.name,
                     "Changed": "False",
                 },
@@ -241,6 +272,7 @@ def _upsert_user(payload: UserSyncRequest) -> UserSyncResponse:
             return UserSyncResponse(
                 success=True,
                 employee_id=employee_id,
+                pin=pin,
                 message="User already up to date.",
                 changed=False,
                 sync_records=0,
@@ -254,6 +286,7 @@ def _upsert_user(payload: UserSyncRequest) -> UserSyncResponse:
         "USER API",
         {
             "Employee ID": employee_id,
+            "PIN": pin,
             "Name": payload.name,
             "Sync Records": sync_records,
         },
@@ -262,6 +295,7 @@ def _upsert_user(payload: UserSyncRequest) -> UserSyncResponse:
         "USER UPSERT",
         {
             "Employee ID": employee_id,
+            "PIN": pin,
             "Name": payload.name,
             "Changed": "True",
         },
@@ -270,6 +304,7 @@ def _upsert_user(payload: UserSyncRequest) -> UserSyncResponse:
     return UserSyncResponse(
         success=True,
         employee_id=employee_id,
+        pin=pin,
         message="User synchronized successfully.",
         changed=True,
         sync_records=sync_records,

@@ -64,7 +64,8 @@ Request body:
 
 ```json
 {
-  "employee_id": "10001",
+  "employee_id": "ESM0001",
+  "pin": "1",
   "name": "Raymon",
   "department": "IT",
   "card_no": "",
@@ -73,12 +74,15 @@ Request body:
 }
 ```
 
+`employee_id` is retained as the Mingdao/ERP employee number for reference and future business matching. `pin` is the attendance device user number and is the field that future device update commands must use. For example, `ESM0001` should be sent as `employee_id=ESM0001` and `pin=1`. If `pin` is omitted, ADMS keeps backward compatibility and uses `employee_id` as the PIN. In production integrations, send both fields.
+
 Response:
 
 ```json
 {
   "success": true,
-  "employee_id": "10001",
+  "employee_id": "ESM0001",
+  "pin": "1",
   "message": "User synchronized successfully.",
   "changed": true,
   "sync_records": 1
@@ -86,6 +90,8 @@ Response:
 ```
 
 If the same payload is sent again, ADMS returns success with `changed=false` and `sync_records=0`.
+
+If another employee already owns the same `pin`, ADMS rejects the request with HTTP `409 Conflict`.
 
 ### POST /api/v1/users/batch
 
@@ -102,7 +108,8 @@ Request body:
 ```json
 [
   {
-    "employee_id": "10001",
+    "employee_id": "ESM0001",
+    "pin": "1",
     "name": "Raymon",
     "department": "IT",
     "card_no": "",
@@ -145,7 +152,7 @@ Get one Mingdao-sourced user by employee ID.
 Example:
 
 ```http
-GET /api/v1/users/10001
+GET /api/v1/users/ESM0001
 ```
 
 ## 4. Mingdao Configuration Guide
@@ -175,7 +182,8 @@ Request JSON example:
 
 ```json
 {
-  "employee_id": "10001",
+  "employee_id": "ESM0001",
+  "pin": "1",
   "name": "Raymon",
   "department": "IT",
   "card_no": "",
@@ -189,7 +197,8 @@ Successful response example:
 ```json
 {
   "success": true,
-  "employee_id": "10001",
+  "employee_id": "ESM0001",
+  "pin": "1",
   "message": "User synchronized successfully.",
   "changed": true,
   "sync_records": 1

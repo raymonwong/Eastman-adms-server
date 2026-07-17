@@ -2,6 +2,28 @@
 
 ## Version
 
+DT010.13
+
+## Date
+
+2026-07-17
+
+## Development Task
+
+DT010.13 Mingdao Device PIN Support
+
+## Description
+
+- Added explicit `pin` support to `POST /api/v1/users` and `POST /api/v1/users/batch`.
+- Kept `employee_id` as the Mingdao/ERP business employee number and `pin` as the attendance device user number.
+- Added API-level duplicate PIN protection: if another Mingdao employee already owns the same `pin`, the API returns `409 Conflict`.
+- Kept backward compatibility: if `pin` is omitted, ADMS uses `employee_id` as the previous default PIN value.
+- Updated Integration page examples, API Test form, README, and Mingdao integration documentation to show `employee_id` and `pin` separately.
+- Added `scripts/DT010.13_install_ubuntu.sh` without overwriting previous deployment scripts.
+- Kept database structure, ADMS protocol, ATTLOG, OPERLOG, device USER upload parser, Console monitoring, and command delivery behavior unchanged.
+
+## Version
+
 DT010.12
 
 ## Date

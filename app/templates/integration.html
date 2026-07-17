@@ -172,7 +172,8 @@
                 <div class="label">Successful Response Example <span class="zh-sub">/ 成功响应示例</span></div>
                 <pre>{
   "success": true,
-  "employee_id": "10001",
+  "employee_id": "ESM0001",
+  "pin": "1",
   "message": "User synchronized successfully.",
   "changed": true,
   "sync_records": 1
@@ -216,7 +217,11 @@
               <div class="row g-2">
                 <div class="col-12 col-md-6">
                   <label class="label">Employee ID <span class="zh-sub">/ 员工编号</span></label>
-                  <input id="testEmployeeId" class="form-control" value="DT01012_TEST">
+                  <input id="testEmployeeId" class="form-control" value="ESM0001">
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="label">Device PIN <span class="zh-sub">/ 打卡机编号</span></label>
+                  <input id="testPin" class="form-control" value="1">
                 </div>
                 <div class="col-12 col-md-6">
                   <label class="label">Name <span class="zh-sub">/ 姓名</span></label>
@@ -281,7 +286,8 @@ X-API-Key: &lt;API_TOKEN&gt;</pre>
           <h3>4. Mingdao Configuration Guide <span class="zh-sub">/ 明道配置说明</span></h3>
           <p>Configure Mingdao HTTP request nodes with the API URL shown on this page. Use method <code>POST</code>, header <code>Content-Type: application/json</code>, and either <code>Authorization: Bearer &lt;API_TOKEN&gt;</code> or <code>X-API-Key: &lt;API_TOKEN&gt;</code>.</p>
           <pre>{
-  "employee_id": "10001",
+  "employee_id": "ESM0001",
+  "pin": "1",
   "name": "Raymon",
   "department": "IT",
   "card_no": "",
@@ -291,7 +297,8 @@ X-API-Key: &lt;API_TOKEN&gt;</pre>
           <p>Successful response:</p>
           <pre>{
   "success": true,
-  "employee_id": "10001",
+  "employee_id": "ESM0001",
+  "pin": "1",
   "message": "User synchronized successfully.",
   "changed": true,
   "sync_records": 1
@@ -359,7 +366,8 @@ X-API-Key: &lt;API_TOKEN&gt;</pre>
 
     function requestJsonExample() {
       return {
-        employee_id: '10001',
+        employee_id: 'ESM0001',
+        pin: '1',
         name: 'Raymon',
         department: 'IT',
         card_no: '',
@@ -391,7 +399,8 @@ X-API-Key: &lt;API_TOKEN&gt;</pre>
   -H "Authorization: Bearer ${token}" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "employee_id": "10001",
+    "employee_id": "ESM0001",
+    "pin": "1",
     "name": "Raymon",
     "department": "IT",
     "card_no": "",
@@ -471,6 +480,7 @@ X-API-Key: &lt;API_TOKEN&gt;</pre>
       const tokenData = await tokenResponse.json();
       const payload = {
         employee_id: document.getElementById('testEmployeeId').value.trim(),
+        pin: document.getElementById('testPin').value.trim(),
         name: document.getElementById('testName').value.trim(),
         department: document.getElementById('testDepartment').value.trim(),
         card_no: '',

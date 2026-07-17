@@ -2,7 +2,7 @@
 
 ## Current Development Task
 
-DT010.12
+DT010.13
 
 ## Status
 
@@ -10,7 +10,7 @@ Waiting for Review
 
 ## Summary
 
-DT010.12 enhances the existing Communication Console System Settings Integration page with safer token display, Mingdao configuration copy support, API testing, runtime API statistics, and a documentation shortcut. It does not change ADMS protocol handling or Mingdao synchronization logic.
+DT010.13 separates Mingdao/ERP employee IDs from attendance device PIN values. `employee_id` is retained as the Mingdao reference field, while `pin` is the device user number used by future attendance device update commands. The Mingdao user API now accepts `pin` and rejects duplicate PIN ownership across different employees.
 
 ## Completed
 
@@ -96,6 +96,11 @@ DT010.12 enhances the existing Communication Console System Settings Integration
 - Added API Test form for `POST /api/v1/users`.
 - Added runtime statistics for last API response code and total API request count.
 - Added Open Integration Documentation action.
+- Added explicit `pin` support to Mingdao user API requests and responses.
+- Kept `employee_id` as Mingdao/ERP reference data and `pin` as the future attendance-device update field.
+- Added duplicate PIN ownership protection with HTTP `409 Conflict`.
+- Updated `/settings/integration` examples, cURL output, API Test form, README, and Mingdao integration documentation to show `employee_id` and `pin` separately.
+- Added `scripts/DT010.13_install_ubuntu.sh`.
 - Updated README, CHANGELOG, and project status documentation.
 
 ## Not Included
@@ -124,4 +129,4 @@ DT010.12 enhances the existing Communication Console System Settings Integration
 
 ## Next Development Task
 
-DT010.12 Review, then DT010.2 user command delivery
+DT010.13 Review, then DT010.2 user command delivery
