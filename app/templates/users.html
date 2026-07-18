@@ -301,7 +301,8 @@
     }
 
     table {
-      min-width: 1240px;
+      min-width: 1320px;
+      table-layout: fixed;
     }
 
     th {
@@ -320,6 +321,13 @@
       vertical-align: middle;
       font-size: 11px;
       line-height: 1.18;
+    }
+
+    th,
+    td,
+    .truncate-cell {
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .mono {
@@ -608,6 +616,18 @@
             </div>
             <div class="table-wrap">
               <table class="table table-dark table-hover align-middle mb-0">
+                <colgroup>
+                  <col style="width: 105px;">
+                  <col style="width: 250px;">
+                  <col style="width: 70px;">
+                  <col style="width: 250px;">
+                  <col style="width: 105px;">
+                  <col style="width: 75px;">
+                  <col style="width: 70px;">
+                  <col style="width: 190px;">
+                  <col style="width: 150px;">
+                  <col style="width: 155px;">
+                </colgroup>
                 <thead>
                   <tr>
                     <th>Employee ID<br><span class="zh-sub">员工工号</span></th>
@@ -636,10 +656,10 @@
     function userRow(user) {
       return `
         <tr>
-          <td class="mono">${esc(user.employee_id || '-')}</td>
-          <td class="mono">${esc(user.employee_record_id || '-')}</td>
+          <td class="mono truncate-cell" title="${esc(user.employee_id || '-')}">${esc(user.employee_id || '-')}</td>
+          <td class="mono truncate-cell" title="${esc(user.employee_record_id || '-')}">${esc(user.employee_record_id || '-')}</td>
           <td class="mono">${esc(user.pin || '-')}</td>
-          <td>${esc(user.name || '-')}</td>
+          <td class="truncate-cell" title="${esc(user.name || '-')}">${esc(user.name || '-')}</td>
           <td>${fingerprintBadge(user)}</td>
           <td class="mono">${esc(user.privilege || '0')}</td>
           <td>${statusBadge(user)}</td>
