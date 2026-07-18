@@ -3,6 +3,8 @@ set -euo pipefail
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TEST_EMPLOYEE_ID="DT010_INSTALL_CHECK"
+TEST_EMPLOYEE_RECORD_ID="DT010_INSTALL_CHECK_RECORD"
+TEST_PIN="9010"
 
 log() {
   printf '[DT010.1] %s\n' "$1" >&2
@@ -65,10 +67,10 @@ verify_user_api() {
   local duplicate_sync_count
 
   log "Verifying Mingdao user synchronization API"
-  compose exec -T api python -c "import json, os, urllib.request; token=os.environ['MINGDAO_API_TOKEN']; payload={'employee_id':'${TEST_EMPLOYEE_ID}','name':' Install Check ','department':' IT ','card_no':'','privilege':0,'enabled':True}; data=json.dumps(payload).encode(); headers={'Content-Type':'application/json','Authorization':'Bearer '+token}; req=urllib.request.Request('http://127.0.0.1:8000/api/v1/users', data=data, headers=headers, method='POST'); res=json.loads(urllib.request.urlopen(req, timeout=5).read()); assert res['success'] is True; assert res['employee_id'] == '${TEST_EMPLOYEE_ID}'; assert res['changed'] is True"
-  compose exec -T api python -c "import json, os, urllib.request; token=os.environ['MINGDAO_API_TOKEN']; payload={'employee_id':'${TEST_EMPLOYEE_ID}','name':'Install Check','department':'IT','card_no':'','privilege':0,'enabled':True}; data=json.dumps(payload).encode(); headers={'Content-Type':'application/json','X-API-Key':token}; req=urllib.request.Request('http://127.0.0.1:8000/api/v1/users', data=data, headers=headers, method='POST'); res=json.loads(urllib.request.urlopen(req, timeout=5).read()); assert res['success'] is True; assert res['changed'] is False; assert res['sync_records'] == 0"
-  compose exec -T api python -c "import json, os, urllib.request; token=os.environ['MINGDAO_API_TOKEN']; req=urllib.request.Request('http://127.0.0.1:8000/api/v1/users/${TEST_EMPLOYEE_ID}', headers={'Authorization':'Bearer '+token}); user=json.loads(urllib.request.urlopen(req, timeout=5).read()); assert user['employee_id'] == '${TEST_EMPLOYEE_ID}'; assert user['name'] == 'Install Check'; assert user['department'] == 'IT'"
-  compose exec -T api python -c "import json, os, urllib.request; token=os.environ['MINGDAO_API_TOKEN']; payload=[{'employee_id':'${TEST_EMPLOYEE_ID}','name':'Install Check','department':'IT','card_no':'','privilege':0,'enabled':True}]; data=json.dumps(payload).encode(); req=urllib.request.Request('http://127.0.0.1:8000/api/v1/users/batch', data=data, headers={'Content-Type':'application/json','Authorization':'Bearer '+token}, method='POST'); res=json.loads(urllib.request.urlopen(req, timeout=5).read()); assert res['total'] == 1; assert res['succeeded'] == 1; assert res['results'][0]['changed'] is False; assert res['results'][0]['sync_records'] == 0"
+  compose exec -T api python -c "import json, os, urllib.request; token=os.environ['MINGDAO_API_TOKEN']; payload={'employee_record_id':'${TEST_EMPLOYEE_RECORD_ID}','employee_id':'${TEST_EMPLOYEE_ID}','pin':'${TEST_PIN}','name':' Install Check ','department':' IT ','card_no':'','privilege':0,'enabled':True}; data=json.dumps(payload).encode(); headers={'Content-Type':'application/json','Authorization':'Bearer '+token}; req=urllib.request.Request('http://127.0.0.1:8000/api/v1/users', data=data, headers=headers, method='POST'); res=json.loads(urllib.request.urlopen(req, timeout=5).read()); assert res['success'] is True; assert res['employee_id'] == '${TEST_EMPLOYEE_ID}'; assert res['employee_record_id'] == '${TEST_EMPLOYEE_RECORD_ID}'; assert res['pin'] == '${TEST_PIN}'; assert res['changed'] is True"
+  compose exec -T api python -c "import json, os, urllib.request; token=os.environ['MINGDAO_API_TOKEN']; payload={'employee_record_id':'${TEST_EMPLOYEE_RECORD_ID}','employee_id':'${TEST_EMPLOYEE_ID}','pin':'${TEST_PIN}','name':'Install Check','department':'IT','card_no':'','privilege':0,'enabled':True}; data=json.dumps(payload).encode(); headers={'Content-Type':'application/json','X-API-Key':token}; req=urllib.request.Request('http://127.0.0.1:8000/api/v1/users', data=data, headers=headers, method='POST'); res=json.loads(urllib.request.urlopen(req, timeout=5).read()); assert res['success'] is True; assert res['changed'] is False; assert res['sync_records'] == 0"
+  compose exec -T api python -c "import json, os, urllib.request; token=os.environ['MINGDAO_API_TOKEN']; req=urllib.request.Request('http://127.0.0.1:8000/api/v1/users/${TEST_EMPLOYEE_ID}', headers={'Authorization':'Bearer '+token}); user=json.loads(urllib.request.urlopen(req, timeout=5).read()); assert user['employee_id'] == '${TEST_EMPLOYEE_ID}'; assert user['employee_record_id'] == '${TEST_EMPLOYEE_RECORD_ID}'; assert user['pin'] == '${TEST_PIN}'; assert user['name'] == 'Install Check'; assert user['department'] == 'IT'"
+  compose exec -T api python -c "import json, os, urllib.request; token=os.environ['MINGDAO_API_TOKEN']; payload=[{'employee_record_id':'${TEST_EMPLOYEE_RECORD_ID}','employee_id':'${TEST_EMPLOYEE_ID}','pin':'${TEST_PIN}','name':'Install Check','department':'IT','card_no':'','privilege':0,'enabled':True}]; data=json.dumps(payload).encode(); req=urllib.request.Request('http://127.0.0.1:8000/api/v1/users/batch', data=data, headers={'Content-Type':'application/json','Authorization':'Bearer '+token}, method='POST'); res=json.loads(urllib.request.urlopen(req, timeout=5).read()); assert res['total'] == 1; assert res['succeeded'] == 1; assert res['results'][0]['changed'] is False; assert res['results'][0]['sync_records'] == 0"
   compose exec -T api python - <<'PY'
 import json
 import os
@@ -77,7 +79,7 @@ import urllib.request
 
 token = os.environ["MINGDAO_API_TOKEN"]
 payload = [
-    {"employee_id": str(index), "name": f"User {index}", "department": "IT", "privilege": 0, "enabled": True}
+    {"employee_record_id": f"batch-record-{index}", "employee_id": str(index), "pin": f"batch-pin-{index}", "name": f"User {index}", "department": "IT", "privilege": 0, "enabled": True}
     for index in range(501)
 ]
 request = urllib.request.Request(

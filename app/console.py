@@ -334,7 +334,18 @@ def _latest_activities(session, devices: list[Device]) -> list[dict[str, object]
     )
     user_names: dict[tuple[str | None, str], str] = {}
     global_user_names: dict[str, str] = {}
-    for user in _user_filter(session.query(DeviceUser), device_sns).all():
+    users_for_name_lookup = (
+        session.query(DeviceUser)
+        .filter(
+            or_(
+                DeviceUser.device_sn.in_(device_sns),
+                DeviceUser.employee_id.is_not(None),
+                DeviceUser.employee_id != "",
+            )
+        )
+        .all()
+    )
+    for user in users_for_name_lookup:
         if not user.name:
             continue
         for alias in _pin_aliases(user.pin):

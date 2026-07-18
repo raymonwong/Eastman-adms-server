@@ -2,8 +2,10 @@
 set -euo pipefail
 
 TEST_EMPLOYEE_ID="DT01013_EMPLOYEE"
+TEST_EMPLOYEE_RECORD_ID="DT01013_RECORD"
 TEST_PIN="9013"
 CONFLICT_EMPLOYEE_ID="DT01013_CONFLICT"
+CONFLICT_EMPLOYEE_RECORD_ID="DT01013_CONFLICT_RECORD"
 
 log() {
   printf '[DT010.13] %s\n' "$1" >&2
@@ -48,6 +50,7 @@ token = os.environ["MINGDAO_API_TOKEN"]
 headers = {"Content-Type": "application/json", "Authorization": f"Bearer {token}"}
 
 payload = {
+    "employee_record_id": "${TEST_EMPLOYEE_RECORD_ID}",
     "employee_id": "${TEST_EMPLOYEE_ID}",
     "pin": "${TEST_PIN}",
     "name": "DT010.13 Pin Check",
@@ -65,6 +68,7 @@ request = urllib.request.Request(
 response = json.loads(urllib.request.urlopen(request, timeout=5).read())
 assert response["success"] is True
 assert response["employee_id"] == "${TEST_EMPLOYEE_ID}"
+assert response["employee_record_id"] == "${TEST_EMPLOYEE_RECORD_ID}"
 assert response["pin"] == "${TEST_PIN}"
 
 request = urllib.request.Request(
@@ -73,10 +77,12 @@ request = urllib.request.Request(
 )
 user = json.loads(urllib.request.urlopen(request, timeout=5).read())
 assert user["employee_id"] == "${TEST_EMPLOYEE_ID}"
+assert user["employee_record_id"] == "${TEST_EMPLOYEE_RECORD_ID}"
 assert user["pin"] == "${TEST_PIN}"
 
 conflict_payload = dict(payload)
 conflict_payload["employee_id"] = "${CONFLICT_EMPLOYEE_ID}"
+conflict_payload["employee_record_id"] = "${CONFLICT_EMPLOYEE_RECORD_ID}"
 conflict_payload["name"] = "DT010.13 Conflict Check"
 request = urllib.request.Request(
     "http://127.0.0.1:8000/api/v1/users",
