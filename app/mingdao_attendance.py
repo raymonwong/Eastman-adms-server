@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
+from app.integration_config import get_config_value
 from app.models import AttendanceEvent, AttendanceMingdaoSync, Device, DeviceUser
 
 
@@ -31,7 +32,7 @@ class MissingEmployeeRecordID(ValueError):
 
 
 def _env_bool(key: str, default: bool = False) -> bool:
-    value = os.getenv(key, str(default)).strip().lower()
+    value = get_config_value(key, str(default)).strip().lower()
     return value in {"1", "true", "yes", "on", "enabled"}
 
 
@@ -45,7 +46,7 @@ def attendance_auto_sync_interval_seconds() -> int:
 
 
 def _required_env(key: str, label: str) -> str:
-    value = os.getenv(key, "").strip()
+    value = get_config_value(key, "").strip()
     if not value:
         raise AttendanceSyncConfigError(f"{label} is not configured.")
     return value
@@ -82,7 +83,7 @@ def _attendance_config() -> dict[str, str | bool]:
         "check_time_field_id": _required_env("MINGDAO_ATTENDANCE_FIELD_CHECK_TIME", "Check Time field ID"),
         "device_name_field_id": _required_env("MINGDAO_ATTENDANCE_FIELD_DEVICE_NAME", "Device Name field ID"),
         "device_sn_field_id": _required_env("MINGDAO_ATTENDANCE_FIELD_DEVICE_SN", "Device SN field ID"),
-        "retry_failed_after_minutes": int(os.getenv("MINGDAO_ATTENDANCE_RETRY_FAILED_AFTER_MINUTES", "60").strip() or "60"),
+        "retry_failed_after_minutes": int(get_config_value("MINGDAO_ATTENDANCE_RETRY_FAILED_AFTER_MINUTES", "60").strip() or "60"),
     }
 
 

@@ -38,6 +38,7 @@ def create_database_tables(engine: Engine) -> None:
     ensure_dt008_tables(engine)
     ensure_dt009_6_device_management(engine)
     ensure_dt010_1_user_sync(engine)
+    ensure_integration_settings(engine)
     ensure_dt014_attendance_mingdao_sync(engine)
 
 
@@ -450,3 +451,23 @@ def ensure_dt014_attendance_mingdao_sync(engine: Engine) -> None:
                 ):
                     continue
                 raise
+
+
+def ensure_integration_settings(engine: Engine) -> None:
+    # Persistent console configuration. Environment variables remain defaults,
+    # but UI changes must survive page refreshes and container restarts.
+    statements = (
+        """
+        CREATE TABLE IF NOT EXISTS integration_setting (
+            setting_key VARCHAR(128) NOT NULL,
+            setting_value TEXT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (setting_key)
+        )
+        """,
+    )
+
+    with engine.begin() as connection:
+        for statement in statements:
+            connection.execute(text(statement))

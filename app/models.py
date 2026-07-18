@@ -170,6 +170,20 @@ class AttendanceMingdaoSync(Base):
     )
 
 
+class IntegrationSetting(Base):
+    __tablename__ = "integration_setting"
+
+    setting_key: Mapped[str] = mapped_column(String(128), primary_key=True)
+    setting_value: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+
 class OperationEvent(Base):
     __tablename__ = "operation_event"
     __table_args__ = (

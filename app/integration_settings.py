@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import text
 
 from app.database import SessionLocal
+from app.integration_config import get_config_values, save_config_values
 from app.mingdao_attendance import attendance_sync_status_summary, sync_pending_attendance_to_mingdao
 from app.mingdao_users import DEFAULT_TOKEN_VALUES, get_mingdao_api_runtime_state
 
@@ -112,24 +113,25 @@ def _health_status() -> dict[str, str]:
 
 def _attendance_config() -> dict[str, object]:
     token = _current_token()
-    sign = os.getenv(ATTENDANCE_CONFIG_KEYS["sign"], "").strip()
+    stored_values = get_config_values(list(ATTENDANCE_CONFIG_KEYS.values()))
+    sign = stored_values[ATTENDANCE_CONFIG_KEYS["sign"]].strip()
     configured_fields = {
-        "Employee Record ID": os.getenv(ATTENDANCE_CONFIG_KEYS["employee_record_id_field_id"], "").strip(),
-        "Check Time": os.getenv(ATTENDANCE_CONFIG_KEYS["check_time_field_id"], "").strip(),
-        "Device Name": os.getenv(ATTENDANCE_CONFIG_KEYS["device_name_field_id"], "").strip(),
-        "Device SN": os.getenv(ATTENDANCE_CONFIG_KEYS["device_sn_field_id"], "").strip(),
+        "Employee Record ID": stored_values[ATTENDANCE_CONFIG_KEYS["employee_record_id_field_id"]].strip(),
+        "Check Time": stored_values[ATTENDANCE_CONFIG_KEYS["check_time_field_id"]].strip(),
+        "Device Name": stored_values[ATTENDANCE_CONFIG_KEYS["device_name_field_id"]].strip(),
+        "Device SN": stored_values[ATTENDANCE_CONFIG_KEYS["device_sn_field_id"]].strip(),
     }
     return {
-        "enabled": os.getenv(ATTENDANCE_CONFIG_KEYS["enabled"], "false").strip().lower() == "true",
-        "openapi_url": os.getenv(ATTENDANCE_CONFIG_KEYS["openapi_url"], "").strip(),
-        "app_key": os.getenv(ATTENDANCE_CONFIG_KEYS["app_key"], "").strip(),
+        "enabled": stored_values[ATTENDANCE_CONFIG_KEYS["enabled"]].strip().lower() == "true",
+        "openapi_url": stored_values[ATTENDANCE_CONFIG_KEYS["openapi_url"]].strip(),
+        "app_key": stored_values[ATTENDANCE_CONFIG_KEYS["app_key"]].strip(),
         "sign": sign,
         "sign_masked": _mask_token(sign),
-        "worksheet_id": os.getenv(ATTENDANCE_CONFIG_KEYS["worksheet_id"], "").strip(),
+        "worksheet_id": stored_values[ATTENDANCE_CONFIG_KEYS["worksheet_id"]].strip(),
         "token_status": "ADMS API Token Configured" if _is_auth_enabled(token) else "ADMS API Token Not Configured",
         "configured_fields": configured_fields,
         "retry_failed_after_minutes": int(
-            os.getenv(ATTENDANCE_CONFIG_KEYS["retry_failed_after_minutes"], "60").strip() or "60"
+            stored_values[ATTENDANCE_CONFIG_KEYS["retry_failed_after_minutes"]].strip() or "60"
         ),
         "last_test_time": ATTENDANCE_TEST_STATE["last_test_time"] or "-",
         "last_test_result": ATTENDANCE_TEST_STATE["last_test_result"] or "Not Tested",
@@ -186,7 +188,14 @@ def _save_attendance_config_to_env_file(payload: AttendanceIntegrationConfigRequ
         ATTENDANCE_CONFIG_KEYS["retry_failed_after_minutes"]: str(payload.retry_failed_after_minutes),
     }
     os.environ.update(values)
-    return _save_values_to_env_file(values)
+    db_saved = save_config_values(values)
+    file_result = _save_values_to_env_file(values)
+    return {
+        "saved": bool(db_saved or file_result["saved"]),
+        "db_saved": db_saved,
+        "env_file_saved": file_result["saved"],
+        "path": file_result["path"],
+    }
 
 
 def _validate_attendance_config(payload: AttendanceIntegrationConfigRequest) -> list[str]:
@@ -409,7 +418,8 @@ def save_attendance_config(payload: AttendanceIntegrationConfigRequest) -> dict[
     return {
         "saved": True,
         "runtime_effective": True,
-        "env_file_saved": file_result["saved"],
+        "db_saved": file_result["db_saved"],
+        "env_file_saved": file_result["env_file_saved"],
         "env_file_path": file_result["path"],
         "restart_required": True,
         "message": "Attendance synchronization configuration saved. DT014 will read this configuration.",
