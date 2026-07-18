@@ -605,6 +605,35 @@ X-API-Key: &lt;API_TOKEN&gt;</pre></details>
       {% endif %}
 
       {% if page_mode == 'attendance' %}
+      <section class="panel">
+        <div class="panel-header">
+          <span>Attendance Sync Diagnostic Log <span class="zh-sub">/ 考勤同步诊断日志</span></span>
+          <button id="refreshAttendanceLogBtn" class="btn btn-outline-info btn-sm btn-console" type="button">Refresh Log <span class="zh-sub">/ 刷新日志</span></button>
+        </div>
+        <div class="panel-body">
+          <div class="help-text mb-2">Latest records from attendance_mingdao_sync. Use this to see which PIN is waiting, skipped, synced, or failed. <span class="zh-sub">/ 直接显示同步队列，方便查看哪个 PIN 待同步、跳过、成功或失败。</span></div>
+          <div class="table-responsive">
+            <table class="table table-dark table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>Sync ID <span class="zh-sub">/ 同步ID</span></th>
+                  <th>Status <span class="zh-sub">/ 状态</span></th>
+                  <th>PIN <span class="zh-sub">/ 打卡机编号</span></th>
+                  <th>Attendance Time <span class="zh-sub">/ 考勤时间</span></th>
+                  <th>Employee <span class="zh-sub">/ 员工</span></th>
+                  <th>Employee Record ID <span class="zh-sub">/ 员工记录ID</span></th>
+                  <th>Mingdao Row <span class="zh-sub">/ 明道记录</span></th>
+                  <th>Error / Reason <span class="zh-sub">/ 原因</span></th>
+                </tr>
+              </thead>
+              <tbody id="attendanceSyncLogBody">
+                <tr><td colspan="8">Loading synchronization log... / 正在加载同步日志...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <section class="panel guide">
         <div class="panel-header">Help and Troubleshooting <span class="zh-sub">/ 帮助与故障排查</span></div>
         <div class="panel-body">
@@ -1107,6 +1136,44 @@ HAP-Sign: &lt;Sign&gt;</pre>
       }
     }
 
+    function renderAttendanceSyncLog(items) {
+      const body = byId('attendanceSyncLogBody');
+      if (!body) return;
+      if (!items || !items.length) {
+        body.innerHTML = '<tr><td colspan="8">No synchronization records yet. / 暂无同步记录。</td></tr>';
+        return;
+      }
+      body.innerHTML = items.map(item => {
+        const status = String(item.sync_status || '-');
+        const statusType = status === 'SYNCED' ? 'ok' : status === 'FAILED' ? 'error' : status === 'SYNCING' ? 'warn' : 'warn';
+        const employee = [item.employee_id, item.name].filter(Boolean).join(' · ') || '-';
+        const error = item.last_error || (item.employee_record_id ? '-' : 'Missing employee_record_id / 缺少员工记录ID');
+        return `<tr>
+          <td class="mono">${esc(item.sync_id || '-')}<br><span class="zh-sub">Event ${esc(item.attendance_event_id || '-')}</span></td>
+          <td>${badge(status, statusType)}<br><span class="zh-sub">R${esc(item.retry_count ?? 0)}</span></td>
+          <td class="mono">${esc(item.pin || '-')}</td>
+          <td class="mono">${esc(formatDubaiTime(item.attendance_time))}</td>
+          <td>${esc(employee)}<br><span class="zh-sub">${esc(item.department || '-')}</span></td>
+          <td class="mono">${esc(item.employee_record_id || '-')}</td>
+          <td class="mono">${esc(item.mingdao_row_id || '-')}</td>
+          <td>${esc(error)}<br><span class="zh-sub">${esc(formatDubaiTime(item.last_sync_time))}</span></td>
+        </tr>`;
+      }).join('');
+    }
+
+    async function refreshAttendanceSyncLog() {
+      const body = byId('attendanceSyncLogBody');
+      if (!body) return;
+      try {
+        const response = await fetch('/api/settings/integration/attendance/sync-log?limit=80', {cache: 'no-store'});
+        if (!response.ok) throw new Error(await response.text());
+        const data = await response.json();
+        renderAttendanceSyncLog(data.items || []);
+      } catch (error) {
+        body.innerHTML = `<tr><td colspan="8">Failed to load synchronization log / 加载同步日志失败：${esc(error.message || error)}</td></tr>`;
+      }
+    }
+
     function attendancePayload() {
       return {
         enabled: byId('attendanceEnabled').checked,
@@ -1175,6 +1242,9 @@ HAP-Sign: &lt;Sign&gt;</pre>
       const response = await fetch(`/api/settings/integration?show_token=${showToken ? 'true' : 'false'}`, {cache: 'no-store'});
       if (!response.ok) throw new Error(await response.text());
       render(await response.json());
+      if (document.body.classList.contains('attendance-page')) {
+        await refreshAttendanceSyncLog();
+      }
       if (window.lucide) window.lucide.createIcons();
     }
 
@@ -1316,6 +1386,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
     });
     on('copyAttendanceAppKeyBtn', 'click', () => copyText(byId('attendanceAppKey').value, 'attendanceFeedback'));
     on('copyAttendanceSignBtn', 'click', () => copyText(byId('attendanceSign').value, 'attendanceFeedback'));
+    on('refreshAttendanceLogBtn', 'click', refreshAttendanceSyncLog);
     document.querySelectorAll('.attendance-field').forEach(input => {
       input.addEventListener('input', () => {
         clearAttendanceInputError(input.id);

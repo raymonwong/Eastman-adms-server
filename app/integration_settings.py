@@ -465,6 +465,40 @@ def sync_attendance_now(limit: int = 50) -> dict[str, object]:
     return sync_pending_attendance_to_mingdao(limit=limit)
 
 
+@router.get("/api/settings/integration/attendance/sync-log")
+def attendance_sync_log(limit: int = 50) -> dict[str, object]:
+    safe_limit = max(1, min(limit, 200))
+    with SessionLocal() as session:
+        rows = session.execute(
+            text(
+                """
+                SELECT
+                    ams.id AS sync_id,
+                    ams.attendance_event_id,
+                    ams.sync_status,
+                    ams.mingdao_row_id,
+                    ams.retry_count,
+                    ams.last_error,
+                    ams.last_sync_time,
+                    ae.device_sn,
+                    ae.pin,
+                    ae.attendance_time,
+                    du.employee_id,
+                    du.employee_record_id,
+                    du.name,
+                    du.department
+                FROM attendance_mingdao_sync ams
+                JOIN attendance_event ae ON ae.id = ams.attendance_event_id
+                LEFT JOIN device_user du ON du.pin = ae.pin
+                ORDER BY ams.updated_at DESC, ams.id DESC
+                LIMIT :limit
+                """
+            ),
+            {"limit": safe_limit},
+        ).mappings()
+        return {"items": [dict(row) for row in rows]}
+
+
 @router.get("/api/settings/integration/health")
 def integration_health() -> dict[str, str]:
     return _health_status()
