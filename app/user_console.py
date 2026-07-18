@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from app.database import SessionLocal
 from sqlalchemy import or_
 
-from app.models import Device, DeviceUser, DeviceUserSync
+from app.models import Device, DeviceUser, DeviceUserFingerprint, DeviceUserSync
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
@@ -33,7 +33,19 @@ class AdmsUserResponse(BaseModel):
     syncing_sync: int
     synced_sync: int
     failed_sync: int
+    fingerprint_count: int
     sync_details: list[dict[str, object | None]]
+
+
+def _pin_aliases(pin: str | None) -> set[str]:
+    value = str(pin or "").strip()
+    if not value:
+        return set()
+    aliases = {value}
+    if value.isdigit():
+        aliases.add(value.lstrip("0") or "0")
+        aliases.add(value.zfill(5))
+    return aliases
 
 
 def _sync_counts(session, employee_id: str | None) -> dict[str, int]:
@@ -79,6 +91,17 @@ def _sync_details(session, employee_id: str | None) -> list[dict[str, object | N
     ]
 
 
+def _fingerprint_count(session, user: DeviceUser) -> int:
+    aliases = _pin_aliases(user.pin) | _pin_aliases(user.employee_id)
+    if not aliases:
+        return 0
+    return (
+        session.query(DeviceUserFingerprint)
+        .filter(DeviceUserFingerprint.pin.in_(aliases))
+        .count()
+    )
+
+
 def _user_to_response(session, user: DeviceUser) -> AdmsUserResponse:
     counts = _sync_counts(session, user.employee_id)
     return AdmsUserResponse(
@@ -99,6 +122,7 @@ def _user_to_response(session, user: DeviceUser) -> AdmsUserResponse:
         syncing_sync=counts["SYNCING"],
         synced_sync=counts["SYNCED"],
         failed_sync=counts["FAILED"],
+        fingerprint_count=_fingerprint_count(session, user),
         sync_details=_sync_details(session, user.employee_id),
     )
 

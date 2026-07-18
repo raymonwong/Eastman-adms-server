@@ -200,7 +200,7 @@
 
     .summary-grid {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: 10px;
       margin-bottom: 14px;
     }
@@ -479,12 +479,14 @@
       const disabled = rows.length - enabled;
       const departments = new Set(rows.map(departmentName)).size;
       const pending = rows.reduce((total, user) => total + Number(user.pending_sync || 0) + Number(user.syncing_sync || 0), 0);
+      const fingerprintUsers = rows.filter(user => Number(user.fingerprint_count || 0) > 0).length;
       document.getElementById('summaryGrid').innerHTML = [
         metric('Total Users', '用户总数', rows.length, 'users', ''),
         metric('Enabled', '启用', enabled, 'user-check', 'success'),
         metric('Disabled', '停用', disabled, 'user-x', 'danger'),
         metric('Departments', '部门数', departments, 'building-2', ''),
         metric('Pending Sync', '待同步', pending, 'refresh-cw', 'warning'),
+        metric('Fingerprint Users', '已保存指纹用户', fingerprintUsers, 'fingerprint', 'success'),
       ].join('');
       document.getElementById('userCount').textContent = `${rows.length} / ${users.length}`;
       if (window.lucide) window.lucide.createIcons();

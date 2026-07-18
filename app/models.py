@@ -302,6 +302,36 @@ class DeviceUserSync(Base):
     )
 
 
+class DeviceUserFingerprint(Base):
+    __tablename__ = "device_user_fingerprint"
+    __table_args__ = (
+        UniqueConstraint("pin", "finger_id", name="uq_device_user_fingerprint_pin_finger"),
+        Index("ix_device_user_fingerprint_device_sn", "device_sn"),
+        Index("ix_device_user_fingerprint_pin", "pin"),
+        Index("ix_device_user_fingerprint_source_device_sn", "source_device_sn"),
+        Index("ix_device_user_fingerprint_template_hash", "template_hash"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    device_sn: Mapped[str] = mapped_column(String(64), nullable=False)
+    pin: Mapped[str] = mapped_column(String(64), nullable=False)
+    finger_id: Mapped[str] = mapped_column(String(32), nullable=False)
+    template_size: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    valid: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    template_data: Mapped[str] = mapped_column(Text, nullable=False)
+    template_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    source_device_sn: Mapped[str] = mapped_column(String(64), nullable=False)
+    raw_request_id: Mapped[int | None] = mapped_column(ForeignKey("raw_request.id"), nullable=True)
+    receive_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+
 class SyncLog(Base):
     __tablename__ = "sync_log"
 

@@ -10,7 +10,17 @@ from fastapi.responses import PlainTextResponse
 from sqlalchemy.exc import IntegrityError
 
 from app.database import SessionLocal
-from app.models import AttendanceEvent, Device, DeviceEventLog, DeviceSyncState, DeviceUser, DeviceUserSync, OperationEvent, RawRequest
+from app.models import (
+    AttendanceEvent,
+    Device,
+    DeviceEventLog,
+    DeviceSyncState,
+    DeviceUser,
+    DeviceUserFingerprint,
+    DeviceUserSync,
+    OperationEvent,
+    RawRequest,
+)
 
 router = APIRouter()
 
@@ -777,6 +787,85 @@ def _parse_user_line(line: str, device_sn: str | None, receive_time: datetime, r
     )
 
 
+def _parse_fp_line(
+    line: str,
+    device_sn: str | None,
+    receive_time: datetime,
+    raw_request_id: int,
+) -> DeviceUserFingerprint:
+    fields = line.split()
+    if not fields or fields[0].upper() != "FP":
+        raise ValueError("FP record must start with FP")
+    if not device_sn:
+        raise ValueError("FP record is missing device SN")
+
+    values = _parse_key_value_fields(fields[1:])
+    pin = values.get("pin")
+    finger_id = values.get("fid")
+    template_data = values.get("tmp")
+    if not pin:
+        raise ValueError("FP record is missing PIN")
+    if not finger_id:
+        raise ValueError("FP record is missing FID")
+    if not template_data:
+        raise ValueError("FP record is missing TMP")
+
+    template_size = None
+    if values.get("size"):
+        try:
+            template_size = int(values["size"])
+        except ValueError as exc:
+            raise ValueError("FP record has invalid Size") from exc
+
+    return DeviceUserFingerprint(
+        device_sn=device_sn,
+        pin=pin,
+        finger_id=finger_id,
+        template_size=template_size,
+        valid=values.get("valid"),
+        template_data=template_data,
+        template_hash=hashlib.sha256(template_data.encode("utf-8")).hexdigest(),
+        source_device_sn=device_sn,
+        raw_request_id=raw_request_id,
+        receive_time=receive_time,
+    )
+
+
+def _save_fingerprint(fingerprint: DeviceUserFingerprint) -> tuple[int, bool]:
+    with SessionLocal() as session:
+        existing = (
+            session.query(DeviceUserFingerprint)
+            .filter(
+                DeviceUserFingerprint.pin == fingerprint.pin,
+                DeviceUserFingerprint.finger_id == fingerprint.finger_id,
+            )
+            .one_or_none()
+        )
+        if existing is None:
+            session.add(fingerprint)
+            session.commit()
+            return fingerprint.id, True
+
+        if existing.template_hash == fingerprint.template_hash:
+            existing.device_sn = fingerprint.device_sn
+            existing.source_device_sn = fingerprint.source_device_sn
+            existing.raw_request_id = fingerprint.raw_request_id
+            existing.receive_time = fingerprint.receive_time
+            session.commit()
+            return existing.id, False
+
+        existing.device_sn = fingerprint.device_sn
+        existing.template_size = fingerprint.template_size
+        existing.valid = fingerprint.valid
+        existing.template_data = fingerprint.template_data
+        existing.template_hash = fingerprint.template_hash
+        existing.source_device_sn = fingerprint.source_device_sn
+        existing.raw_request_id = fingerprint.raw_request_id
+        existing.receive_time = fingerprint.receive_time
+        session.commit()
+        return existing.id, True
+
+
 def _save_device_user(user: DeviceUser) -> int:
     # Mingdao is the employee source of truth. Device USER uploads may confirm that
     # a terminal has seen a PIN, but they must not overwrite Mingdao profile fields.
@@ -883,6 +972,32 @@ def _parse_and_save_operlog(context: dict[str, object], body: bytes) -> int:
                         "User ID": user_id,
                     },
                 )
+            elif record_type == "FP":
+                fingerprint = _parse_fp_line(
+                    line,
+                    context["device_sn"],
+                    context["received_at"],
+                    context["raw_request_id"],
+                )
+                _debug_log(
+                    "FP RECEIVED",
+                    {
+                        "Device": fingerprint.device_sn,
+                        "PIN": fingerprint.pin,
+                        "Finger ID": fingerprint.finger_id,
+                        "Template Size": fingerprint.template_size,
+                    },
+                )
+                fingerprint_id, changed = _save_fingerprint(fingerprint)
+                saved_count += 1
+                _debug_log(
+                    "FP SAVED",
+                    {
+                        "Fingerprint ID": fingerprint_id,
+                        "Changed": changed,
+                        "Raw Request ID": fingerprint.raw_request_id,
+                    },
+                )
             else:
                 raise ValueError(f"unsupported OPERLOG record type: {record_type}")
         except Exception as exc:
@@ -891,7 +1006,7 @@ def _parse_and_save_operlog(context: dict[str, object], body: bytes) -> int:
                 "ERROR",
                 {
                     "Device": context["device_sn"] or "",
-                    "Module": "USER" if module == "USER" else "OPERLOG",
+                    "Module": module if module in ("USER", "FP") else "OPERLOG",
                     "Reason": f"Line {line_number}: {exc}",
                 },
             )

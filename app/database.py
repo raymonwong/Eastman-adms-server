@@ -39,6 +39,7 @@ def create_database_tables(engine: Engine) -> None:
     ensure_dt009_6_device_management(engine)
     ensure_dt010_1_user_sync(engine)
     ensure_integration_settings(engine)
+    ensure_dt012_1_fingerprint_tables(engine)
     ensure_dt014_attendance_mingdao_sync(engine)
 
 
@@ -446,6 +447,52 @@ def ensure_dt014_attendance_mingdao_sync(engine: Engine) -> None:
                 if (
                     "duplicate key name" in error_text
                     or "duplicate check constraint name" in error_text
+                    or "already exists" in error_text
+                    or "duplicate foreign key constraint name" in error_text
+                ):
+                    continue
+                raise
+
+
+def ensure_dt012_1_fingerprint_tables(engine: Engine) -> None:
+    # DT012.1 stores FP records uploaded by real devices inside OPERLOG bodies.
+    # Distribution to other devices is intentionally out of scope for this stage.
+    statements = (
+        """
+        CREATE TABLE IF NOT EXISTS device_user_fingerprint (
+            id INT NOT NULL AUTO_INCREMENT,
+            device_sn VARCHAR(64) NOT NULL,
+            pin VARCHAR(64) NOT NULL,
+            finger_id VARCHAR(32) NOT NULL,
+            template_size INT NULL,
+            valid VARCHAR(16) NULL,
+            template_data TEXT NOT NULL,
+            template_hash VARCHAR(64) NOT NULL,
+            source_device_sn VARCHAR(64) NOT NULL,
+            raw_request_id INT NULL,
+            receive_time DATETIME NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            CONSTRAINT uq_device_user_fingerprint_pin_finger UNIQUE (pin, finger_id),
+            CONSTRAINT fk_device_user_fingerprint_raw_request_id FOREIGN KEY (raw_request_id) REFERENCES raw_request(id)
+        )
+        """,
+        "CREATE INDEX ix_device_user_fingerprint_device_sn ON device_user_fingerprint (device_sn)",
+        "CREATE INDEX ix_device_user_fingerprint_pin ON device_user_fingerprint (pin)",
+        "CREATE INDEX ix_device_user_fingerprint_source_device_sn ON device_user_fingerprint (source_device_sn)",
+        "CREATE INDEX ix_device_user_fingerprint_template_hash ON device_user_fingerprint (template_hash)",
+        "ALTER TABLE device_user_fingerprint ADD CONSTRAINT fk_device_user_fingerprint_raw_request_id FOREIGN KEY (raw_request_id) REFERENCES raw_request(id)",
+    )
+
+    with engine.begin() as connection:
+        for statement in statements:
+            try:
+                connection.execute(text(statement))
+            except Exception as exc:
+                error_text = str(exc).lower()
+                if (
+                    "duplicate key name" in error_text
                     or "already exists" in error_text
                     or "duplicate foreign key constraint name" in error_text
                 ):
