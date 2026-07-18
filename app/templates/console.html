@@ -11,10 +11,10 @@
       --font-small: 12px;
       --font-label: 11px;
       --space-sm: 8px;
-      --space-md: 14px;
-      --panel-gap: 14px;
-      --panel-padding: 14px;
-      --radius: 10px;
+      --space-md: 10px;
+      --panel-gap: 10px;
+      --panel-padding: 10px;
+      --radius: 8px;
       --bg: #0b0f14;
       --panel: #111821;
       --card: #0d131b;
@@ -129,7 +129,7 @@
 
     .page-head {
       margin-bottom: var(--panel-gap);
-      padding: 14px 16px;
+      padding: 10px 14px;
     }
 
     .page-title {
@@ -156,12 +156,12 @@
     }
 
     .panel-header {
-      min-height: 38px;
+      min-height: 32px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: var(--space-sm);
-      padding: 8px var(--panel-padding);
+      padding: 6px var(--panel-padding);
       border-bottom: 1px solid var(--line-soft);
       color: var(--blue);
       font-size: 14px;
@@ -209,20 +209,20 @@
     }
 
     .metric {
-      min-height: 108px;
+      min-height: 58px;
       display: grid;
       grid-template-rows: auto 1fr;
-      gap: 10px;
+      gap: 6px;
       background: var(--card);
       border: 1px solid rgba(255, 255, 255, 0.075);
       border-radius: var(--radius);
-      padding: 14px;
+      padding: 10px;
     }
 
     .metric-head {
       display: flex;
-      align-items: flex-start;
-      gap: 10px;
+      align-items: center;
+      gap: 8px;
       min-width: 0;
     }
 
@@ -271,22 +271,22 @@
     }
 
     .server-metric {
-      min-height: 58px;
+      min-height: 44px;
       display: grid;
       grid-template-columns: auto minmax(0, 1fr) auto;
       align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
+      gap: 8px;
+      padding: 7px 10px;
     }
 
     .server-metric .metric-icon {
-      width: 30px;
-      height: 30px;
+      width: 26px;
+      height: 26px;
     }
 
     .server-metric .metric-icon .icon {
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
     }
 
     .server-metric .metric-value {
@@ -300,25 +300,35 @@
 
     .server-metric .metric-title {
       font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .server-metric .metric-label-inline {
+      color: #8ea1b8;
+      font-size: 11px;
+      font-weight: 700;
+      margin-left: 4px;
     }
 
     .dashboard-metric {
-      min-height: 58px;
+      min-height: 48px;
       display: grid;
       grid-template-columns: auto minmax(0, 1fr) auto;
       align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
+      gap: 8px;
+      padding: 8px 10px;
     }
 
     .dashboard-metric .metric-icon {
-      width: 30px;
-      height: 30px;
+      width: 27px;
+      height: 27px;
     }
 
     .dashboard-metric .metric-icon .icon {
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
     }
 
     .dashboard-metric .metric-title {
@@ -329,32 +339,42 @@
       align-self: center;
       justify-self: end;
       text-align: right;
-      font-size: 20px;
+      font-size: 18px;
       line-height: 1;
       white-space: nowrap;
     }
 
     .exception-metric {
-      min-height: 58px;
+      min-height: 48px;
       display: grid;
-      grid-template-columns: auto minmax(0, 1fr) auto;
+      grid-template-columns: auto minmax(112px, 1fr) auto;
       align-items: center;
-      gap: 10px;
-      padding: 10px 12px;
+      gap: 8px;
+      padding: 8px 10px;
     }
 
     .exception-metric .metric-icon {
-      width: 30px;
-      height: 30px;
+      width: 27px;
+      height: 27px;
     }
 
     .exception-metric .metric-icon .icon {
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
     }
 
     .exception-metric .metric-title {
       font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .exception-metric .metric-label-inline {
+      color: #8ea1b8;
+      font-size: 11px;
+      font-weight: 700;
+      margin-left: 4px;
     }
 
     .exception-metric .metric-value {
@@ -364,6 +384,9 @@
       font-size: 14px;
       line-height: 1.15;
       white-space: nowrap;
+      max-width: 165px;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .time-pulse {
@@ -949,8 +972,7 @@
         <div class="metric server-metric ${esc(extraClass)}">
           <div class="metric-icon">${icon(iconName)}</div>
           <div>
-            <div class="metric-title">${esc(titleEn)}</div>
-            <div class="metric-label">${esc(titleZh)}</div>
+            <div class="metric-title">${esc(titleEn)} <span class="metric-label-inline">/ ${esc(titleZh)}</span></div>
           </div>
           <div class="metric-value mono small">${value}</div>
         </div>
@@ -976,8 +998,7 @@
         <div class="metric exception-metric" title="${esc(full)} / ${esc(titleZh)}">
           <div class="metric-icon">${icon(iconName)}</div>
           <div>
-            <div class="metric-title">${esc(titleEn)}</div>
-            <div class="metric-label">${esc(titleZh)}</div>
+            <div class="metric-title">${esc(titleEn)} <span class="metric-label-inline">/ ${esc(titleZh)}</span></div>
           </div>
           <div class="metric-value mono small">${value}</div>
         </div>
@@ -989,7 +1010,7 @@
         serverMetricCard('server', 'Server', '服务器状态', `${statusChip(server.server)}`),
         serverMetricCard('database', 'Database', '数据库状态', `${statusChip(server.database)}`),
         serverMetricCard('cable', 'API', '接口状态', `${statusChip(server.api)}`),
-        serverMetricCard('clock-3', 'Server Time', '服务器时间', esc(server.server_time), 'time-pulse'),
+        serverMetricCard('clock-3', 'SvrTime', '服务器时间', esc(server.server_time), 'time-pulse'),
       ].join('');
       refreshIcons();
     }
