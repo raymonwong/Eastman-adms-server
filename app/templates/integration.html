@@ -789,20 +789,10 @@ HAP-Sign: &lt;Sign&gt;</pre>
         .replace(/[．。]/g, '.');
     }
 
-    function isValidHttpUrl(value) {
-      try {
-        const url = new URL(normalizeOpenApiUrl(value));
-        return ['http:', 'https:'].includes(url.protocol) && Boolean(url.hostname);
-      } catch (error) {
-        return false;
-      }
-    }
-
     function attendanceMissingItems() {
       const payload = attendancePayload();
       const missing = [];
       if (!payload.openapi_url) missing.push('Mingdao Attendance OpenAPI URL');
-      if (payload.openapi_url && !isValidHttpUrl(payload.openapi_url)) missing.push('Valid OpenAPI URL');
       if (!payload.app_key) missing.push('AppKey');
       if (!payload.sign) missing.push('Sign');
       if (!payload.worksheet_id) missing.push('Worksheet ID');
@@ -837,8 +827,8 @@ HAP-Sign: &lt;Sign&gt;</pre>
       clearAttendanceErrors();
       const payload = attendancePayload();
       let valid = true;
-      if (!payload.openapi_url || !isValidHttpUrl(payload.openapi_url)) {
-        setFieldError('attendanceOpenapiUrl', 'Valid OpenAPI URL is required / 请输入有效 OpenAPI URL');
+      if (!payload.openapi_url) {
+        setFieldError('attendanceOpenapiUrl', 'OpenAPI URL is required / OpenAPI URL 必填');
         valid = false;
       }
       if (!payload.app_key) {
