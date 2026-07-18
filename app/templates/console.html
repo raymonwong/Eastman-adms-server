@@ -270,6 +270,117 @@
       line-height: 1.25;
     }
 
+    .server-metric {
+      min-height: 58px;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+    }
+
+    .server-metric .metric-icon {
+      width: 30px;
+      height: 30px;
+    }
+
+    .server-metric .metric-icon .icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    .server-metric .metric-value {
+      align-self: center;
+      justify-self: end;
+      text-align: right;
+      font-size: 14px;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .server-metric .metric-title {
+      font-size: 12px;
+    }
+
+    .dashboard-metric {
+      min-height: 58px;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+    }
+
+    .dashboard-metric .metric-icon {
+      width: 30px;
+      height: 30px;
+    }
+
+    .dashboard-metric .metric-icon .icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    .dashboard-metric .metric-title {
+      font-size: 12px;
+    }
+
+    .dashboard-metric .metric-value {
+      align-self: center;
+      justify-self: end;
+      text-align: right;
+      font-size: 20px;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .exception-metric {
+      min-height: 58px;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+    }
+
+    .exception-metric .metric-icon {
+      width: 30px;
+      height: 30px;
+    }
+
+    .exception-metric .metric-icon .icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    .exception-metric .metric-title {
+      font-size: 12px;
+    }
+
+    .exception-metric .metric-value {
+      align-self: center;
+      justify-self: end;
+      text-align: right;
+      font-size: 14px;
+      line-height: 1.15;
+      white-space: nowrap;
+    }
+
+    .time-pulse {
+      animation: timePulse 1s ease-in-out infinite;
+    }
+
+    @keyframes timePulse {
+      0%, 100% {
+        background: var(--card);
+        box-shadow: none;
+      }
+      45% {
+        background: rgba(36, 214, 133, 0.14);
+        box-shadow: inset 0 0 0 1px rgba(36, 214, 133, 0.32);
+      }
+    }
+
     .device-filter-row {
       display: flex;
       align-items: end;
@@ -833,35 +944,75 @@
       `;
     }
 
+    function serverMetricCard(iconName, titleEn, titleZh, value, extraClass = '') {
+      return `
+        <div class="metric server-metric ${esc(extraClass)}">
+          <div class="metric-icon">${icon(iconName)}</div>
+          <div>
+            <div class="metric-title">${esc(titleEn)}</div>
+            <div class="metric-label">${esc(titleZh)}</div>
+          </div>
+          <div class="metric-value mono small">${value}</div>
+        </div>
+      `;
+    }
+
+    function dashboardMetricCard(iconName, titleEn, titleZh, value) {
+      return `
+        <div class="metric dashboard-metric">
+          <div class="metric-icon">${icon(iconName)}</div>
+          <div>
+            <div class="metric-title">${esc(titleEn)}</div>
+            <div class="metric-label">${esc(titleZh)}</div>
+          </div>
+          <div class="metric-value mono">${value}</div>
+        </div>
+      `;
+    }
+
+    function exceptionMetricCard(iconName, titleEn, titleZh, value, titleFull = '') {
+      const full = titleFull || titleEn;
+      return `
+        <div class="metric exception-metric" title="${esc(full)} / ${esc(titleZh)}">
+          <div class="metric-icon">${icon(iconName)}</div>
+          <div>
+            <div class="metric-title">${esc(titleEn)}</div>
+            <div class="metric-label">${esc(titleZh)}</div>
+          </div>
+          <div class="metric-value mono small">${value}</div>
+        </div>
+      `;
+    }
+
     function renderServer(server) {
       document.getElementById('serverStatus').innerHTML = [
-        metricCard('server', 'Server', '服务器状态', `${statusChip(server.server)}`, 'small'),
-        metricCard('database', 'Database', '数据库状态', `${statusChip(server.database)}`, 'small'),
-        metricCard('cable', 'API', '接口状态', `${statusChip(server.api)}`, 'small'),
-        metricCard('clock-3', 'Server Time', '服务器时间', esc(server.server_time), 'small'),
+        serverMetricCard('server', 'Server', '服务器状态', `${statusChip(server.server)}`),
+        serverMetricCard('database', 'Database', '数据库状态', `${statusChip(server.database)}`),
+        serverMetricCard('cable', 'API', '接口状态', `${statusChip(server.api)}`),
+        serverMetricCard('clock-3', 'Server Time', '服务器时间', esc(server.server_time), 'time-pulse'),
       ].join('');
       refreshIcons();
     }
 
     function renderDashboard(dashboard) {
       document.getElementById('dashboard').innerHTML = [
-        metricCard('monitor-check', 'Online Devices', '在线设备', esc(dashboard.online_devices)),
-        metricCard('monitor-off', 'Offline Devices', '离线设备', esc(dashboard.offline_devices)),
-        metricCard('clipboard-check', "Today's Attendance", '今日考勤', esc(dashboard.attendance)),
-        metricCard('users', "Today's USER Upload", '今日设备用户上传', esc(dashboard.user_upload ?? dashboard.user)),
-        metricCard('users', 'Mingdao User Sync', '明道用户同步', esc(dashboard.mingdao_sync ?? 0)),
-        metricCard('file-text', "Today's OPLOG", '今日操作', esc(dashboard.oplog)),
+        dashboardMetricCard('monitor-check', 'Online Devices', '在线设备', esc(dashboard.online_devices)),
+        dashboardMetricCard('monitor-off', 'Offline Devices', '离线设备', esc(dashboard.offline_devices)),
+        dashboardMetricCard('clipboard-check', "Today's Attendance", '今日考勤', esc(dashboard.attendance)),
+        dashboardMetricCard('users', "Today's USER Upload", '今日设备用户上传', esc(dashboard.user_upload ?? dashboard.user)),
+        dashboardMetricCard('users', 'Mingdao User Sync', '明道用户同步', esc(dashboard.mingdao_sync ?? 0)),
+        dashboardMetricCard('file-text', "Today's OPLOG", '今日操作', esc(dashboard.oplog)),
       ].join('');
       refreshIcons();
     }
 
     function renderExceptionOverview(overview) {
       document.getElementById('exceptionOverview').innerHTML = [
-        metricCard('monitor-off', 'Offline Devices', '当前离线设备', `<button type="button" class="btn btn-sm btn-outline-danger btn-console" data-summary-status="OFFLINE">${esc(overview.offline_devices ?? 0)}</button>`),
-        metricCard('clock-3', 'Heartbeat Timeout', '超时未心跳设备', `<button type="button" class="btn btn-sm btn-outline-warning btn-console" data-summary-status="OFFLINE">${esc(overview.heartbeat_timeout_devices ?? 0)}</button>`),
-        metricCard('triangle-alert', 'Latest Exception', '最近一次异常', esc(overview.last_exception_time || '-'), 'small'),
-        metricCard('clipboard-check', 'Latest Normal Attendance', '最近一次正常考勤', esc(overview.last_normal_attendance_time || '-'), 'small'),
-        metricCard('search', 'Find Exception Devices', '查看异常设备', '<button type="button" class="btn btn-sm btn-outline-info btn-console" data-summary-status="OFFLINE">View / 查看</button>', 'small'),
+        exceptionMetricCard('monitor-off', 'Offline', '当前离线设备', `<button type="button" class="btn btn-sm btn-outline-danger btn-console" data-summary-status="OFFLINE">${esc(overview.offline_devices ?? 0)}</button>`, 'Offline Devices'),
+        exceptionMetricCard('clock-3', 'HBT', '超时未心跳', `<button type="button" class="btn btn-sm btn-outline-warning btn-console" data-summary-status="OFFLINE">${esc(overview.heartbeat_timeout_devices ?? 0)}</button>`, 'Heartbeat Timeout'),
+        exceptionMetricCard('triangle-alert', 'Latest Exception', '最近异常', esc(overview.last_exception_time || '-')),
+        exceptionMetricCard('clipboard-check', 'LNA', '最近正常考勤', esc(overview.last_normal_attendance_time || '-'), 'Latest Normal Attendance'),
+        exceptionMetricCard('search', 'Find', '查看异常设备', '<button type="button" class="btn btn-sm btn-outline-info btn-console" data-summary-status="OFFLINE">View / 查看</button>', 'Find Exception Devices'),
       ].join('');
       refreshIcons();
     }
