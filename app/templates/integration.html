@@ -131,7 +131,9 @@
     .step-panel .panel-header { justify-content: flex-start; gap: 10px; }
     .step-number { width: 26px; height: 26px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: rgba(34, 211, 238, 0.14); color: var(--cyan); border: 1px solid rgba(34, 211, 238, 0.32); font-weight: 900; }
     .help-text { color: var(--muted); font-size: 11px; margin-top: 5px; }
-    .credential-row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; }
+    .credential-box { display: grid; gap: 8px; }
+    .credential-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+    .enable-blocker { margin-top: 8px; }
     .mapping-table { min-width: 760px; margin-bottom: 0; }
     .mapping-source { background: rgba(143, 179, 217, 0.08); border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px; display: inline-block; }
     .summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
@@ -159,6 +161,7 @@
       .code-grid { grid-template-columns: 1fr; }
       .description-list { grid-template-columns: 1fr; }
       .token-row { grid-template-columns: 1fr; }
+      .credential-actions { justify-content: flex-start; }
       .step-flow { grid-template-columns: 1fr; }
       .step:not(:last-child)::after { content: "↓"; right: 50%; top: auto; bottom: -15px; transform: translateX(50%); }
     }
@@ -468,20 +471,24 @@ X-API-Key: &lt;API_TOKEN&gt;</pre></details>
               <div class="form-grid">
                 <div>
                   <label class="field-label">AppKey <span class="zh-sub">/ 明道 AppKey</span> <span class="required-mark">*</span></label>
-                  <div class="credential-row">
+                  <div class="credential-box">
                     <input id="attendanceAppKey" class="form-control mono attendance-field" type="password" placeholder="Copied from Mingdao OpenAPI">
-                    <button id="showAttendanceAppKeyBtn" class="btn btn-outline-light btn-console" type="button">Show <span class="zh-sub">/ 显示</span></button>
-                    <button id="copyAttendanceAppKeyBtn" class="btn btn-outline-info btn-console" type="button">Copy <span class="zh-sub">/ 复制</span></button>
+                    <div class="credential-actions">
+                      <button id="showAttendanceAppKeyBtn" class="btn btn-outline-light btn-console" type="button">Show <span class="zh-sub">/ 显示</span></button>
+                      <button id="copyAttendanceAppKeyBtn" class="btn btn-outline-info btn-console" type="button">Copy <span class="zh-sub">/ 复制</span></button>
+                    </div>
                   </div>
                   <div class="help-text">Copied from Mingdao OpenAPI. <span class="zh-sub">/ 从明道 OpenAPI 授权页面复制。</span></div>
                   <div id="attendanceAppKeyError" class="field-error"></div>
                 </div>
                 <div>
                   <label class="field-label">Sign <span class="zh-sub">/ 明道 Sign</span> <span class="required-mark">*</span></label>
-                  <div class="credential-row">
+                  <div class="credential-box">
                     <input id="attendanceSign" class="form-control mono attendance-field" type="password" placeholder="Copied from Mingdao OpenAPI">
-                    <button id="showAttendanceSignBtn" class="btn btn-outline-light btn-console" type="button">Show <span class="zh-sub">/ 显示</span></button>
-                    <button id="copyAttendanceSignBtn" class="btn btn-outline-info btn-console" type="button">Copy <span class="zh-sub">/ 复制</span></button>
+                    <div class="credential-actions">
+                      <button id="showAttendanceSignBtn" class="btn btn-outline-light btn-console" type="button">Show <span class="zh-sub">/ 显示</span></button>
+                      <button id="copyAttendanceSignBtn" class="btn btn-outline-info btn-console" type="button">Copy <span class="zh-sub">/ 复制</span></button>
+                    </div>
                   </div>
                   <div class="help-text">Sensitive credential. It is hidden by default. <span class="zh-sub">/ 敏感凭证，默认隐藏。</span></div>
                   <div id="attendanceSignError" class="field-error"></div>
@@ -531,6 +538,7 @@ X-API-Key: &lt;API_TOKEN&gt;</pre></details>
                     <label id="attendanceEnabledLabel" class="form-check-label" for="attendanceEnabled">Disabled / 停用</label>
                   </div>
                   <div class="help-text">Incomplete configuration blocks enabling sync. <span class="zh-sub">/ 配置不完整时不能启用同步。</span></div>
+                  <div id="attendanceEnableHelp" class="danger-alert enable-blocker" style="display:none;"></div>
                 </div>
                 <div>
                   <label class="field-label">Retry Failed After Minutes <span class="zh-sub">/ 失败重试间隔分钟</span></label>
@@ -780,6 +788,25 @@ HAP-Sign: &lt;Sign&gt;</pre>
       return missing;
     }
 
+    function updateAttendanceMissingNotice({attemptedEnable = false} = {}) {
+      const missing = attendanceMissingItems();
+      const enableHelp = byId('attendanceEnableHelp');
+      const configBox = byId('attendanceConfigMissing');
+      const message = missing.length
+        ? `Complete these items before enabling sync / 启用同步前请补充：<br>${missing.map(esc).join('<br>')}`
+        : '';
+      if (enableHelp) {
+        enableHelp.style.display = missing.length ? 'block' : 'none';
+        enableHelp.innerHTML = message;
+      }
+      if (configBox) {
+        configBox.style.display = missing.length ? 'block' : 'none';
+        configBox.innerHTML = missing.length
+          ? `${attemptedEnable ? 'Cannot enable synchronization.' : 'Configuration incomplete.'} / ${attemptedEnable ? '不能启用同步。' : '配置不完整。'}<br>${missing.map(esc).join('<br>')}`
+          : '';
+      }
+    }
+
     function validateAttendanceConfig({forEnable = false} = {}) {
       clearAttendanceErrors();
       const payload = attendancePayload();
@@ -809,13 +836,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
         setFieldError('attendanceRetryMinutes', 'Range must be 1-10080 minutes / 范围必须为 1-10080 分钟');
         valid = false;
       }
-      if (!valid && forEnable) {
-        const box = byId('attendanceConfigMissing');
-        if (box) {
-          box.style.display = 'block';
-          box.innerHTML = `Cannot enable synchronization. Missing / 不能启用同步，缺少：<br>${attendanceMissingItems().map(esc).join('<br>')}`;
-        }
-      }
+      updateAttendanceMissingNotice({attemptedEnable: forEnable && !valid});
       return valid;
     }
 
@@ -941,6 +962,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
 
       updateMappingStatuses(fields);
       updateManualSyncState();
+      updateAttendanceMissingNotice();
 
       setText('attendanceSummaryStatus', config.enabled ? 'Enabled / 启用' : 'Disabled / 停用');
       setText('attendanceSummaryUrl', config.openapi_url || '-');
@@ -1005,6 +1027,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
       };
       updateMappingStatuses(fields);
       updateManualSyncState();
+      updateAttendanceMissingNotice();
     }
 
     function setCredentialVisible(inputId, buttonId, visible) {
@@ -1282,15 +1305,20 @@ HAP-Sign: &lt;Sign&gt;</pre>
         refreshAttendanceMappingFromInputs();
         if (input.id === 'attendanceEnabled') {
           byId('attendanceEnabledLabel').textContent = input.checked ? 'Enabled / 启用' : 'Disabled / 停用';
+          updateAttendanceMissingNotice();
         }
       });
       input.addEventListener('change', () => {
         if (input.id === 'attendanceEnabled' && input.checked && !validateAttendanceConfig({forEnable: true})) {
           input.checked = false;
-          byId('attendanceEnabledLabel').textContent = 'Disabled / 停用';
+          byId('attendanceEnabledLabel').textContent = 'Disabled - incomplete / 停用 - 配置未完成';
+          showToast('Complete required configuration before enabling sync / 请先补全必填配置再启用同步');
+        } else if (input.id === 'attendanceEnabled') {
+          byId('attendanceEnabledLabel').textContent = input.checked ? 'Enabled / 启用' : 'Disabled / 停用';
         }
         setAttendanceDirty(true);
         refreshAttendanceMappingFromInputs();
+        updateAttendanceMissingNotice();
       });
     });
     on('saveAttendanceBtn', 'click', async () => {
