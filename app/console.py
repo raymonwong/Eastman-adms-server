@@ -308,8 +308,19 @@ def _attendance_status_label(status: str | None) -> str:
     if status is None or status == "":
         return "Unknown / 未知"
     if status == "255":
-        return "Unrecognized Attendance Status / 未识别的考勤状态"
+        return "Attendance Record / 考勤记录"
     return status
+
+
+def _pin_aliases(pin: str | None) -> set[str]:
+    value = str(pin or "").strip()
+    if not value:
+        return set()
+    aliases = {value}
+    if value.isdigit():
+        aliases.add(value.lstrip("0") or "0")
+        aliases.add(value.zfill(5))
+    return aliases
 
 
 def _latest_activities(session, devices: list[Device]) -> list[dict[str, object]]:
@@ -321,10 +332,16 @@ def _latest_activities(session, devices: list[Device]) -> list[dict[str, object]
         .limit(7)
         .all()
     )
-    user_names = {
-        (user.device_sn, user.pin): user.name
-        for user in _user_filter(session.query(DeviceUser), device_sns).all()
-    }
+    user_names: dict[tuple[str | None, str], str] = {}
+    global_user_names: dict[str, str] = {}
+    for user in _user_filter(session.query(DeviceUser), device_sns).all():
+        if not user.name:
+            continue
+        for alias in _pin_aliases(user.pin):
+            user_names[(user.device_sn, alias)] = user.name
+            global_user_names.setdefault(alias, user.name)
+        for alias in _pin_aliases(user.employee_id):
+            global_user_names.setdefault(alias, user.name)
     attendance_pins = {item.pin for item in attendance_events}
     mingdao_user_names = {
         user.employee_id: user.name
@@ -340,7 +357,21 @@ def _latest_activities(session, devices: list[Device]) -> list[dict[str, object]
             "device_display": _device_display(devices_by_sn.get(item.device_sn), item.device_sn),
             "device_sn": item.device_sn,
             "employee_pin": item.pin,
-            "employee_name": user_names.get((item.device_sn, item.pin)) or mingdao_user_names.get(item.pin) or "-",
+            "employee_name": (
+                next(
+                    (
+                        user_names.get((item.device_sn, alias))
+                        or global_user_names.get(alias)
+                        or mingdao_user_names.get(alias)
+                        for alias in _pin_aliases(item.pin)
+                        if user_names.get((item.device_sn, alias))
+                        or global_user_names.get(alias)
+                        or mingdao_user_names.get(alias)
+                    ),
+                    None,
+                )
+                or "-"
+            ),
             "attendance_type": _attendance_status_label(item.status),
             "raw_status": item.status or "",
             "attendance_time": _format_dubai(item.attendance_time, source="local"),
