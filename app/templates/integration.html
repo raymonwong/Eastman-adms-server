@@ -781,11 +781,28 @@ HAP-Sign: &lt;Sign&gt;</pre>
       }
     }
 
+    function normalizeOpenApiUrl(value) {
+      return String(value || '')
+        .replace(/[\u200B-\u200D\uFEFF\s]/g, '')
+        .replace(/[：﹕]/g, ':')
+        .replace(/[／]/g, '/')
+        .replace(/[．。]/g, '.');
+    }
+
+    function isValidHttpUrl(value) {
+      try {
+        const url = new URL(normalizeOpenApiUrl(value));
+        return ['http:', 'https:'].includes(url.protocol) && Boolean(url.hostname);
+      } catch (error) {
+        return false;
+      }
+    }
+
     function attendanceMissingItems() {
       const payload = attendancePayload();
       const missing = [];
       if (!payload.openapi_url) missing.push('Mingdao Attendance OpenAPI URL');
-      if (payload.openapi_url && !/^https?:\/\/[^\s]+$/i.test(payload.openapi_url)) missing.push('Valid OpenAPI URL');
+      if (payload.openapi_url && !isValidHttpUrl(payload.openapi_url)) missing.push('Valid OpenAPI URL');
       if (!payload.app_key) missing.push('AppKey');
       if (!payload.sign) missing.push('Sign');
       if (!payload.worksheet_id) missing.push('Worksheet ID');
@@ -820,7 +837,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
       clearAttendanceErrors();
       const payload = attendancePayload();
       let valid = true;
-      if (!payload.openapi_url || !/^https?:\/\/[^\s]+$/i.test(payload.openapi_url)) {
+      if (!payload.openapi_url || !isValidHttpUrl(payload.openapi_url)) {
         setFieldError('attendanceOpenapiUrl', 'Valid OpenAPI URL is required / 请输入有效 OpenAPI URL');
         valid = false;
       }
@@ -1103,7 +1120,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
     function attendancePayload() {
       return {
         enabled: byId('attendanceEnabled').checked,
-        openapi_url: byId('attendanceOpenapiUrl').value.trim(),
+        openapi_url: normalizeOpenApiUrl(byId('attendanceOpenapiUrl').value),
         app_key: byId('attendanceAppKey').value.trim(),
         sign: byId('attendanceSign').value.trim(),
         worksheet_id: byId('attendanceWorksheetId').value.trim(),

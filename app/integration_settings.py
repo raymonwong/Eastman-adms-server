@@ -23,6 +23,24 @@ router = APIRouter()
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
 
 
+def _normalize_openapi_url(value: str) -> str:
+    replacements = {
+        "\u200b": "",
+        "\u200c": "",
+        "\u200d": "",
+        "\ufeff": "",
+        "：": ":",
+        "﹕": ":",
+        "／": "/",
+        "．": ".",
+        "。": ".",
+    }
+    normalized = value.strip()
+    for source, target in replacements.items():
+        normalized = normalized.replace(source, target)
+    return "".join(normalized.split())
+
+
 class TokenSaveRequest(BaseModel):
     token: str = Field(min_length=32, max_length=255)
 
@@ -40,7 +58,6 @@ class AttendanceIntegrationConfigRequest(BaseModel):
     retry_failed_after_minutes: int = Field(default=60, ge=1, le=10080)
 
     @field_validator(
-        "openapi_url",
         "app_key",
         "sign",
         "worksheet_id",
@@ -52,6 +69,11 @@ class AttendanceIntegrationConfigRequest(BaseModel):
     @classmethod
     def clean_text(cls, value: str) -> str:
         return value.strip()
+
+    @field_validator("openapi_url")
+    @classmethod
+    def clean_openapi_url(cls, value: str) -> str:
+        return _normalize_openapi_url(value)
 
 
 ATTENDANCE_CONFIG_KEYS = {
