@@ -151,12 +151,12 @@
     }
 
     .panel-header {
-      min-height: 38px;
+      min-height: 34px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      padding: 8px 14px;
+      padding: 6px 12px;
       border-bottom: 1px solid var(--line-soft);
       color: var(--blue);
       font-size: 14px;
@@ -164,15 +164,15 @@
     }
 
     .panel-body {
-      padding: 14px;
+      padding: 10px 12px;
     }
 
     .toolbar {
       display: grid;
       grid-template-columns: minmax(280px, 420px) 180px auto;
-      gap: 10px;
+      gap: 8px;
       align-items: end;
-      margin-bottom: 14px;
+      margin-bottom: 10px;
     }
 
     .form-control,
@@ -180,7 +180,7 @@
       background: var(--card);
       border-color: rgba(255, 255, 255, 0.14);
       color: var(--text);
-      font-size: 13px;
+      font-size: 12px;
     }
 
     .form-control:focus,
@@ -192,34 +192,50 @@
     }
 
     .field-label {
-      margin-bottom: 4px;
+      margin-bottom: 3px;
       color: var(--muted);
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 800;
+    }
+
+    .sync-legend {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: -2px 0 8px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.25;
+    }
+
+    .sync-legend-title {
+      color: var(--text);
+      font-weight: 900;
     }
 
     .summary-grid {
       display: grid;
       grid-template-columns: repeat(6, minmax(0, 1fr));
-      gap: 10px;
-      margin-bottom: 14px;
+      gap: 8px;
+      margin-bottom: 10px;
     }
 
     .metric {
-      min-height: 78px;
+      min-height: 56px;
       display: grid;
       grid-template-columns: auto minmax(0, 1fr);
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       background: var(--card);
       border: 1px solid rgba(255, 255, 255, 0.075);
       border-radius: var(--radius);
-      padding: 10px 12px;
+      padding: 7px 9px;
     }
 
     .metric-icon {
-      width: 34px;
-      height: 34px;
+      width: 28px;
+      height: 28px;
       display: grid;
       place-items: center;
       border-radius: 9px;
@@ -243,25 +259,25 @@
     }
 
     .metric-icon .icon {
-      width: 20px;
-      height: 20px;
+      width: 16px;
+      height: 16px;
     }
 
     .metric-label {
       color: var(--muted);
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 800;
     }
 
     .metric-value {
-      margin-top: 3px;
+      margin-top: 1px;
       color: #f2f7ff;
-      font-size: 21px;
+      font-size: 18px;
       font-weight: 900;
     }
 
     .department-group {
-      margin-bottom: 14px;
+      margin-bottom: 9px;
       border: 1px solid var(--line-soft);
       border-radius: var(--radius);
       overflow: hidden;
@@ -273,9 +289,10 @@
       justify-content: space-between;
       align-items: center;
       gap: 10px;
-      padding: 9px 12px;
+      padding: 6px 10px;
       color: var(--blue);
       background: rgba(143, 179, 217, 0.08);
+      font-size: 12px;
       font-weight: 900;
     }
 
@@ -284,52 +301,81 @@
     }
 
     table {
-      min-width: 1180px;
+      min-width: 1240px;
     }
 
     th {
       color: var(--blue);
-      font-size: 11px;
+      font-size: 10px;
+      line-height: 1.15;
       white-space: nowrap;
     }
 
     th,
     td {
-      padding: 7px 10px !important;
+      padding: 4px 8px !important;
     }
 
     td {
       vertical-align: middle;
-      font-size: 12px;
-      line-height: 1.28;
+      font-size: 11px;
+      line-height: 1.18;
     }
 
     .mono {
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
     }
 
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+    }
+
+    .status-badge .icon {
+      width: 14px;
+      height: 14px;
+    }
+
     .badge-enabled {
+      border-color: rgba(36, 214, 133, 0.45);
       color: var(--green);
-      font-weight: 900;
+      background: rgba(36, 214, 133, 0.08);
+    }
+
+    .badge-enabled .icon {
+      color: var(--green);
+      stroke: var(--green);
     }
 
     .badge-disabled {
+      border-color: rgba(255, 77, 79, 0.45);
       color: var(--red);
-      font-weight: 900;
+      background: rgba(255, 77, 79, 0.08);
+    }
+
+    .badge-disabled .icon {
+      color: var(--red);
+      stroke: var(--red);
     }
 
     .sync-badges {
       display: flex;
-      gap: 5px;
+      gap: 4px;
       flex-wrap: wrap;
     }
 
     .sync-badge {
-      padding: 1px 5px;
+      padding: 0 4px;
       border: 1px solid var(--line);
       border-radius: 999px;
       color: var(--muted);
-      font-size: 10px;
+      font-size: 9px;
+      line-height: 1.35;
     }
 
     .sync-badge.pending { color: var(--orange); }
@@ -337,13 +383,36 @@
     .sync-badge.synced { color: var(--green); }
     .sync-badge.failed { color: var(--red); }
 
-    .sync-details {
-      margin-top: 4px;
-      display: grid;
-      gap: 2px;
-      color: var(--muted);
+    .fingerprint-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 1px 6px;
+      border: 1px solid rgba(36, 214, 133, 0.35);
+      border-radius: 999px;
+      color: var(--green);
       font-size: 10px;
-      line-height: 1.25;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .fingerprint-badge.empty {
+      border-color: var(--line);
+      color: var(--muted);
+    }
+
+    .fingerprint-badge .icon {
+      width: 12px;
+      height: 12px;
+    }
+
+    .sync-details {
+      margin-top: 2px;
+      display: grid;
+      gap: 1px;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.15;
     }
 
     .sync-detail-status {
@@ -431,6 +500,13 @@
               <div class="field-label">Grouping <span class="zh-sub">/ 分组</span></div>
               <div class="muted">Grouped by Department <span class="zh-sub">/ 按部门分组</span></div>
             </div>
+          </div>
+          <div class="sync-legend">
+            <span class="sync-legend-title">Sync legend <span class="zh-sub">/ 同步说明</span>:</span>
+            <span class="sync-badge pending">P</span><span>Pending <span class="zh-sub">/ 待同步</span></span>
+            <span class="sync-badge syncing">I</span><span>In progress <span class="zh-sub">/ 同步中</span></span>
+            <span class="sync-badge synced">S</span><span>Synced <span class="zh-sub">/ 已同步</span></span>
+            <span class="sync-badge failed">F</span><span>Failed <span class="zh-sub">/ 失败</span></span>
           </div>
           <div id="usersContainer">
             <div class="table-state">Loading...<br><span class="zh-sub">正在加载……</span></div>
@@ -538,7 +614,7 @@
                     <th>Employee Record ID<br><span class="zh-sub">员工记录ID</span></th>
                     <th>PIN<br><span class="zh-sub">打卡机编号</span></th>
                     <th>Name<br><span class="zh-sub">姓名</span></th>
-                    <th>Source<br><span class="zh-sub">来源</span></th>
+                    <th>Fingerprints<br><span class="zh-sub">指纹</span></th>
                     <th>Privilege<br><span class="zh-sub">权限</span></th>
                     <th>Status<br><span class="zh-sub">状态</span></th>
                     <th>Sync<br><span class="zh-sub">同步</span></th>
@@ -554,6 +630,7 @@
           </section>
         `;
       }).join('');
+      if (window.lucide) window.lucide.createIcons();
     }
 
     function userRow(user) {
@@ -563,9 +640,9 @@
           <td class="mono">${esc(user.employee_record_id || '-')}</td>
           <td class="mono">${esc(user.pin || '-')}</td>
           <td>${esc(user.name || '-')}</td>
-          <td>${esc(sourceName(user))}</td>
+          <td>${fingerprintBadge(user)}</td>
           <td class="mono">${esc(user.privilege || '0')}</td>
-          <td>${user.enabled ? '<span class="badge-enabled">Enabled / 启用</span>' : '<span class="badge-disabled">Disabled / 停用</span>'}</td>
+          <td>${statusBadge(user)}</td>
           <td>
             <div class="sync-badges">
               <span class="sync-badge pending">P ${esc(user.pending_sync || 0)}</span>
@@ -579,6 +656,19 @@
           <td class="mono">${esc(formatTime(user.updated_at))}</td>
         </tr>
       `;
+    }
+
+    function fingerprintBadge(user) {
+      const count = Number(user.fingerprint_count || 0);
+      const emptyClass = count > 0 ? '' : ' empty';
+      return `<span class="fingerprint-badge${emptyClass}" title="${esc(count)} fingerprint templates / ${esc(count)} 个指纹模板"><i data-lucide="fingerprint" class="icon"></i><span class="mono">${esc(count)}</span> FP</span>`;
+    }
+
+    function statusBadge(user) {
+      if (user.enabled) {
+        return '<span class="status-badge badge-enabled" title="Enabled / 启用"><i data-lucide="check" class="icon"></i></span>';
+      }
+      return '<span class="status-badge badge-disabled" title="Disabled / 停用"><i data-lucide="x" class="icon"></i></span>';
     }
 
     function syncDetails(user) {
