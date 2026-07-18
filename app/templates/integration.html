@@ -772,6 +772,15 @@ HAP-Sign: &lt;Sign&gt;</pre>
       setText('mappingError', '');
     }
 
+    function clearAttendanceInputError(inputId) {
+      if (inputId && byId(`${inputId}Error`)) {
+        setFieldError(inputId, '');
+      }
+      if (inputId && byId(inputId)?.classList.contains('mapping-field')) {
+        setText('mappingError', '');
+      }
+    }
+
     function attendanceMissingItems() {
       const payload = attendancePayload();
       const missing = [];
@@ -923,6 +932,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
 
     function renderAttendanceConfig(config) {
       if (!byId('attendanceEnabled')) return;
+      clearAttendanceErrors();
       byId('attendanceEnabled').checked = Boolean(config.enabled);
       byId('attendanceOpenapiUrl').value = config.openapi_url || '';
       byId('attendanceAppKey').value = config.app_key || '';
@@ -1301,6 +1311,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
     on('copyAttendanceSignBtn', 'click', () => copyText(byId('attendanceSign').value, 'attendanceFeedback'));
     document.querySelectorAll('.attendance-field').forEach(input => {
       input.addEventListener('input', () => {
+        clearAttendanceInputError(input.id);
         setAttendanceDirty(true);
         refreshAttendanceMappingFromInputs();
         if (input.id === 'attendanceEnabled') {
@@ -1309,6 +1320,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
         }
       });
       input.addEventListener('change', () => {
+        clearAttendanceInputError(input.id);
         if (input.id === 'attendanceEnabled' && input.checked && !validateAttendanceConfig({forEnable: true})) {
           input.checked = false;
           byId('attendanceEnabledLabel').textContent = 'Disabled - incomplete / 停用 - 配置未完成';
