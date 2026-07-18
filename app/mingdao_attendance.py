@@ -210,7 +210,13 @@ def create_missing_attendance_sync_records(session: Session, limit: int | None =
     return created
 
 
-def attendance_sync_status_summary() -> dict[str, int]:
+def _utc_datetime_text(value: object) -> str:
+    if isinstance(value, datetime):
+        return value.replace(tzinfo=UTC).isoformat(timespec="seconds")
+    return str(value or "")
+
+
+def attendance_sync_status_summary() -> dict[str, object]:
     with SessionLocal() as session:
         row = session.execute(
             text(
@@ -241,13 +247,21 @@ def attendance_sync_status_summary() -> dict[str, int]:
                     SUM(CASE WHEN ams.sync_status = 'SYNCING' THEN 1 ELSE 0 END) AS syncing_count,
                     SUM(CASE WHEN ams.sync_status = 'SYNCED' THEN 1 ELSE 0 END) AS synced_count,
                     SUM(CASE WHEN ams.sync_status = 'FAILED' THEN 1 ELSE 0 END) AS failed_count,
-                    COUNT(*) AS total_count
+                    COUNT(*) AS total_count,
+                    MAX(ams.last_sync_time) AS last_sync_time,
+                    (
+                        SELECT ams2.sync_status
+                        FROM attendance_mingdao_sync ams2
+                        WHERE ams2.last_sync_time IS NOT NULL
+                        ORDER BY ams2.last_sync_time DESC, ams2.id DESC
+                        LIMIT 1
+                    ) AS last_sync_status
                 FROM attendance_mingdao_sync ams
                 JOIN attendance_event ae ON ae.id = ams.attendance_event_id
                 """
             )
         ).mappings().first()
-        summary = {status: 0 for status in SYNC_STATUSES}
+        summary: dict[str, object] = {status: 0 for status in SYNC_STATUSES}
         if row:
             summary["PENDING"] = int(row["pending_ready"] or 0)
             summary["MISSING_EMPLOYEE_RECORD_ID"] = int(row["missing_employee_record_id"] or 0)
@@ -255,9 +269,13 @@ def attendance_sync_status_summary() -> dict[str, int]:
             summary["SYNCED"] = int(row["synced_count"] or 0)
             summary["FAILED"] = int(row["failed_count"] or 0)
             summary["TOTAL"] = int(row["total_count"] or 0)
+            summary["LAST_SYNC_TIME"] = _utc_datetime_text(row["last_sync_time"])
+            summary["LAST_SYNC_STATUS"] = row["last_sync_status"] or ""
         else:
             summary["MISSING_EMPLOYEE_RECORD_ID"] = 0
             summary["TOTAL"] = 0
+            summary["LAST_SYNC_TIME"] = ""
+            summary["LAST_SYNC_STATUS"] = ""
         return summary
 
 
