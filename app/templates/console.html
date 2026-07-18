@@ -596,13 +596,15 @@
     }
 
     .console-table tbody tr.flash-new td {
-      animation: flashNewRow 1.4s ease-out 0s 2;
+      animation: flashNewRow 5s ease-out;
     }
 
     @keyframes flashNewRow {
-      0% { background: rgba(255, 77, 79, 0.36); }
-      55% { background: rgba(255, 77, 79, 0.18); }
-      100% { background: transparent; }
+      0% { background: rgba(255, 77, 79, 0.48); box-shadow: inset 4px 0 0 rgba(255, 77, 79, 0.95); }
+      18% { background: rgba(255, 77, 79, 0.24); box-shadow: inset 4px 0 0 rgba(255, 77, 79, 0.7); }
+      36% { background: rgba(255, 77, 79, 0.4); box-shadow: inset 4px 0 0 rgba(255, 77, 79, 0.85); }
+      68% { background: rgba(255, 77, 79, 0.14); box-shadow: inset 4px 0 0 rgba(255, 77, 79, 0.45); }
+      100% { background: transparent; box-shadow: none; }
     }
 
     .empty-state {
@@ -833,6 +835,8 @@
     let latestHeartbeatSummary = null;
     let previousActivityKeys = new Set();
     let previousEventKeys = new Set();
+    let activityFlashUntil = new Map();
+    let eventFlashUntil = new Map();
     let latestDeviceSummary = [];
 
     function esc(value) {
@@ -1060,6 +1064,7 @@
         nextDeviceFilter.addEventListener('change', function () {
           selectedFilter = this.value;
           eventLogCleared = false;
+          resetNewRowFlashState();
           showInitialLoading();
           refreshConsole();
         });
@@ -1118,6 +1123,37 @@
       return [event.type, event.device_sn, event.time_full, eventDetailsText(event.details)].join('|');
     }
 
+    function markNewRows(items, keyFn, previousKeys, flashMap) {
+      const now = Date.now();
+      const currentKeys = new Set(items.map(keyFn));
+      flashMap.forEach((expiresAt, key) => {
+        if (expiresAt <= now || !currentKeys.has(key)) {
+          flashMap.delete(key);
+        }
+      });
+      if (hasLoadedOnce) {
+        items.forEach(item => {
+          const key = keyFn(item);
+          if (!previousKeys.has(key)) {
+            flashMap.set(key, now + 5000);
+          }
+        });
+      }
+      return currentKeys;
+    }
+
+    function isFlashing(key, flashMap) {
+      return (flashMap.get(key) || 0) > Date.now();
+    }
+
+    function resetNewRowFlashState() {
+      previousActivityKeys = new Set();
+      previousEventKeys = new Set();
+      activityFlashUntil = new Map();
+      eventFlashUntil = new Map();
+      hasLoadedOnce = false;
+    }
+
     function relativeTime(value) {
       if (!value || value === '-') return '-';
       const parsed = new Date(String(value).replace(' ', 'T') + '+04:00');
@@ -1144,10 +1180,10 @@
         { label: labelText('Attendance Type', '事件类型'), width: '20%' },
         { label: labelText('Attendance Time', '考勤时间'), width: '28%' },
       ];
-      const currentKeys = new Set(items.map(activityKey));
+      const currentKeys = markNewRows(items, activityKey, previousActivityKeys, activityFlashUntil);
       const rows = items.slice(0, 7).map(item => {
         const key = activityKey(item);
-        const shouldFlash = hasLoadedOnce && !previousActivityKeys.has(key);
+        const shouldFlash = isFlashing(key, activityFlashUntil);
         return `
         <tr class="${shouldFlash ? 'flash-new' : ''}" title="${esc(item.device_display || item.device_name)}">
           <td>${esc(item.device_name)}</td>
@@ -1221,12 +1257,12 @@
         { label: labelText('Event Type', '事件类型'), width: '18%' },
         { label: labelText('Details', '事件明细'), width: '39%' },
       ];
-      const currentKeys = new Set(events.map(eventKey));
+      const currentKeys = markNewRows(events, eventKey, previousEventKeys, eventFlashUntil);
       const rows = visibleEvents.slice(0, 10).map((event, index) => {
         const details = eventDetailsText(event.details);
         const technical = eventTechnicalText(event, event.details);
         const key = eventKey(event);
-        const shouldFlash = hasLoadedOnce && !previousEventKeys.has(key);
+        const shouldFlash = isFlashing(key, eventFlashUntil);
         return `
           <tr class="${shouldFlash ? 'flash-new' : ''}" title="SN: ${esc(event.device_sn)} · ${esc(details)}">
             <td class="mono">${esc(event.time)}</td>
@@ -1341,6 +1377,7 @@
     document.getElementById('deviceFilter').addEventListener('change', function () {
       selectedFilter = this.value;
       eventLogCleared = false;
+      resetNewRowFlashState();
       showInitialLoading();
       refreshConsole();
     });
