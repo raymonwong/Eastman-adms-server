@@ -132,6 +132,12 @@
       font-size: 12px;
     }
 
+    .timezone-note {
+      display: block;
+      margin-top: 10px;
+      margin-bottom: 0;
+    }
+
     .table-state {
       min-height: 130px;
       display: grid;
@@ -228,6 +234,10 @@
         <div>
           <h1 class="title">Device Management <span class="zh-sub">/ 设备管理</span></h1>
           <div class="subtitle">Configuration only <span class="zh-sub">/ 仅用于设备配置</span> · Devices are discovered automatically <span class="zh-sub">/ 设备自动发现</span></div>
+          <div class="warning-note timezone-note">
+            Timezone Notice: this server currently supports UTC+4 devices only. For devices in other timezones, contact development to upgrade the server before adding them.
+            <span class="zh-sub">/ 时区提示：当前服务器仅支持 UTC+4 时区设备。其他时区设备如需新增，请先联系开发升级服务器。</span>
+          </div>
         </div>
         <div class="d-flex gap-2 flex-wrap">
           <a href="/users" class="btn btn-outline-info btn-console">ADMS Users <span class="zh-sub">/ 用户列表</span></a>

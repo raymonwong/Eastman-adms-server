@@ -503,7 +503,7 @@ X-API-Key: &lt;API_TOKEN&gt;</pre></details>
           </section>
 
           <section class="panel step-panel">
-            <div class="panel-header"><span class="step-number">2</span><span>Worksheet and Field Mapping <span class="zh-sub">/ 工作表及字段映射</span></span><span id="mappingCompleteness" class="badge-soft badge-warn ms-auto">0/4</span></div>
+            <div class="panel-header"><span class="step-number">2</span><span>Worksheet and Field Mapping <span class="zh-sub">/ 工作表及字段映射</span></span><span id="mappingCompleteness" class="badge-soft badge-warn ms-auto">0/5</span></div>
             <div class="panel-body">
               <div class="mb-3">
                 <label class="field-label">Worksheet ID <span class="zh-sub">/ 工作表 ID</span> <span class="required-mark">*</span></label>
@@ -518,6 +518,7 @@ X-API-Key: &lt;API_TOKEN&gt;</pre></details>
                   <tbody>
                     <tr><td><span class="mapping-source mono">employee_record_id</span></td><td>Text / Relation ID <span class="zh-sub">/ 文本/关联标识</span></td><td><input id="attendanceEmployeeRecordField" class="form-control mono attendance-field mapping-field" data-label="Employee Record ID"></td><td id="mapStatusEmployeeRecord">-</td></tr>
                     <tr><td><span class="mapping-source mono">check_time</span></td><td>DateTime <span class="zh-sub">/ 日期时间</span></td><td><input id="attendanceCheckTimeField" class="form-control mono attendance-field mapping-field" data-label="Check Time"></td><td id="mapStatusCheckTime">-</td></tr>
+                    <tr><td><span class="mapping-source mono">check_date</span></td><td>Date <span class="zh-sub">/ 日期</span></td><td><input id="attendanceCheckDateField" class="form-control mono attendance-field mapping-field" data-label="Check Date"></td><td id="mapStatusCheckDate">-</td></tr>
                     <tr><td><span class="mapping-source mono">device_name</span></td><td>Text <span class="zh-sub">/ 文本</span></td><td><input id="attendanceDeviceNameField" class="form-control mono attendance-field mapping-field" data-label="Device Name"></td><td id="mapStatusDeviceName">-</td></tr>
                     <tr><td><span class="mapping-source mono">device_sn</span></td><td>Text <span class="zh-sub">/ 文本</span></td><td><input id="attendanceDeviceSnField" class="form-control mono attendance-field mapping-field" data-label="Device SN"></td><td id="mapStatusDeviceSn">-</td></tr>
                   </tbody>
@@ -631,6 +632,13 @@ X-API-Key: &lt;API_TOKEN&gt;</pre></details>
               </tbody>
             </table>
           </div>
+          <div class="button-row justify-content-between align-items-center mt-2">
+            <span id="attendanceLogPageInfo" class="help-text">Page 1 / 第 1 页</span>
+            <div class="d-flex gap-2">
+              <button id="attendanceLogPrevBtn" class="btn btn-outline-light btn-sm btn-console" type="button">Previous <span class="zh-sub">/ 上一页</span></button>
+              <button id="attendanceLogNextBtn" class="btn btn-outline-light btn-sm btn-console" type="button">Next <span class="zh-sub">/ 下一页</span></button>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -653,7 +661,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
             </details>
             <details>
               <summary>3. Worksheet and Field Mapping <span class="zh-sub">/ 工作表与字段映射</span></summary>
-              <p>Configure the Mingdao Attendance Worksheet ID and target field IDs for Employee Record ID, Check Time, Device Name, and Device SN. The ADMS source fields are fixed; only Mingdao target field IDs are editable.</p>
+              <p>Configure the Mingdao Attendance Worksheet ID and target field IDs for Employee Record ID, Check Time, Check Date, Device Name, and Device SN. The ADMS source fields are fixed; only Mingdao target field IDs are editable.</p>
             </details>
             <details>
               <summary>4. Duplicate Prevention <span class="zh-sub">/ 防重复上传</span></summary>
@@ -693,6 +701,9 @@ HAP-Sign: &lt;Sign&gt;</pre>
     let attendanceLastTestSuccess = false;
     let attendanceLastSyncTime = '-';
     let attendanceLastSyncResult = '-';
+    let attendanceLogPage = 1;
+    let attendanceLogTotalPages = 1;
+    const attendanceLogPageSize = 10;
 
     function esc(value) {
       return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -709,7 +720,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
     function setText(id, value) {
       const element = byId(id);
       if (!element) return;
-      element.textContent = value || '-';
+      element.textContent = value === undefined || value === null || value === '' ? '-' : value;
     }
 
     function on(id, eventName, handler) {
@@ -831,6 +842,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
       if (!payload.worksheet_id) missing.push('Worksheet ID');
       if (!payload.employee_record_id_field_id) missing.push('Employee Record ID field');
       if (!payload.check_time_field_id) missing.push('Check Time field');
+      if (!payload.check_date_field_id) missing.push('Check Date field');
       if (!payload.device_name_field_id) missing.push('Device Name field');
       if (!payload.device_sn_field_id) missing.push('Device SN field');
       if (!payload.retry_failed_after_minutes || payload.retry_failed_after_minutes < 1 || payload.retry_failed_after_minutes > 10080) missing.push('Retry interval 1-10080 minutes');
@@ -984,6 +996,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
       const fields = config.configured_fields || {};
       byId('attendanceEmployeeRecordField').value = fields['Employee Record ID'] || '';
       byId('attendanceCheckTimeField').value = fields['Check Time'] || '';
+      byId('attendanceCheckDateField').value = fields['Check Date'] || '';
       byId('attendanceDeviceNameField').value = fields['Device Name'] || '';
       byId('attendanceDeviceSnField').value = fields['Device SN'] || '';
       byId('attendanceEnabledLabel').textContent = config.enabled ? 'Enabled / 启用' : 'Disabled / 停用';
@@ -998,7 +1011,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
       setText('syncTotal', syncStatus.TOTAL ?? 0);
       setText('manualPending', syncStatus.PENDING ?? 0);
       setText('manualFailed', syncStatus.FAILED ?? 0);
-      setText('manualMissingRecord', 'Shown after sync / 同步后显示');
+      setText('manualMissingRecord', syncStatus.MISSING_EMPLOYEE_RECORD_ID ?? 0);
       setText('syncLastTime', attendanceLastSyncTime);
       setText('attendanceLastRefreshTime', `Last refreshed / 最近刷新：${nowDubaiText()}`);
 
@@ -1032,6 +1045,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
       const rows = [
         ['Employee Record ID', 'mapStatusEmployeeRecord'],
         ['Check Time', 'mapStatusCheckTime'],
+        ['Check Date', 'mapStatusCheckDate'],
         ['Device Name', 'mapStatusDeviceName'],
         ['Device SN', 'mapStatusDeviceSn'],
       ];
@@ -1041,14 +1055,14 @@ HAP-Sign: &lt;Sign&gt;</pre>
         configured += ok ? 1 : 0;
         setBadge(id, ok ? 'Configured <span class="zh-sub">/ 已配置</span>' : 'Missing <span class="zh-sub">/ 缺失</span>', ok ? 'ok' : 'error');
       });
-      const state = configured === 4 ? 'ok' : configured === 0 ? 'error' : 'warn';
-      setBadge('mappingCompleteness', `${configured}/4 configured <span class="zh-sub">/ 已配置</span>`, state);
+      const state = configured === rows.length ? 'ok' : configured === 0 ? 'error' : 'warn';
+      setBadge('mappingCompleteness', `${configured}/${rows.length} configured <span class="zh-sub">/ 已配置</span>`, state);
     }
 
     function renderSummaryFields(fields) {
       const container = byId('attendanceSummaryFields');
       if (!container) return;
-      container.innerHTML = ['Employee Record ID', 'Check Time', 'Device Name', 'Device SN'].map(label => {
+      container.innerHTML = ['Employee Record ID', 'Check Time', 'Check Date', 'Device Name', 'Device SN'].map(label => {
         const value = fields[label] || '-';
         const state = value === '-' ? badge('Missing / 缺失', 'error') : badge('Configured / 已配置', 'ok');
         return `<div class="summary-field-row"><span>${esc(label)}</span><span class="mono">${esc(value)}</span><span>${state}</span></div>`;
@@ -1072,6 +1086,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
       const fields = {
         'Employee Record ID': byId('attendanceEmployeeRecordField')?.value.trim() || '',
         'Check Time': byId('attendanceCheckTimeField')?.value.trim() || '',
+        'Check Date': byId('attendanceCheckDateField')?.value.trim() || '',
         'Device Name': byId('attendanceDeviceNameField')?.value.trim() || '',
         'Device SN': byId('attendanceDeviceSnField')?.value.trim() || '',
       };
@@ -1137,12 +1152,20 @@ HAP-Sign: &lt;Sign&gt;</pre>
         setText('syncTotal', data.status.TOTAL ?? 0);
         setText('manualPending', data.status.PENDING ?? 0);
         setText('manualFailed', data.status.FAILED ?? 0);
+        setText('manualMissingRecord', data.status.MISSING_EMPLOYEE_RECORD_ID ?? waiting);
       }
     }
 
-    function renderAttendanceSyncLog(items) {
+    function renderAttendanceSyncLog(items, meta = {}) {
       const body = byId('attendanceSyncLogBody');
       if (!body) return;
+      attendanceLogPage = Number(meta.page || attendanceLogPage || 1);
+      attendanceLogTotalPages = Number(meta.total_pages || 1);
+      setText('attendanceLogPageInfo', `Page ${attendanceLogPage} / ${attendanceLogTotalPages} · Total ${meta.total ?? 0} / 第 ${attendanceLogPage} 页，共 ${attendanceLogTotalPages} 页 · 总计 ${meta.total ?? 0}`);
+      const prevBtn = byId('attendanceLogPrevBtn');
+      const nextBtn = byId('attendanceLogNextBtn');
+      if (prevBtn) prevBtn.disabled = attendanceLogPage <= 1;
+      if (nextBtn) nextBtn.disabled = attendanceLogPage >= attendanceLogTotalPages;
       if (!items || !items.length) {
         body.innerHTML = '<tr><td colspan="8">No synchronization records yet. / 暂无同步记录。</td></tr>';
         return;
@@ -1169,14 +1192,15 @@ HAP-Sign: &lt;Sign&gt;</pre>
       }).join('');
     }
 
-    async function refreshAttendanceSyncLog() {
+    async function refreshAttendanceSyncLog(page = attendanceLogPage) {
       const body = byId('attendanceSyncLogBody');
       if (!body) return;
+      attendanceLogPage = Math.max(1, Number(page || 1));
       try {
-        const response = await fetch('/api/settings/integration/attendance/sync-log?limit=80', {cache: 'no-store'});
+        const response = await fetch(`/api/settings/integration/attendance/sync-log?page=${attendanceLogPage}&page_size=${attendanceLogPageSize}`, {cache: 'no-store'});
         if (!response.ok) throw new Error(await response.text());
         const data = await response.json();
-        renderAttendanceSyncLog(data.items || []);
+        renderAttendanceSyncLog(data.items || [], data);
       } catch (error) {
         body.innerHTML = `<tr><td colspan="8">Failed to load synchronization log / 加载同步日志失败：${esc(error.message || error)}</td></tr>`;
       }
@@ -1191,6 +1215,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
         worksheet_id: byId('attendanceWorksheetId').value.trim(),
         employee_record_id_field_id: byId('attendanceEmployeeRecordField').value.trim(),
         check_time_field_id: byId('attendanceCheckTimeField').value.trim(),
+        check_date_field_id: byId('attendanceCheckDateField').value.trim(),
         device_name_field_id: byId('attendanceDeviceNameField').value.trim(),
         device_sn_field_id: byId('attendanceDeviceSnField').value.trim(),
         retry_failed_after_minutes: Number(byId('attendanceRetryMinutes').value || 60),
@@ -1394,7 +1419,9 @@ HAP-Sign: &lt;Sign&gt;</pre>
     });
     on('copyAttendanceAppKeyBtn', 'click', () => copyText(byId('attendanceAppKey').value, 'attendanceFeedback'));
     on('copyAttendanceSignBtn', 'click', () => copyText(byId('attendanceSign').value, 'attendanceFeedback'));
-    on('refreshAttendanceLogBtn', 'click', refreshAttendanceSyncLog);
+    on('refreshAttendanceLogBtn', 'click', () => refreshAttendanceSyncLog(attendanceLogPage));
+    on('attendanceLogPrevBtn', 'click', () => refreshAttendanceSyncLog(attendanceLogPage - 1));
+    on('attendanceLogNextBtn', 'click', () => refreshAttendanceSyncLog(attendanceLogPage + 1));
     document.querySelectorAll('.attendance-field').forEach(input => {
       input.addEventListener('input', () => {
         clearAttendanceInputError(input.id);
@@ -1483,6 +1510,8 @@ HAP-Sign: &lt;Sign&gt;</pre>
         setText('attendanceFeedback', data.message || 'Attendance sync finished / 考勤同步完成');
         showToast('Attendance sync finished / 考勤同步完成');
         await refresh(tokenVisible);
+        renderAttendanceSyncResult(data, elapsedMs);
+        await refreshAttendanceSyncLog(1);
       } catch (error) {
         byId('attendanceSyncResult').textContent = String(error);
         setText('attendanceFeedback', 'Attendance sync failed / 考勤同步失败');

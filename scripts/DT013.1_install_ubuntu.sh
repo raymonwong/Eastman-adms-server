@@ -34,6 +34,7 @@ payload = {
     "worksheet_id": "worksheet001",
     "employee_record_id_field_id": "field_employee",
     "check_time_field_id": "field_check_time",
+    "check_date_field_id": "field_check_date",
     "device_name_field_id": "field_device_name",
     "device_sn_field_id": "field_device_sn",
 }

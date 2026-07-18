@@ -356,6 +356,7 @@ Communication Console
 | Worksheet ID | Mingdao Attendance worksheet ID copied from Mingdao OpenAPI documentation. |
 | Employee Record ID Target Field ID | Target Mingdao field ID for the employee relation/record ID. |
 | Check Time Target Field ID | Target Mingdao field ID for attendance check time. |
+| Check Date Target Field ID | Target Mingdao field ID for attendance check date. |
 | Device Name Target Field ID | Target Mingdao field ID for ADMS device name. |
 | Device SN Target Field ID | Target Mingdao field ID for ADMS device serial number. |
 | Retry Failed After Minutes | Failed records become eligible for another create-row attempt after this interval. |
@@ -421,6 +422,10 @@ Request body:
     {
       "id": "<Check Time Target Field ID>",
       "value": "2026-07-17 20:50:02"
+    },
+    {
+      "id": "<Check Date Target Field ID>",
+      "value": "2026-07-17"
     },
     {
       "id": "<Device Name Target Field ID>",

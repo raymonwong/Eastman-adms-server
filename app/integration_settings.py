@@ -53,6 +53,7 @@ class AttendanceIntegrationConfigRequest(BaseModel):
     worksheet_id: str = Field(max_length=128)
     employee_record_id_field_id: str = Field(max_length=128)
     check_time_field_id: str = Field(max_length=128)
+    check_date_field_id: str = Field(max_length=128)
     device_name_field_id: str = Field(max_length=128)
     device_sn_field_id: str = Field(max_length=128)
     retry_failed_after_minutes: int = Field(default=60, ge=1, le=10080)
@@ -63,6 +64,7 @@ class AttendanceIntegrationConfigRequest(BaseModel):
         "worksheet_id",
         "employee_record_id_field_id",
         "check_time_field_id",
+        "check_date_field_id",
         "device_name_field_id",
         "device_sn_field_id",
     )
@@ -84,6 +86,7 @@ ATTENDANCE_CONFIG_KEYS = {
     "worksheet_id": "MINGDAO_ATTENDANCE_WORKSHEET_ID",
     "employee_record_id_field_id": "MINGDAO_ATTENDANCE_FIELD_EMPLOYEE_RECORD_ID",
     "check_time_field_id": "MINGDAO_ATTENDANCE_FIELD_CHECK_TIME",
+    "check_date_field_id": "MINGDAO_ATTENDANCE_FIELD_CHECK_DATE",
     "device_name_field_id": "MINGDAO_ATTENDANCE_FIELD_DEVICE_NAME",
     "device_sn_field_id": "MINGDAO_ATTENDANCE_FIELD_DEVICE_SN",
     "retry_failed_after_minutes": "MINGDAO_ATTENDANCE_RETRY_FAILED_AFTER_MINUTES",
@@ -140,6 +143,7 @@ def _attendance_config() -> dict[str, object]:
     configured_fields = {
         "Employee Record ID": stored_values[ATTENDANCE_CONFIG_KEYS["employee_record_id_field_id"]].strip(),
         "Check Time": stored_values[ATTENDANCE_CONFIG_KEYS["check_time_field_id"]].strip(),
+        "Check Date": stored_values[ATTENDANCE_CONFIG_KEYS["check_date_field_id"]].strip(),
         "Device Name": stored_values[ATTENDANCE_CONFIG_KEYS["device_name_field_id"]].strip(),
         "Device SN": stored_values[ATTENDANCE_CONFIG_KEYS["device_sn_field_id"]].strip(),
     }
@@ -205,6 +209,7 @@ def _save_attendance_config_to_env_file(payload: AttendanceIntegrationConfigRequ
         ATTENDANCE_CONFIG_KEYS["worksheet_id"]: payload.worksheet_id,
         ATTENDANCE_CONFIG_KEYS["employee_record_id_field_id"]: payload.employee_record_id_field_id,
         ATTENDANCE_CONFIG_KEYS["check_time_field_id"]: payload.check_time_field_id,
+        ATTENDANCE_CONFIG_KEYS["check_date_field_id"]: payload.check_date_field_id,
         ATTENDANCE_CONFIG_KEYS["device_name_field_id"]: payload.device_name_field_id,
         ATTENDANCE_CONFIG_KEYS["device_sn_field_id"]: payload.device_sn_field_id,
         ATTENDANCE_CONFIG_KEYS["retry_failed_after_minutes"]: str(payload.retry_failed_after_minutes),
@@ -237,6 +242,7 @@ def _validate_attendance_config(payload: AttendanceIntegrationConfigRequest) -> 
     required_fields = {
         "Employee Record ID": payload.employee_record_id_field_id,
         "Check Time": payload.check_time_field_id,
+        "Check Date": payload.check_date_field_id,
         "Device Name": payload.device_name_field_id,
         "Device SN": payload.device_sn_field_id,
     }
@@ -326,6 +332,7 @@ def _test_attendance_connection(payload: AttendanceIntegrationConfigRequest) -> 
     required_field_ids = {
         "Employee Record ID": payload.employee_record_id_field_id,
         "Check Time": payload.check_time_field_id,
+        "Check Date": payload.check_date_field_id,
         "Device Name": payload.device_name_field_id,
         "Device SN": payload.device_sn_field_id,
     }
@@ -397,6 +404,7 @@ def _attendance_field_name_by_id() -> dict[str, str]:
         for label, zh_label, field_id in (
             ("Employee Record ID", "员工记录ID字段", fields.get("Employee Record ID")),
             ("Check Time", "考勤时间字段", fields.get("Check Time")),
+            ("Check Date", "打卡日期字段", fields.get("Check Date")),
             ("Device Name", "设备名称字段", fields.get("Device Name")),
             ("Device SN", "设备序列号字段", fields.get("Device SN")),
         )
@@ -553,9 +561,23 @@ def sync_attendance_now(limit: int = 50) -> dict[str, object]:
 
 
 @router.get("/api/settings/integration/attendance/sync-log")
-def attendance_sync_log(limit: int = 50) -> dict[str, object]:
-    safe_limit = max(1, min(limit, 200))
+def attendance_sync_log(page: int = 1, page_size: int = 10) -> dict[str, object]:
+    safe_page = max(1, page)
+    safe_page_size = max(1, min(page_size, 100))
+    offset = (safe_page - 1) * safe_page_size
     with SessionLocal() as session:
+        total = int(
+            session.execute(
+                text(
+                    """
+                    SELECT COUNT(*)
+                    FROM attendance_mingdao_sync ams
+                    JOIN attendance_event ae ON ae.id = ams.attendance_event_id
+                    """
+                )
+            ).scalar()
+            or 0
+        )
         rows = session.execute(
             text(
                 """
@@ -578,11 +600,20 @@ def attendance_sync_log(limit: int = 50) -> dict[str, object]:
                 FROM attendance_mingdao_sync ams
                 JOIN attendance_event ae ON ae.id = ams.attendance_event_id
                 LEFT JOIN device_user du ON du.pin = ae.pin
-                ORDER BY ae.attendance_time DESC, ams.updated_at DESC, ams.id DESC
-                LIMIT :limit
+                ORDER BY
+                    CASE ams.sync_status
+                        WHEN 'FAILED' THEN 0
+                        WHEN 'PENDING' THEN 1
+                        WHEN 'SYNCING' THEN 2
+                        ELSE 3
+                    END,
+                    ae.attendance_time DESC,
+                    ams.updated_at DESC,
+                    ams.id DESC
+                LIMIT :limit OFFSET :offset
                 """
             ),
-            {"limit": safe_limit},
+            {"limit": safe_page_size, "offset": offset},
         ).mappings()
         field_name_by_id = _attendance_field_name_by_id()
         items: list[dict[str, object]] = []
@@ -597,7 +628,14 @@ def attendance_sync_log(limit: int = 50) -> dict[str, object]:
             item["error_detail"] = error_detail["message"]
             item.pop("response_body", None)
             items.append(item)
-        return {"items": items}
+        total_pages = max(1, (total + safe_page_size - 1) // safe_page_size)
+        return {
+            "items": items,
+            "page": safe_page,
+            "page_size": safe_page_size,
+            "total": total,
+            "total_pages": total_pages,
+        }
 
 
 @router.get("/api/settings/integration/health")

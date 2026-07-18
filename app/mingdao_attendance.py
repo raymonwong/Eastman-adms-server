@@ -8,7 +8,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import quote
 from urllib.request import Request as UrlRequest, urlopen
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -81,6 +81,7 @@ def _attendance_config() -> dict[str, str | bool]:
             "Employee Record ID field ID",
         ),
         "check_time_field_id": _required_env("MINGDAO_ATTENDANCE_FIELD_CHECK_TIME", "Check Time field ID"),
+        "check_date_field_id": _required_env("MINGDAO_ATTENDANCE_FIELD_CHECK_DATE", "Check Date field ID"),
         "device_name_field_id": _required_env("MINGDAO_ATTENDANCE_FIELD_DEVICE_NAME", "Device Name field ID"),
         "device_sn_field_id": _required_env("MINGDAO_ATTENDANCE_FIELD_DEVICE_SN", "Device SN field ID"),
         "retry_failed_after_minutes": int(get_config_value("MINGDAO_ATTENDANCE_RETRY_FAILED_AFTER_MINUTES", "60").strip() or "60"),
@@ -148,6 +149,10 @@ def _build_mingdao_payload(session: Session, event: AttendanceEvent, config: dic
                 "value": _format_datetime(event.attendance_time),
             },
             {
+                "id": str(config["check_date_field_id"]),
+                "value": event.attendance_time.strftime("%Y-%m-%d"),
+            },
+            {
                 "id": str(config["device_name_field_id"]),
                 "value": _device_name(session, event.device_sn),
             },
@@ -207,15 +212,52 @@ def create_missing_attendance_sync_records(session: Session, limit: int | None =
 
 def attendance_sync_status_summary() -> dict[str, int]:
     with SessionLocal() as session:
-        rows = session.execute(
-            select(AttendanceMingdaoSync.sync_status, func.count(AttendanceMingdaoSync.id)).group_by(
-                AttendanceMingdaoSync.sync_status
+        row = session.execute(
+            text(
+                """
+                SELECT
+                    SUM(CASE
+                        WHEN ams.sync_status = 'PENDING'
+                         AND EXISTS (
+                            SELECT 1
+                            FROM device_user du
+                            WHERE du.pin = ae.pin
+                              AND COALESCE(du.employee_id, '') <> ''
+                              AND COALESCE(du.employee_record_id, '') <> ''
+                         )
+                        THEN 1 ELSE 0
+                    END) AS pending_ready,
+                    SUM(CASE
+                        WHEN ams.sync_status = 'PENDING'
+                         AND NOT EXISTS (
+                            SELECT 1
+                            FROM device_user du
+                            WHERE du.pin = ae.pin
+                              AND COALESCE(du.employee_id, '') <> ''
+                              AND COALESCE(du.employee_record_id, '') <> ''
+                         )
+                        THEN 1 ELSE 0
+                    END) AS missing_employee_record_id,
+                    SUM(CASE WHEN ams.sync_status = 'SYNCING' THEN 1 ELSE 0 END) AS syncing_count,
+                    SUM(CASE WHEN ams.sync_status = 'SYNCED' THEN 1 ELSE 0 END) AS synced_count,
+                    SUM(CASE WHEN ams.sync_status = 'FAILED' THEN 1 ELSE 0 END) AS failed_count,
+                    COUNT(*) AS total_count
+                FROM attendance_mingdao_sync ams
+                JOIN attendance_event ae ON ae.id = ams.attendance_event_id
+                """
             )
-        ).all()
+        ).mappings().first()
         summary = {status: 0 for status in SYNC_STATUSES}
-        for status, count in rows:
-            summary[str(status)] = int(count)
-        summary["TOTAL"] = sum(summary.values())
+        if row:
+            summary["PENDING"] = int(row["pending_ready"] or 0)
+            summary["MISSING_EMPLOYEE_RECORD_ID"] = int(row["missing_employee_record_id"] or 0)
+            summary["SYNCING"] = int(row["syncing_count"] or 0)
+            summary["SYNCED"] = int(row["synced_count"] or 0)
+            summary["FAILED"] = int(row["failed_count"] or 0)
+            summary["TOTAL"] = int(row["total_count"] or 0)
+        else:
+            summary["MISSING_EMPLOYEE_RECORD_ID"] = 0
+            summary["TOTAL"] = 0
         return summary
 
 
@@ -237,27 +279,41 @@ def sync_pending_attendance_to_mingdao(*, limit: int = DEFAULT_BATCH_SIZE) -> di
         with SessionLocal() as session:
             created_pending = create_missing_attendance_sync_records(session)
             retry_cutoff = datetime.now(UTC) - timedelta(minutes=int(config["retry_failed_after_minutes"]))
-            sync_rows = list(
+            sync_row_ids = list(
                 session.execute(
-                    select(AttendanceMingdaoSync)
-                    .where(
-                        or_(
-                            AttendanceMingdaoSync.sync_status == "PENDING",
-                            and_(
-                                AttendanceMingdaoSync.sync_status == "FAILED",
-                                or_(
-                                    AttendanceMingdaoSync.last_sync_time.is_(None),
-                                    AttendanceMingdaoSync.last_sync_time <= retry_cutoff,
-                                ),
-                            ),
-                        )
-                    )
-                    .order_by(AttendanceMingdaoSync.id.asc())
-                    .limit(limit)
-                )
-                .scalars()
-                .all()
+                    text(
+                        """
+                        SELECT ams.id
+                        FROM attendance_mingdao_sync ams
+                        JOIN attendance_event ae ON ae.id = ams.attendance_event_id
+                        WHERE ams.sync_status = 'PENDING'
+                           OR (
+                              ams.sync_status = 'FAILED'
+                              AND (ams.last_sync_time IS NULL OR ams.last_sync_time <= :retry_cutoff)
+                           )
+                        ORDER BY
+                            CASE
+                                WHEN ams.sync_status = 'PENDING'
+                                 AND EXISTS (
+                                    SELECT 1
+                                    FROM device_user du
+                                    WHERE du.pin = ae.pin
+                                      AND COALESCE(du.employee_id, '') <> ''
+                                      AND COALESCE(du.employee_record_id, '') <> ''
+                                 )
+                                THEN 0
+                                WHEN ams.sync_status = 'FAILED' THEN 1
+                                WHEN ams.sync_status = 'PENDING' THEN 2
+                                ELSE 3
+                            END,
+                            ams.id ASC
+                        LIMIT :limit
+                        """
+                    ),
+                    {"retry_cutoff": retry_cutoff, "limit": limit},
+                ).scalars()
             )
+            sync_rows = [row for row in (session.get(AttendanceMingdaoSync, row_id) for row_id in sync_row_ids) if row]
 
             uploaded = 0
             failed = 0
