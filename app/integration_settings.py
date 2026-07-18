@@ -490,7 +490,7 @@ def attendance_sync_log(limit: int = 50) -> dict[str, object]:
                 FROM attendance_mingdao_sync ams
                 JOIN attendance_event ae ON ae.id = ams.attendance_event_id
                 LEFT JOIN device_user du ON du.pin = ae.pin
-                ORDER BY ams.updated_at DESC, ams.id DESC
+                ORDER BY ae.attendance_time DESC, ams.updated_at DESC, ams.id DESC
                 LIMIT :limit
                 """
             ),
