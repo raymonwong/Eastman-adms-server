@@ -88,7 +88,11 @@ def _attendance_config() -> dict[str, str | bool]:
 
 
 def _format_datetime(value: datetime) -> str:
-    return value.strftime("%Y-%m-%d %H:%M:%S")
+    # Mingdao OpenAPI interprets datetime strings as UTC+8 before the worksheet
+    # displays them in its configured timezone. ADMS attendance_time is the
+    # device/Dubai time, so add 4 hours to keep the displayed Mingdao value at UTC+4.
+    mingdao_display_compensated = value + timedelta(hours=4)
+    return mingdao_display_compensated.strftime("%Y-%m-%d %H:%M:%S")
 
 
 def _extract_row_id(response_json: object) -> str | None:

@@ -365,6 +365,93 @@ def _collect_field_ids(value: object) -> set[str]:
     return field_ids
 
 
+def _collect_error_tokens(value: object) -> list[dict[str, str]]:
+    tokens: list[dict[str, str]] = []
+    if isinstance(value, dict):
+        field_id = value.get("controlId") or value.get("control_id") or value.get("fieldId") or value.get("field_id")
+        field_name = value.get("controlName") or value.get("fieldName") or value.get("name") or value.get("title")
+        message = value.get("error_msg") or value.get("message") or value.get("msg")
+        if field_id or field_name or message:
+            tokens.append(
+                {
+                    "field_id": str(field_id or ""),
+                    "field_name": str(field_name or ""),
+                    "message": str(message or ""),
+                }
+            )
+        for child in value.values():
+            tokens.extend(_collect_error_tokens(child))
+    elif isinstance(value, list):
+        for item in value:
+            tokens.extend(_collect_error_tokens(item))
+    return tokens
+
+
+def _attendance_field_name_by_id() -> dict[str, str]:
+    config = _attendance_config()
+    fields = config.get("configured_fields", {})
+    if not isinstance(fields, dict):
+        return {}
+    return {
+        str(field_id): f"{label} / {zh_label}"
+        for label, zh_label, field_id in (
+            ("Employee Record ID", "员工记录ID字段", fields.get("Employee Record ID")),
+            ("Check Time", "考勤时间字段", fields.get("Check Time")),
+            ("Device Name", "设备名称字段", fields.get("Device Name")),
+            ("Device SN", "设备序列号字段", fields.get("Device SN")),
+        )
+        if field_id
+    }
+
+
+def _mingdao_error_detail(
+    last_error: str | None,
+    response_body: str | None,
+    field_name_by_id: dict[str, str],
+) -> dict[str, object]:
+    details: list[str] = []
+    field_names: list[str] = []
+    if last_error:
+        details.append(last_error)
+    if response_body:
+        try:
+            response_json = json.loads(response_body)
+            tokens = _collect_error_tokens(response_json)
+            if tokens:
+                for token in tokens[:12]:
+                    field_id = token.get("field_id", "")
+                    field_name = token.get("field_name") or field_name_by_id.get(field_id) or field_id
+                    if field_name:
+                        field_names.append(field_name)
+                    if token.get("message"):
+                        details.append(token["message"])
+            response_text = json.dumps(response_json, ensure_ascii=False)
+            for field_id, configured_name in field_name_by_id.items():
+                if field_id in response_text:
+                    field_names.append(configured_name)
+            if isinstance(response_json, dict) and response_json.get("data") is not None:
+                details.append(f"data: {response_json['data']}")
+        except Exception:
+            details.append(response_body[:500])
+    if response_body and not field_names and "controlId" in response_body:
+        field_names.append("Unknown Mingdao required field / 明道返回未包含字段名称")
+
+    def unique(values: list[str]) -> list[str]:
+        seen: set[str] = set()
+        unique_values: list[str] = []
+        for item in values:
+            text_value = str(item)
+            if text_value and text_value not in seen:
+                unique_values.append(text_value)
+                seen.add(text_value)
+        return unique_values
+
+    return {
+        "field_names": unique(field_names),
+        "message": "\n".join(unique(details)),
+    }
+
+
 def _integration_payload(request: Request, *, show_token: bool = False) -> dict[str, object]:
     token = _current_token()
     runtime = get_mingdao_api_runtime_state()
@@ -479,6 +566,7 @@ def attendance_sync_log(limit: int = 50) -> dict[str, object]:
                     ams.mingdao_row_id,
                     ams.retry_count,
                     ams.last_error,
+                    ams.response_body,
                     ams.last_sync_time,
                     ae.device_sn,
                     ae.pin,
@@ -496,7 +584,20 @@ def attendance_sync_log(limit: int = 50) -> dict[str, object]:
             ),
             {"limit": safe_limit},
         ).mappings()
-        return {"items": [dict(row) for row in rows]}
+        field_name_by_id = _attendance_field_name_by_id()
+        items: list[dict[str, object]] = []
+        for row in rows:
+            item = dict(row)
+            error_detail = _mingdao_error_detail(
+                item.get("last_error"),
+                item.get("response_body"),
+                field_name_by_id,
+            )
+            item["error_field_names"] = error_detail["field_names"]
+            item["error_detail"] = error_detail["message"]
+            item.pop("response_body", None)
+            items.append(item)
+        return {"items": items}
 
 
 @router.get("/api/settings/integration/health")

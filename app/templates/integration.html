@@ -698,6 +698,10 @@ HAP-Sign: &lt;Sign&gt;</pre>
       return String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
     }
 
+    function escAttr(value) {
+      return esc(value).replace(/\n/g, '&#10;');
+    }
+
     function byId(id) {
       return document.getElementById(id);
     }
@@ -1147,7 +1151,11 @@ HAP-Sign: &lt;Sign&gt;</pre>
         const status = String(item.sync_status || '-');
         const statusType = status === 'SYNCED' ? 'ok' : status === 'FAILED' ? 'error' : status === 'SYNCING' ? 'warn' : 'warn';
         const employee = [item.employee_id, item.name].filter(Boolean).join(' · ') || '-';
-        const error = item.last_error || (item.employee_record_id ? '-' : 'Missing employee_record_id / 缺少员工记录ID');
+        const fieldNames = Array.isArray(item.error_field_names) ? item.error_field_names.filter(Boolean) : [];
+        const fallbackError = item.last_error || (item.employee_record_id ? '-' : 'Missing employee_record_id / 缺少员工记录ID');
+        const error = fieldNames.length ? fieldNames.slice(0, 3).join(', ') : fallbackError;
+        const moreFields = fieldNames.length > 3 ? ` +${fieldNames.length - 3}` : '';
+        const errorDetail = item.error_detail || fallbackError;
         return `<tr>
           <td class="mono">${esc(item.sync_id || '-')}<br><span class="zh-sub">Event ${esc(item.attendance_event_id || '-')}</span></td>
           <td>${badge(status, statusType)}<br><span class="zh-sub">R${esc(item.retry_count ?? 0)}</span></td>
@@ -1156,7 +1164,7 @@ HAP-Sign: &lt;Sign&gt;</pre>
           <td>${esc(employee)}<br><span class="zh-sub">${esc(item.department || '-')}</span></td>
           <td class="mono">${esc(item.employee_record_id || '-')}</td>
           <td class="mono">${esc(item.mingdao_row_id || '-')}</td>
-          <td>${esc(error)}<br><span class="zh-sub">${esc(formatDubaiTime(item.last_sync_time))}</span></td>
+          <td title="${escAttr(errorDetail)}">${esc(error)}${esc(moreFields)}<br><span class="zh-sub">${esc(formatDubaiTime(item.last_sync_time))}</span></td>
         </tr>`;
       }).join('');
     }
