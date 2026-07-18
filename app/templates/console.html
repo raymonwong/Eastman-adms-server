@@ -11,9 +11,9 @@
       --font-small: 12px;
       --font-label: 11px;
       --space-sm: 8px;
-      --space-md: 10px;
-      --panel-gap: 10px;
-      --panel-padding: 10px;
+      --space-md: 8px;
+      --panel-gap: 8px;
+      --panel-padding: 8px;
       --radius: 8px;
       --bg: #0b0f14;
       --panel: #111821;
@@ -117,7 +117,7 @@
     .console-shell {
       width: 100%;
       max-width: 1780px;
-      padding: 16px 24px 20px;
+      padding: 12px 18px 16px;
     }
 
     .page-head,
@@ -129,7 +129,7 @@
 
     .page-head {
       margin-bottom: var(--panel-gap);
-      padding: 10px 14px;
+      padding: 8px 12px;
     }
 
     .page-title {
@@ -156,15 +156,15 @@
     }
 
     .panel-header {
-      min-height: 32px;
+      min-height: 28px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: var(--space-sm);
-      padding: 6px var(--panel-padding);
+      padding: 4px var(--panel-padding);
       border-bottom: 1px solid var(--line-soft);
       color: var(--blue);
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 900;
     }
 
@@ -209,14 +209,14 @@
     }
 
     .metric {
-      min-height: 58px;
+      min-height: 44px;
       display: grid;
       grid-template-rows: auto 1fr;
       gap: 6px;
       background: var(--card);
       border: 1px solid rgba(255, 255, 255, 0.075);
       border-radius: var(--radius);
-      padding: 10px;
+      padding: 8px;
     }
 
     .metric-head {
@@ -227,19 +227,19 @@
     }
 
     .metric-icon {
-      width: 34px;
-      height: 34px;
+      width: 28px;
+      height: 28px;
       display: grid;
       place-items: center;
-      border-radius: 9px;
+      border-radius: 8px;
       background: rgba(143, 179, 217, 0.1);
       color: var(--blue);
       flex: 0 0 auto;
     }
 
     .metric-icon .icon {
-      width: 21px;
-      height: 21px;
+      width: 17px;
+      height: 17px;
     }
 
     .metric-label,
@@ -251,7 +251,7 @@
 
     .metric-title {
       color: #f2f7ff;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 850;
       line-height: 1.25;
     }
@@ -259,47 +259,47 @@
     .metric-value {
       align-self: end;
       color: #f2f7ff;
-      font-size: 22px;
+      font-size: 18px;
       line-height: 1.05;
       font-weight: 950;
       overflow-wrap: anywhere;
     }
 
     .metric-value.small {
-      font-size: 15px;
-      line-height: 1.25;
+      font-size: 13px;
+      line-height: 1.15;
     }
 
     .server-metric {
-      min-height: 44px;
+      min-height: 38px;
       display: grid;
       grid-template-columns: auto minmax(0, 1fr) auto;
       align-items: center;
       gap: 8px;
-      padding: 7px 10px;
+      padding: 5px 8px;
     }
 
     .server-metric .metric-icon {
-      width: 26px;
-      height: 26px;
+      width: 24px;
+      height: 24px;
     }
 
     .server-metric .metric-icon .icon {
-      width: 16px;
-      height: 16px;
+      width: 15px;
+      height: 15px;
     }
 
     .server-metric .metric-value {
       align-self: center;
       justify-self: end;
       text-align: right;
-      font-size: 14px;
-      line-height: 1.2;
+      font-size: 13px;
+      line-height: 1.1;
       white-space: nowrap;
     }
 
     .server-metric .metric-title {
-      font-size: 12px;
+      font-size: 11px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -307,64 +307,69 @@
 
     .server-metric .metric-label-inline {
       color: #8ea1b8;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       margin-left: 4px;
     }
 
     .dashboard-metric {
-      min-height: 48px;
+      min-height: 40px;
       display: grid;
       grid-template-columns: auto minmax(0, 1fr) auto;
       align-items: center;
       gap: 8px;
-      padding: 8px 10px;
+      padding: 6px 8px;
     }
 
     .dashboard-metric .metric-icon {
-      width: 27px;
-      height: 27px;
+      width: 24px;
+      height: 24px;
     }
 
     .dashboard-metric .metric-icon .icon {
-      width: 16px;
-      height: 16px;
+      width: 15px;
+      height: 15px;
     }
 
     .dashboard-metric .metric-title {
-      font-size: 12px;
+      font-size: 11px;
+      line-height: 1.1;
+    }
+
+    .dashboard-metric .metric-label {
+      line-height: 1.1;
     }
 
     .dashboard-metric .metric-value {
       align-self: center;
       justify-self: end;
       text-align: right;
-      font-size: 18px;
+      font-size: 17px;
       line-height: 1;
       white-space: nowrap;
     }
 
     .exception-metric {
-      min-height: 48px;
+      min-height: 40px;
       display: grid;
       grid-template-columns: auto minmax(112px, 1fr) auto;
       align-items: center;
       gap: 8px;
-      padding: 8px 10px;
+      padding: 6px 8px;
     }
 
     .exception-metric .metric-icon {
-      width: 27px;
-      height: 27px;
+      width: 24px;
+      height: 24px;
     }
 
     .exception-metric .metric-icon .icon {
-      width: 16px;
-      height: 16px;
+      width: 15px;
+      height: 15px;
     }
 
     .exception-metric .metric-title {
-      font-size: 12px;
+      font-size: 11px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -372,7 +377,7 @@
 
     .exception-metric .metric-label-inline {
       color: #8ea1b8;
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
       margin-left: 4px;
     }
@@ -381,7 +386,7 @@
       align-self: center;
       justify-self: end;
       text-align: right;
-      font-size: 14px;
+      font-size: 13px;
       line-height: 1.15;
       white-space: nowrap;
       max-width: 165px;
@@ -407,8 +412,8 @@
     .device-filter-row {
       display: flex;
       align-items: end;
-      gap: 16px;
-      min-height: 46px;
+      gap: 10px;
+      min-height: 36px;
     }
 
     .filter-box {
@@ -417,7 +422,7 @@
 
     .filter-select,
     .btn-console {
-      min-height: 32px;
+      min-height: 28px;
       border-radius: 7px;
       font-size: var(--font-small);
     }
@@ -429,7 +434,7 @@
     }
 
     .btn-console {
-      padding: 4px 10px;
+      padding: 3px 9px;
       white-space: nowrap;
     }
 
@@ -660,7 +665,7 @@
       .server-grid, .stats-grid, .exception-grid { grid-template-columns: 1fr; }
       .device-filter-row { align-items: stretch; flex-direction: column; }
       .filter-box, .btn-console { width: 100%; }
-      .metric { min-height: 92px; }
+      .metric { min-height: 58px; }
       .event-toolbar { grid-template-columns: 1fr; }
       .summary-toolbar { grid-template-columns: 1fr; }
     }
