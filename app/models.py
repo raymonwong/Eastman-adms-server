@@ -42,6 +42,7 @@ class RawRequest(Base):
     __table_args__ = (
         Index("ix_raw_request_device_sn", "device_sn"),
         Index("ix_raw_request_received_at", "received_at"),
+        Index("ix_raw_request_path_received_at", "request_path", "received_at"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)

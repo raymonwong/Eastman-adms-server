@@ -34,6 +34,7 @@ DEFAULT_TRANS_INTERVAL = "1"
 DEFAULT_TRANS_TIMES = "00:00"
 DEFAULT_TRANS_FLAG = "TransData\tAttLog\tOpLog\tEnrollUser\tChgUser\tEnrollFP\tChgFP\tFACE\tUserPic"
 DEFAULT_PUSH_OPTIONS = "FingerFunOn,FaceFunOn,UserPicURLFunOn"
+HEARTBEAT_RAW_REQUEST_RETENTION_DAYS = 3
 OPERATION_NAME_MAP = {
     "82": "Modify Cloud Server Address",
 }
@@ -258,6 +259,21 @@ def _mark_raw_request_parsed(raw_request_id: int) -> None:
             return
         raw_request.parsed = True
         session.commit()
+
+
+def _cleanup_old_heartbeat_raw_requests(now: datetime | None = None) -> int:
+    cutoff = (now or datetime.now(UTC)) - timedelta(days=HEARTBEAT_RAW_REQUEST_RETENTION_DAYS)
+    with SessionLocal() as session:
+        deleted_count = (
+            session.query(RawRequest)
+            .filter(
+                RawRequest.request_path == "/iclock/getrequest",
+                RawRequest.received_at < cutoff,
+            )
+            .delete(synchronize_session=False)
+        )
+        session.commit()
+        return int(deleted_count or 0)
 
 
 def _get_device_sync_states(device_sn: str | None) -> dict[str, str | None]:
@@ -1097,6 +1113,26 @@ async def iclock_getrequest(request: Request) -> PlainTextResponse:
     response_status_code = 200
     body = await request.body()
     context = _save_raw_request(request, body, response_body, response_status_code)
+    try:
+        deleted_count = _cleanup_old_heartbeat_raw_requests(context["received_at"])
+        if deleted_count:
+            _debug_log(
+                "HEARTBEAT CLEANUP",
+                {
+                    "Device": context["device_sn"] or "",
+                    "Deleted Raw Requests": deleted_count,
+                    "Retention Days": HEARTBEAT_RAW_REQUEST_RETENTION_DAYS,
+                },
+            )
+    except Exception as exc:
+        _debug_log(
+            "ERROR",
+            {
+                "Device": context["device_sn"] or "",
+                "Module": "HEARTBEAT CLEANUP",
+                "Reason": exc,
+            },
+        )
     try:
         _upsert_device(context["device_sn"], context["client_ip"], context["received_at"])
     except Exception as exc:

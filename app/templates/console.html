@@ -1186,7 +1186,8 @@
         <span class="zh-sub">/ 最后心跳</span>
         · Device: ${esc(summary.last_device || '-')} <span class="zh-sub">/ 设备</span>
         · Client IP: <span class="mono">${esc(summary.last_client_ip || '-')}</span>
-        · Total heartbeat rows: <span class="mono">${esc(summary.count ?? 0)}</span>
+        · Heartbeat rows kept 3d: <span class="mono">${esc(summary.count ?? 0)}</span>
+        <span class="zh-sub">/ 近3天保留心跳数</span>
       `;
     }
 

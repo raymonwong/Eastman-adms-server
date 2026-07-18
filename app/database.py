@@ -96,6 +96,7 @@ def ensure_dt003_columns(engine: Engine) -> None:
         "ALTER TABLE raw_request ADD COLUMN parsed BOOL NOT NULL DEFAULT 0",
         "ALTER TABLE raw_request ADD COLUMN request_hash VARCHAR(64) NULL",
         "CREATE INDEX ix_raw_request_request_hash ON raw_request (request_hash)",
+        "CREATE INDEX ix_raw_request_path_received_at ON raw_request (request_path, received_at)",
         """
         CREATE TABLE IF NOT EXISTS device_event_log (
             id INT NOT NULL AUTO_INCREMENT,
