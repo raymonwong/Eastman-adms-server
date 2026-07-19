@@ -16,6 +16,7 @@ templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "tem
 
 DEVICE_ROLE_MAP = {
     "NORMAL": {"privilege": "0", "label": "Normal User / 普通用户"},
+    "ENROLL_ADMIN": {"privilege": "2", "label": "Enroll Admin / 登记管理员"},
     "ADMIN": {"privilege": "14", "label": "Administrator / 管理员"},
 }
 
@@ -73,6 +74,7 @@ class AdminDeviceResponse(BaseModel):
     status: str | None
     last_online: datetime | None
     admin_count: int
+    enroll_admin_count: int
     pending_count: int
     synced_count: int
     failed_count: int
@@ -161,6 +163,8 @@ def _role_code_for_privilege(privilege: str | None) -> str:
     value = str(privilege or "0").strip()
     if value == "14":
         return "ADMIN"
+    if value == "2":
+        return "ENROLL_ADMIN"
     if value == "0":
         return "NORMAL"
     return "PRI"
@@ -278,7 +282,7 @@ def api_list_role_devices() -> list[DeviceOptionResponse]:
 def api_set_device_role(user_id: int, payload: DeviceRoleRequest) -> DeviceRoleResponse:
     role_code = (payload.role_code or "").strip().upper()
     if role_code not in DEVICE_ROLE_MAP:
-        raise HTTPException(status_code=422, detail="Unsupported role_code. Use NORMAL or ADMIN.")
+        raise HTTPException(status_code=422, detail="Unsupported role_code. Use NORMAL, ENROLL_ADMIN, or ADMIN.")
 
     device_sns = sorted({str(device_sn or "").strip() for device_sn in payload.device_sns if str(device_sn or "").strip()})
     if not device_sns:
@@ -347,6 +351,11 @@ def api_list_admin_devices() -> list[AdminDeviceResponse]:
                 for record in sync_records
                 if (record.role_name or "").upper() == "ADMIN" or str(record.target_privilege or "").strip() == "14"
             )
+            enroll_admin_count = sum(
+                1
+                for record in sync_records
+                if (record.role_name or "").upper() == "ENROLL_ADMIN" or str(record.target_privilege or "").strip() == "2"
+            )
             responses.append(
                 AdminDeviceResponse(
                     device_sn=device.device_sn,
@@ -355,6 +364,7 @@ def api_list_admin_devices() -> list[AdminDeviceResponse]:
                     status=device.status,
                     last_online=device.last_online,
                     admin_count=admin_count,
+                    enroll_admin_count=enroll_admin_count,
                     pending_count=sum(1 for record in sync_records if (record.sync_status or "").upper() == "PENDING"),
                     synced_count=sum(1 for record in sync_records if (record.sync_status or "").upper() == "SYNCED"),
                     failed_count=sum(1 for record in sync_records if (record.sync_status or "").upper() == "FAILED"),
@@ -437,7 +447,7 @@ def api_list_device_role_users(device_sn: str, q: str = Query(default="")) -> li
 def api_set_device_role_user(device_sn: str, user_id: int, payload: DeviceRoleRequest) -> DeviceRoleResponse:
     role_code = (payload.role_code or "").strip().upper()
     if role_code not in DEVICE_ROLE_MAP:
-        raise HTTPException(status_code=422, detail="Unsupported role_code. Use NORMAL or ADMIN.")
+        raise HTTPException(status_code=422, detail="Unsupported role_code. Use NORMAL, ENROLL_ADMIN, or ADMIN.")
 
     with SessionLocal() as session:
         device = (

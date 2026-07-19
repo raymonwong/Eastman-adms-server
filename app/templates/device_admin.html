@@ -265,7 +265,21 @@
     }
 
     .role-select {
-      min-width: 150px;
+      min-width: 132px;
+      max-width: 160px;
+      font-size: 12px;
+    }
+
+    .role-action {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .role-action .btn {
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 800;
     }
 
     .state {
@@ -317,16 +331,11 @@
     <div class="topbar">
       <div>
         <h1 class="title">Attendance Device User Permission Management <span class="zh">/ 考勤机用户权限管理</span></h1>
-        <div class="subtitle">Select an attendance device, then set Mingdao users as device administrators. <span class="zh">/ 先选设备，再把明道云用户设置为该设备管理员。</span></div>
+        <div class="subtitle">Select an attendance device, then assign Mingdao users as Normal, Enroll Admin, or Admin on that device. <span class="zh">/ 先选设备，再把明道云用户设置为普通用户、登记管理员或管理员。</span></div>
       </div>
       <button id="refreshBtn" type="button" class="btn btn-outline-primary btn-sm">
         <i data-lucide="refresh-cw" class="icon"></i> Refresh <span class="zh">/ 刷新</span>
       </button>
-    </div>
-
-    <div class="embed-note">
-      This page is designed for Mingdao custom links and embedded opening. Role changes are queued; the device applies them on the next GETREQUEST.
-      <span class="zh">/ 本页面适合明道云自定义链接或嵌入打开。角色变更会进入队列，设备下次 GETREQUEST 时执行。</span>
     </div>
 
     <div class="layout">
@@ -356,6 +365,10 @@
               <div id="adminCount" class="summary-value">-</div>
             </div>
             <div class="summary-card">
+              <div class="summary-label">Enroll Admins <span class="zh">/ 登记管理员</span></div>
+              <div id="enrollAdminCount" class="summary-value">-</div>
+            </div>
+            <div class="summary-card">
               <div class="summary-label">Pending <span class="zh">/ 待同步</span></div>
               <div id="pendingCount" class="summary-value">-</div>
             </div>
@@ -374,6 +387,7 @@
             <select id="roleFilter" class="form-select">
               <option value="all">All Roles / 全部角色</option>
               <option value="ADMIN">Admins / 管理员</option>
+              <option value="ENROLL_ADMIN">Enroll Admins / 登记管理员</option>
               <option value="NORMAL">Normal / 普通用户</option>
               <option value="PENDING">Pending / 待同步</option>
               <option value="FAILED">Failed / 失败</option>
@@ -465,6 +479,7 @@
       if (!device) return;
       document.getElementById('selectedDeviceLabel').textContent = deviceLabel(device);
       document.getElementById('adminCount').textContent = device.admin_count || 0;
+      document.getElementById('enrollAdminCount').textContent = device.enroll_admin_count || 0;
       document.getElementById('pendingCount').textContent = device.pending_count || 0;
       document.getElementById('syncedCount').textContent = device.synced_count || 0;
       document.getElementById('failedCount').textContent = device.failed_count || 0;
@@ -494,7 +509,11 @@
     }
 
     function roleRank(user) {
-      return String(user.role_code || '').toUpperCase() === 'ADMIN' ? 0 : 1;
+      const roleCode = String(user.role_code || '').toUpperCase();
+      if (roleCode === 'ADMIN') return 0;
+      if (roleCode === 'ENROLL_ADMIN') return 1;
+      if (roleCode === 'NORMAL') return 2;
+      return 3;
     }
 
     function compareUsers(a, b) {
@@ -524,6 +543,9 @@
     function roleBadge(user) {
       if (user.role_code === 'ADMIN') {
         return '<span class="pill green">ADMIN / 管理员</span>';
+      }
+      if (user.role_code === 'ENROLL_ADMIN') {
+        return '<span class="pill orange" title="Pri=2. Detailed permissions are configured on the device. / Pri=2，细化权限在设备本机配置。">ENROLL ADMIN / 登记管理员</span>';
       }
       if (user.role_code === 'NORMAL') {
         return '<span class="pill blue">NORMAL / 普通用户</span>';
@@ -556,7 +578,6 @@
                 <th>PIN / 打卡机编号</th>
                 <th>Role / 角色</th>
                 <th>Sync / 同步</th>
-                <th>Last Sync / 最后同步</th>
                 <th>Action / 操作</th>
               </tr>
             </thead>
@@ -569,8 +590,7 @@
     }
 
     function userRow(user) {
-      const nextRole = user.role_code === 'ADMIN' ? 'NORMAL' : 'ADMIN';
-      const nextLabel = user.role_code === 'ADMIN' ? 'Set Normal / 恢复普通' : 'Set Admin / 设为管理员';
+      const roleCode = String(user.role_code || 'NORMAL').toUpperCase();
       return `
         <tr>
           <td><div class="user-name">${esc(user.name || '-')}</div></td>
@@ -578,11 +598,17 @@
           <td class="mono">${esc(user.pin || '-')}</td>
           <td>${roleBadge(user)}</td>
           <td>${syncBadge(user)}</td>
-          <td class="mono">${esc(formatTime(user.last_sync_time))}</td>
           <td>
-            <button class="btn btn-sm ${nextRole === 'ADMIN' ? 'btn-primary' : 'btn-outline-secondary'}" data-user-id="${esc(user.user_id)}" data-role-code="${esc(nextRole)}">
-              ${nextLabel}
-            </button>
+            <div class="role-action">
+              <select class="form-select form-select-sm role-select" data-role-select-for="${esc(user.user_id)}">
+                <option value="NORMAL" ${roleCode === 'NORMAL' ? 'selected' : ''}>Normal / 普通</option>
+                <option value="ENROLL_ADMIN" ${roleCode === 'ENROLL_ADMIN' ? 'selected' : ''}>Enroll Admin / 登记</option>
+                <option value="ADMIN" ${roleCode === 'ADMIN' ? 'selected' : ''}>Admin / 管理员</option>
+              </select>
+              <button class="btn btn-sm btn-primary" data-user-id="${esc(user.user_id)}">
+                Apply / 应用
+              </button>
+            </div>
           </td>
         </tr>
       `;
@@ -617,9 +643,12 @@
       selectDevice(card.dataset.deviceSn);
     });
     document.getElementById('usersArea').addEventListener('click', function (event) {
-      const button = event.target.closest('[data-user-id][data-role-code]');
+      const button = event.target.closest('[data-user-id]');
       if (!button) return;
-      setUserRole(button.dataset.userId, button.dataset.roleCode, button);
+      const select = Array.from(document.querySelectorAll('[data-role-select-for]')).find(function (item) {
+        return String(item.dataset.roleSelectFor) === String(button.dataset.userId);
+      });
+      setUserRole(button.dataset.userId, select ? select.value : 'NORMAL', button);
     });
     document.getElementById('reloadUsersBtn').addEventListener('click', loadDeviceUsers);
     document.getElementById('roleFilter').addEventListener('change', renderUsers);

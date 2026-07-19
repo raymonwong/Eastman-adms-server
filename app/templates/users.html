@@ -691,8 +691,8 @@
             <div class="field-label">Role <span class="zh-sub">/ 角色</span></div>
             <select id="roleCodeInput" class="form-select">
               <option value="ADMIN">Administrator / 管理员 (Pri=14)</option>
+              <option value="ENROLL_ADMIN">Enroll Admin / 登记管理员 (Pri=2)</option>
               <option value="NORMAL">Normal User / 普通用户 (Pri=0)</option>
-              <option value="FINGER_ADMIN" disabled>Finger Admin / 指纹管理员（后续验证）</option>
             </select>
           </div>
           <div>
@@ -895,6 +895,7 @@
     function privilegeRoleName(privilege) {
       const value = String(privilege ?? '').trim();
       if (value === '14') return 'ADMIN';
+      if (value === '2') return 'ENROLL_ADMIN';
       if (value === '0' || value === '') return 'NORMAL';
       return 'PRI';
     }
