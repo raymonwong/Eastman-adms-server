@@ -172,6 +172,7 @@
     .pill.orange { color: var(--orange); border-color: rgba(217, 119, 6, .28); background: #fff7ed; }
     .pill.red { color: var(--red); border-color: rgba(220, 38, 38, .25); background: #fef2f2; }
     .pill.blue { color: var(--blue); border-color: rgba(37, 99, 235, .22); background: #eff6ff; }
+    .pill.purple { color: #7c3aed; border-color: rgba(124, 58, 237, .24); background: #f5f3ff; }
 
     .toolbar {
       display: grid;
@@ -247,6 +248,7 @@
     th,
     td {
       padding: 8px 10px !important;
+      text-align: left;
       vertical-align: middle;
     }
 
@@ -542,7 +544,7 @@
 
     function roleBadge(user) {
       if (user.role_code === 'ADMIN') {
-        return '<span class="pill green">ADMIN / 管理员</span>';
+        return '<span class="pill purple">ADMIN / 管理员</span>';
       }
       if (user.role_code === 'ENROLL_ADMIN') {
         return '<span class="pill orange" title="Pri=2. Detailed permissions are configured on the device. / Pri=2，细化权限在设备本机配置。">ENROLL ADMIN / 登记管理员</span>';
