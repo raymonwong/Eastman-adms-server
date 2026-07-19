@@ -13,6 +13,7 @@ from app.integration_settings import router as integration_settings_router
 from app.mingdao_attendance import attendance_auto_sync_interval_seconds, sync_pending_attendance_to_mingdao
 from app.mingdao_users import router as mingdao_users_router
 from app.user_console import router as user_console_router
+from app.user_reconciliation import run_due_user_reconciliation, user_reconciliation_check_interval_seconds
 from app.settings import Settings
 
 settings = Settings.from_env()
@@ -38,6 +39,23 @@ async def _attendance_sync_loop() -> None:
         await asyncio.sleep(attendance_auto_sync_interval_seconds())
 
 
+async def _user_reconciliation_loop() -> None:
+    await asyncio.sleep(user_reconciliation_check_interval_seconds())
+    while True:
+        try:
+            result = await asyncio.to_thread(run_due_user_reconciliation)
+            if result:
+                print(
+                    "User Reconciliation",
+                    f"sync_records={result.get('sync_records', 0)}",
+                    f"last_run_at={result.get('last_run_at', '-')}",
+                    flush=True,
+                )
+        except Exception as exc:
+            print(f"User Reconciliation Error: {exc}", flush=True)
+        await asyncio.sleep(user_reconciliation_check_interval_seconds())
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     # Fail fast during startup if MySQL is unavailable, then prepare DT002 tables.
@@ -49,12 +67,16 @@ async def lifespan(_: FastAPI):
     print("Tables Ready", flush=True)
     print("========================================", flush=True)
     attendance_sync_task = asyncio.create_task(_attendance_sync_loop())
+    user_reconciliation_task = asyncio.create_task(_user_reconciliation_loop())
     try:
         yield
     finally:
         attendance_sync_task.cancel()
+        user_reconciliation_task.cancel()
         with suppress(asyncio.CancelledError):
             await attendance_sync_task
+        with suppress(asyncio.CancelledError):
+            await user_reconciliation_task
 
 
 app = FastAPI(title=settings.app_name, version="0.0.2", lifespan=lifespan)

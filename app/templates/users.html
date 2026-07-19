@@ -218,6 +218,66 @@
       font-weight: 900;
     }
 
+    .overview-tools {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(420px, 0.8fr);
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 8px;
+    }
+
+    .reconcile-card {
+      display: grid;
+      grid-template-columns: auto 120px 110px 92px 96px 95px;
+      gap: 7px;
+      align-items: end;
+      padding: 8px 10px;
+      border: 1px solid rgba(143, 179, 217, 0.16);
+      border-radius: var(--radius);
+      background: rgba(143, 179, 217, 0.055);
+    }
+
+    .reconcile-title {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--blue);
+      font-size: 11px;
+      font-weight: 900;
+      min-width: 0;
+    }
+
+    .reconcile-help {
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .reconcile-status {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.25;
+    }
+
+    .reconcile-status strong {
+      color: var(--text);
+    }
+
+    .reconcile-card .btn,
+    .reconcile-card .form-select,
+    .reconcile-card .form-control {
+      min-height: 30px;
+      padding-top: 4px;
+      padding-bottom: 4px;
+    }
+
     .summary-grid {
       display: grid;
       grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -592,6 +652,7 @@
 
     @media (max-width: 1300px) {
       .summary-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .overview-tools { grid-template-columns: 1fr; }
     }
 
     @media (max-width: 900px) {
@@ -599,6 +660,7 @@
       .sidebar { position: static; height: auto; display: flex; overflow-x: auto; gap: 8px; }
       .brand, .sidebar-version { display: none; }
       .toolbar, .summary-grid { grid-template-columns: 1fr; }
+      .reconcile-card { grid-template-columns: 1fr; }
       .shell { padding: 12px; }
     }
   </style>
@@ -636,22 +698,67 @@
         </div>
         <div class="panel-body">
           <div id="summaryGrid" class="summary-grid"></div>
-          <div class="toolbar">
-            <div>
-              <div class="field-label">Search <span class="zh-sub">/ 搜索</span></div>
-              <input id="searchInput" class="form-control" placeholder="Employee ID / Record ID / PIN / Name / Department 搜索工号 / 记录ID / PIN / 姓名 / 部门">
+          <div class="overview-tools">
+            <div class="toolbar">
+              <div>
+                <div class="field-label">Search <span class="zh-sub">/ 搜索</span></div>
+                <input id="searchInput" class="form-control" placeholder="Employee ID / Record ID / PIN / Name / Department 搜索工号 / 记录ID / PIN / 姓名 / 部门">
+              </div>
+              <div>
+                <div class="field-label">Status <span class="zh-sub">/ 状态</span></div>
+                <select id="statusFilter" class="form-select">
+                  <option value="all">All / 全部</option>
+                  <option value="enabled">Enabled / 启用</option>
+                  <option value="disabled">Disabled / 停用</option>
+                </select>
+              </div>
+              <div>
+                <div class="field-label">Grouping <span class="zh-sub">/ 分组</span></div>
+                <div class="muted">GM first, then by Department <span class="zh-sub">/ GM 优先，再按部门分组</span></div>
+              </div>
             </div>
-            <div>
-              <div class="field-label">Status <span class="zh-sub">/ 状态</span></div>
-              <select id="statusFilter" class="form-select">
-                <option value="all">All / 全部</option>
-                <option value="enabled">Enabled / 启用</option>
-                <option value="disabled">Disabled / 停用</option>
-              </select>
-            </div>
-            <div>
-              <div class="field-label">Grouping <span class="zh-sub">/ 分组</span></div>
-              <div class="muted">Grouped by Department <span class="zh-sub">/ 按部门分组</span></div>
+            <div class="reconcile-card">
+              <div>
+                <div class="reconcile-title"><i data-lucide="calendar-sync" class="icon"></i> User Reconciliation <span class="zh-sub">/ 用户兜底恢复</span></div>
+                <div class="reconcile-help">Queue full USER sync to attendance devices. <span class="zh-sub">定时把用户重新加入待下发队列。</span></div>
+              </div>
+              <div>
+                <div class="field-label">Status <span class="zh-sub">/ 状态</span></div>
+                <select id="reconcileEnabled" class="form-select">
+                  <option value="true">Enabled / 启用</option>
+                  <option value="false">Disabled / 停用</option>
+                </select>
+              </div>
+              <div>
+                <div class="field-label">Frequency <span class="zh-sub">/ 频率</span></div>
+                <select id="reconcileFrequency" class="form-select">
+                  <option value="daily">Daily / 每天</option>
+                  <option value="weekly">Weekly / 每周</option>
+                </select>
+              </div>
+              <div>
+                <div class="field-label">Weekday <span class="zh-sub">/ 星期</span></div>
+                <select id="reconcileWeekday" class="form-select">
+                  <option value="0">Mon / 周一</option>
+                  <option value="1">Tue / 周二</option>
+                  <option value="2">Wed / 周三</option>
+                  <option value="3">Thu / 周四</option>
+                  <option value="4">Fri / 周五</option>
+                  <option value="5">Sat / 周六</option>
+                  <option value="6">Sun / 周日</option>
+                </select>
+              </div>
+              <div>
+                <div class="field-label">Time <span class="zh-sub">/ 时间</span></div>
+                <input id="reconcileTime" class="form-control" type="time" min="00:00" max="06:00" step="60">
+              </div>
+              <button id="saveReconcileBtn" type="button" class="btn btn-outline-info btn-sm">Save <span class="zh-sub">/ 保存</span></button>
+              <div class="reconcile-status">
+                <span>Dubai Time <span class="zh-sub">/ 迪拜时间</span>: <strong>00:00-06:00</strong></span>
+                <span>Next <span class="zh-sub">/ 下次</span>: <strong id="reconcileNext">-</strong></span>
+                <span>Last Sync <span class="zh-sub">/ 最新同步</span>: <strong id="reconcileLast">-</strong></span>
+                <span>Result <span class="zh-sub">/ 结果</span>: <strong id="reconcileResult">-</strong></span>
+              </div>
             </div>
           </div>
           <div class="sync-legend">
@@ -720,6 +827,7 @@
     let users = [];
     let devices = [];
     let selectedRoleUser = null;
+    let reconciliationConfig = null;
 
     function esc(value) {
       return String(value ?? '').replace(/[&<>"']/g, function (char) {
@@ -728,6 +836,15 @@
     }
 
     function formatTime(value) {
+      return value ? String(value).replace('T', ' ').slice(0, 19) : '-';
+    }
+
+    function numericPart(value) {
+      const match = String(value || '').match(/\d+/);
+      return match ? Number(match[0]) : Number.MAX_SAFE_INTEGER;
+    }
+
+    function formatConfigTime(value) {
       return value ? String(value).replace('T', ' ').slice(0, 19) : '-';
     }
 
@@ -750,6 +867,25 @@
           return String(value || '').toLowerCase().includes(keyword);
         });
       });
+    }
+
+    function departmentRank(name) {
+      const normalized = String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      return normalized.includes('gm') ? 0 : 1;
+    }
+
+    function compareDepartment(left, right) {
+      const rankDiff = departmentRank(left) - departmentRank(right);
+      if (rankDiff !== 0) return rankDiff;
+      return String(left || '').localeCompare(String(right || ''));
+    }
+
+    function compareUserByEmployeeId(left, right) {
+      const employeeDiff = numericPart(left.employee_id) - numericPart(right.employee_id);
+      if (employeeDiff !== 0) return employeeDiff;
+      const pinDiff = numericPart(left.pin) - numericPart(right.pin);
+      if (pinDiff !== 0) return pinDiff;
+      return String(left.employee_id || '').localeCompare(String(right.employee_id || ''));
     }
 
     function renderSummary(rows) {
@@ -798,10 +934,11 @@
       });
 
       const sortedGroups = Array.from(groups.entries()).sort(function (left, right) {
-        return left[0].localeCompare(right[0]);
+        return compareDepartment(left[0], right[0]);
       });
 
       document.getElementById('usersContainer').innerHTML = sortedGroups.map(function ([department, groupRows]) {
+        const sortedRows = groupRows.slice().sort(compareUserByEmployeeId);
         return `
           <section class="department-group">
             <div class="department-header">
@@ -839,7 +976,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  ${groupRows.map(userRow).join('')}
+                  ${sortedRows.map(userRow).join('')}
                 </tbody>
               </table>
             </div>
@@ -926,6 +1063,62 @@
       showToast.timer = window.setTimeout(function () {
         toast.style.display = 'none';
       }, 4500);
+    }
+
+    function renderReconciliationConfig(config) {
+      reconciliationConfig = config;
+      document.getElementById('reconcileEnabled').value = String(Boolean(config.enabled));
+      document.getElementById('reconcileFrequency').value = config.frequency || 'daily';
+      document.getElementById('reconcileWeekday').value = String(config.weekday ?? 0);
+      document.getElementById('reconcileTime').value = config.time || '03:00';
+      document.getElementById('reconcileWeekday').disabled = document.getElementById('reconcileFrequency').value !== 'weekly';
+      document.getElementById('reconcileNext').textContent = formatConfigTime(config.next_run_at);
+      document.getElementById('reconcileLast').textContent = formatConfigTime(config.last_run_at);
+      document.getElementById('reconcileResult').textContent = `${config.last_result || '-'} · ${config.last_sync_records || 0} records`;
+    }
+
+    async function loadReconciliationConfig() {
+      try {
+        const response = await fetch('/api/adms-users/reconciliation/config', {cache: 'no-store'});
+        if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+        renderReconciliationConfig(await response.json());
+      } catch (error) {
+        document.getElementById('reconcileResult').textContent = `Load failed: ${error.message || error}`;
+      }
+    }
+
+    async function saveReconciliationConfig() {
+      const timeValue = document.getElementById('reconcileTime').value || '03:00';
+      const [hourText, minuteText] = timeValue.split(':');
+      const hour = Number(hourText);
+      const minute = Number(minuteText);
+      if (hour < 0 || hour > 6 || minute < 0 || minute > 59 || (hour === 6 && minute !== 0)) {
+        showToast('Time must be between 00:00 and 06:00 Dubai time. / 时间必须在迪拜时间 00:00-06:00 范围内。', 'error');
+        return;
+      }
+
+      const button = document.getElementById('saveReconcileBtn');
+      button.disabled = true;
+      try {
+        const response = await fetch('/api/adms-users/reconciliation/config', {
+          method: 'PUT',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            enabled: document.getElementById('reconcileEnabled').value === 'true',
+            frequency: document.getElementById('reconcileFrequency').value,
+            weekday: Number(document.getElementById('reconcileWeekday').value || 0),
+            time: timeValue,
+          }),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.detail || `${response.status} ${response.statusText}`);
+        renderReconciliationConfig(result);
+        showToast('User reconciliation schedule saved. / 用户兜底恢复排程已保存。', 'success');
+      } catch (error) {
+        showToast(`Save failed: ${error.message || error} / 保存失败`, 'error');
+      } finally {
+        button.disabled = false;
+      }
     }
 
     async function loadDevices() {
@@ -1049,6 +1242,10 @@
     document.getElementById('refreshBtn').addEventListener('click', loadUsers);
     document.getElementById('searchInput').addEventListener('input', renderUsers);
     document.getElementById('statusFilter').addEventListener('change', renderUsers);
+    document.getElementById('reconcileFrequency').addEventListener('change', function () {
+      document.getElementById('reconcileWeekday').disabled = this.value !== 'weekly';
+    });
+    document.getElementById('saveReconcileBtn').addEventListener('click', saveReconciliationConfig);
     document.getElementById('usersContainer').addEventListener('click', function (event) {
       const button = event.target.closest('[data-role-user-id]');
       if (!button || button.disabled) return;
@@ -1076,6 +1273,7 @@
     });
     document.addEventListener('DOMContentLoaded', function () {
       loadUsers();
+      loadReconciliationConfig();
       if (window.lucide) window.lucide.createIcons();
     });
   </script>

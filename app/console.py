@@ -191,11 +191,13 @@ def _event(
     device: Device | None,
     device_sn: str | None,
     details: dict[str, object],
+    *,
+    event_time_source: str = "utc",
 ) -> dict[str, object]:
     return {
         "type": event_type,
-        "time": _short_time(event_time),
-        "time_full": _format_dubai(event_time),
+        "time": _short_time(event_time, source=event_time_source),
+        "time_full": _format_dubai(event_time, source=event_time_source),
         "device_name": _device_name(device, device_sn),
         "device_display": _device_display(device, device_sn),
         "device_sn": device_sn or "",
@@ -415,6 +417,7 @@ def _events(session, devices: list[Device]) -> list[dict[str, object]]:
                 device,
                 device.device_sn,
                 {"Status": status, "Last Heartbeat": _format_dubai(last_heartbeat)},
+                event_time_source="utc" if last_heartbeat else "local",
             )
         )
 
@@ -499,6 +502,7 @@ def _events(session, devices: list[Device]) -> list[dict[str, object]]:
                     "Retry Count": sync_record.retry_count,
                     "Last Error": sync_record.last_error or "",
                 },
+                event_time_source="local",
             )
         )
 

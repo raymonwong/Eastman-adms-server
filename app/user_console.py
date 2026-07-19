@@ -10,6 +10,7 @@ from app.database import SessionLocal
 from sqlalchemy import or_
 
 from app.models import Device, DeviceUser, DeviceUserFingerprint, DeviceUserSync
+from app.user_reconciliation import save_user_reconciliation_config, user_reconciliation_config
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
@@ -94,6 +95,13 @@ class DeviceRoleUserResponse(BaseModel):
     retry_count: int
     last_sync_time: datetime | None
     last_error: str | None
+
+
+class UserReconciliationConfigRequest(BaseModel):
+    enabled: bool
+    frequency: str
+    weekday: int
+    time: str
 
 
 def _pin_aliases(pin: str | None) -> set[str]:
@@ -276,6 +284,37 @@ def api_list_role_devices() -> list[DeviceOptionResponse]:
             )
             for device in devices
         ]
+
+
+@router.get("/api/adms-users/reconciliation/config")
+def api_get_user_reconciliation_config() -> dict[str, object]:
+    return user_reconciliation_config()
+
+
+@router.put("/api/adms-users/reconciliation/config")
+def api_save_user_reconciliation_config(payload: UserReconciliationConfigRequest) -> dict[str, object]:
+    frequency = (payload.frequency or "").strip().lower()
+    if frequency not in {"daily", "weekly"}:
+        raise HTTPException(status_code=422, detail="frequency must be daily or weekly.")
+    if payload.weekday < 0 or payload.weekday > 6:
+        raise HTTPException(status_code=422, detail="weekday must be 0-6.")
+    try:
+        hour_text, minute_text = payload.time.split(":", 1)
+        hour = int(hour_text)
+        minute = int(minute_text)
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail="time must use HH:MM format.") from exc
+    if hour < 0 or hour > 6 or minute < 0 or minute > 59:
+        raise HTTPException(status_code=422, detail="time must be between 00:00 and 06:00 Dubai time.")
+    if hour == 6 and minute != 0:
+        raise HTTPException(status_code=422, detail="latest allowed time is 06:00 Dubai time.")
+
+    return save_user_reconciliation_config(
+        enabled=payload.enabled,
+        frequency=frequency,
+        weekday=payload.weekday,
+        time_value=f"{hour:02d}:{minute:02d}",
+    )
 
 
 @router.post("/api/adms-users/{user_id}/role", response_model=DeviceRoleResponse)
