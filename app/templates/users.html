@@ -100,6 +100,20 @@
       background: rgba(143, 179, 217, 0.12);
     }
 
+    .nav-group-label {
+      margin: 13px 8px 5px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+      line-height: 1.25;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .nav-sub-link {
+      margin-left: 8px;
+    }
+
     .sidebar-version {
       position: absolute;
       bottom: 14px;
@@ -173,7 +187,7 @@
 
     .toolbar {
       display: grid;
-      grid-template-columns: minmax(280px, 420px) 180px auto;
+      grid-template-columns: minmax(280px, 420px) 180px;
       gap: 8px;
       align-items: end;
       margin-bottom: 10px;
@@ -220,7 +234,7 @@
 
     .overview-tools {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(420px, 0.8fr);
+      grid-template-columns: minmax(470px, 0.55fr) minmax(690px, 1fr);
       gap: 10px;
       align-items: end;
       margin-bottom: 8px;
@@ -228,8 +242,8 @@
 
     .reconcile-card {
       display: grid;
-      grid-template-columns: auto 120px 110px 92px 96px 95px;
-      gap: 7px;
+      grid-template-columns: minmax(160px, 1fr) 104px 100px 76px 92px 64px;
+      gap: 6px;
       align-items: end;
       padding: 8px 10px;
       border: 1px solid rgba(143, 179, 217, 0.16);
@@ -245,6 +259,7 @@
       font-size: 11px;
       font-weight: 900;
       min-width: 0;
+      white-space: nowrap;
     }
 
     .reconcile-help {
@@ -274,6 +289,7 @@
     .reconcile-card .form-select,
     .reconcile-card .form-control {
       min-height: 30px;
+      font-size: 11px;
       padding-top: 4px;
       padding-bottom: 4px;
     }
@@ -675,8 +691,11 @@
       <a class="nav-link-console" href="/console"><i data-lucide="layout-dashboard" class="icon"></i><span>Operation Monitor<br><span class="zh-sub">运行监控</span></span></a>
       <a class="nav-link-console" href="/dms"><i data-lucide="monitor-cog" class="icon"></i><span>Device Management<br><span class="zh-sub">设备管理</span></span></a>
       <a class="nav-link-console active" href="/users"><i data-lucide="users" class="icon"></i><span>ADMS Users<br><span class="zh-sub">用户列表</span></span></a>
-      <span class="nav-link-console"><i data-lucide="square-terminal" class="icon"></i><span>Protocol Console<br><span class="zh-sub">协议控制台 · 开发中</span></span></span>
-      <a class="nav-link-console" href="/settings/integration"><i data-lucide="settings" class="icon"></i><span>System Settings<br><span class="zh-sub">系统设置 · Integration</span></span></a>
+      <div class="nav-group-label">Protocol Console <span class="zh-sub">/ 协议控制台</span></div>
+      <a class="nav-link-console nav-sub-link" href="/settings/integration"><i data-lucide="cable" class="icon"></i><span>Inbound API<br><span class="zh-sub">对外 API</span></span></a>
+      <a class="nav-link-console nav-sub-link" href="/settings/attendance-sync"><i data-lucide="clipboard-check" class="icon"></i><span>Attendance Sync<br><span class="zh-sub">考勤同步</span></span></a>
+      <div class="nav-group-label">System Settings <span class="zh-sub">/ 系统配置</span></div>
+      <span class="nav-link-console nav-sub-link"><i data-lucide="database-backup" class="icon"></i><span>Backup Settings<br><span class="zh-sub">备份设置</span></span></span>
       <div class="sidebar-version">v1.0.0</div>
     </aside>
 
@@ -711,10 +730,6 @@
                   <option value="enabled">Enabled / 启用</option>
                   <option value="disabled">Disabled / 停用</option>
                 </select>
-              </div>
-              <div>
-                <div class="field-label">Grouping <span class="zh-sub">/ 分组</span></div>
-                <div class="muted">GM first, then by Department <span class="zh-sub">/ GM 优先，再按部门分组</span></div>
               </div>
             </div>
             <div class="reconcile-card">
@@ -754,7 +769,7 @@
               </div>
               <button id="saveReconcileBtn" type="button" class="btn btn-outline-info btn-sm">Save <span class="zh-sub">/ 保存</span></button>
               <div class="reconcile-status">
-                <span>Dubai Time <span class="zh-sub">/ 迪拜时间</span>: <strong>00:00-06:00</strong></span>
+                <span>Dubai <span class="zh-sub">/ 迪拜</span>: <strong>00:00-06:00</strong></span>
                 <span>Next <span class="zh-sub">/ 下次</span>: <strong id="reconcileNext">-</strong></span>
                 <span>Last Sync <span class="zh-sub">/ 最新同步</span>: <strong id="reconcileLast">-</strong></span>
                 <span>Result <span class="zh-sub">/ 结果</span>: <strong id="reconcileResult">-</strong></span>

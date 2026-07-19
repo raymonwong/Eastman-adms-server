@@ -93,6 +93,20 @@
       background: rgba(143, 179, 217, 0.12);
     }
 
+    .nav-group-label {
+      margin: 13px 8px 5px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+      line-height: 1.25;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .nav-sub-link {
+      margin-left: 8px;
+    }
+
     .sidebar-version {
       position: absolute;
       bottom: 14px;
@@ -384,8 +398,11 @@
       <a class="nav-link-console" href="/console"><i data-lucide="layout-dashboard" class="icon"></i><span>Operation Monitor<br><span class="zh-sub">运行监控</span></span></a>
       <a class="nav-link-console active" href="/dms"><i data-lucide="monitor-cog" class="icon"></i><span>Device Management<br><span class="zh-sub">设备管理</span></span></a>
       <a class="nav-link-console" href="/users"><i data-lucide="users" class="icon"></i><span>ADMS Users<br><span class="zh-sub">用户列表</span></span></a>
-      <span class="nav-link-console"><i data-lucide="square-terminal" class="icon"></i><span>Protocol Console<br><span class="zh-sub">协议控制台 · 开发中</span></span></span>
-      <a class="nav-link-console" href="/settings/integration"><i data-lucide="settings" class="icon"></i><span>System Settings<br><span class="zh-sub">系统设置 · Integration</span></span></a>
+      <div class="nav-group-label">Protocol Console <span class="zh-sub">/ 协议控制台</span></div>
+      <a class="nav-link-console nav-sub-link" href="/settings/integration"><i data-lucide="cable" class="icon"></i><span>Inbound API<br><span class="zh-sub">对外 API</span></span></a>
+      <a class="nav-link-console nav-sub-link" href="/settings/attendance-sync"><i data-lucide="clipboard-check" class="icon"></i><span>Attendance Sync<br><span class="zh-sub">考勤同步</span></span></a>
+      <div class="nav-group-label">System Settings <span class="zh-sub">/ 系统配置</span></div>
+      <span class="nav-link-console nav-sub-link"><i data-lucide="database-backup" class="icon"></i><span>Backup Settings<br><span class="zh-sub">备份设置</span></span></span>
       <div class="sidebar-version">v1.0.0</div>
     </aside>
 
