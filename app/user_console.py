@@ -1,7 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -64,6 +64,34 @@ class DeviceRoleResponse(BaseModel):
     sync_records: int
     devices: list[str]
     message: str
+
+
+class AdminDeviceResponse(BaseModel):
+    device_sn: str
+    device_name: str | None
+    location: str | None
+    status: str | None
+    last_online: datetime | None
+    admin_count: int
+    pending_count: int
+    synced_count: int
+    failed_count: int
+
+
+class DeviceRoleUserResponse(BaseModel):
+    user_id: int
+    employee_id: str | None
+    employee_record_id: str | None
+    pin: str | None
+    name: str | None
+    department: str | None
+    enabled: bool
+    role_code: str
+    target_privilege: str
+    sync_status: str | None
+    retry_count: int
+    last_sync_time: datetime | None
+    last_error: str | None
 
 
 def _pin_aliases(pin: str | None) -> set[str]:
@@ -129,6 +157,34 @@ def _device_label(device: Device) -> str:
     return " · ".join(parts)
 
 
+def _role_code_for_privilege(privilege: str | None) -> str:
+    value = str(privilege or "0").strip()
+    if value == "14":
+        return "ADMIN"
+    if value == "0":
+        return "NORMAL"
+    return "PRI"
+
+
+def _set_user_device_role(session, user: DeviceUser, device_sn: str, role_code: str) -> DeviceUserSync:
+    role = DEVICE_ROLE_MAP[role_code]
+    sync_record = (
+        session.query(DeviceUserSync)
+        .filter(DeviceUserSync.employee_id == user.employee_id, DeviceUserSync.device_sn == device_sn)
+        .one_or_none()
+    )
+    if sync_record is None:
+        sync_record = DeviceUserSync(employee_id=user.employee_id, device_sn=device_sn)
+        session.add(sync_record)
+
+    sync_record.target_privilege = role["privilege"]
+    sync_record.role_name = role_code
+    sync_record.sync_status = "PENDING"
+    sync_record.retry_count = 0
+    sync_record.last_error = None
+    return sync_record
+
+
 def _fingerprint_count(session, user: DeviceUser) -> int:
     aliases = _pin_aliases(user.pin) | _pin_aliases(user.employee_id)
     if not aliases:
@@ -185,6 +241,11 @@ def _list_adms_users() -> list[AdmsUserResponse]:
 @router.get("/users", response_class=HTMLResponse)
 async def adms_users_page(request: Request):
     return templates.TemplateResponse("users.html", {"request": request})
+
+
+@router.get("/devices/admin", response_class=HTMLResponse)
+async def device_admin_page(request: Request):
+    return templates.TemplateResponse("device_admin.html", {"request": request})
 
 
 @router.get("/api/adms-users", response_model=list[AdmsUserResponse])
@@ -248,20 +309,7 @@ def api_set_device_role(user_id: int, payload: DeviceRoleRequest) -> DeviceRoleR
 
         sync_records = 0
         for device_sn in valid_device_sns:
-            sync_record = (
-                session.query(DeviceUserSync)
-                .filter(DeviceUserSync.employee_id == user.employee_id, DeviceUserSync.device_sn == device_sn)
-                .one_or_none()
-            )
-            if sync_record is None:
-                sync_record = DeviceUserSync(employee_id=user.employee_id, device_sn=device_sn)
-                session.add(sync_record)
-
-            sync_record.target_privilege = target_privilege
-            sync_record.role_name = role_code
-            sync_record.sync_status = "PENDING"
-            sync_record.retry_count = 0
-            sync_record.last_error = None
+            _set_user_device_role(session, user, device_sn, role_code)
             sync_records += 1
 
         session.commit()
@@ -275,4 +323,150 @@ def api_set_device_role(user_id: int, payload: DeviceRoleRequest) -> DeviceRoleR
         sync_records=sync_records,
         devices=valid_device_sns,
         message=f"{role['label']} queued for {sync_records} device(s).",
+    )
+
+
+@router.get("/api/devices/admin", response_model=list[AdminDeviceResponse])
+def api_list_admin_devices() -> list[AdminDeviceResponse]:
+    with SessionLocal() as session:
+        devices = (
+            session.query(Device)
+            .filter(Device.record_attendance.is_(True))
+            .order_by(Device.updated_at.desc(), Device.device_sn.asc())
+            .all()
+        )
+        responses: list[AdminDeviceResponse] = []
+        for device in devices:
+            sync_records = (
+                session.query(DeviceUserSync)
+                .filter(DeviceUserSync.device_sn == device.device_sn)
+                .all()
+            )
+            admin_count = sum(
+                1
+                for record in sync_records
+                if (record.role_name or "").upper() == "ADMIN" or str(record.target_privilege or "").strip() == "14"
+            )
+            responses.append(
+                AdminDeviceResponse(
+                    device_sn=device.device_sn,
+                    device_name=device.device_name,
+                    location=device.location,
+                    status=device.status,
+                    last_online=device.last_online,
+                    admin_count=admin_count,
+                    pending_count=sum(1 for record in sync_records if (record.sync_status or "").upper() == "PENDING"),
+                    synced_count=sum(1 for record in sync_records if (record.sync_status or "").upper() == "SYNCED"),
+                    failed_count=sum(1 for record in sync_records if (record.sync_status or "").upper() == "FAILED"),
+                )
+            )
+        return responses
+
+
+@router.get("/api/devices/{device_sn}/role-users", response_model=list[DeviceRoleUserResponse])
+def api_list_device_role_users(device_sn: str, q: str = Query(default="")) -> list[DeviceRoleUserResponse]:
+    keyword = q.strip().lower()
+    with SessionLocal() as session:
+        device = (
+            session.query(Device)
+            .filter(Device.device_sn == device_sn, Device.record_attendance.is_(True))
+            .one_or_none()
+        )
+        if device is None:
+            raise HTTPException(status_code=404, detail="Attendance device not found.")
+
+        users_query = (
+            session.query(DeviceUser)
+            .filter(DeviceUser.employee_id.is_not(None), DeviceUser.employee_id != "")
+            .filter(DeviceUser.pin.is_not(None), DeviceUser.pin != "")
+            .order_by(DeviceUser.department.asc(), DeviceUser.employee_id.asc(), DeviceUser.pin.asc())
+        )
+        users = users_query.all()
+        if keyword:
+            users = [
+                user
+                for user in users
+                if any(
+                    keyword in str(value or "").lower()
+                    for value in (user.employee_id, user.employee_record_id, user.pin, user.name, user.department)
+                )
+            ]
+
+        sync_rows = (
+            session.query(DeviceUserSync)
+            .filter(DeviceUserSync.device_sn == device_sn)
+            .all()
+        )
+        sync_by_employee = {row.employee_id: row for row in sync_rows}
+
+        responses: list[DeviceRoleUserResponse] = []
+        for user in users:
+            sync_record = sync_by_employee.get(user.employee_id or "")
+            target_privilege = (
+                sync_record.target_privilege
+                if sync_record is not None and sync_record.target_privilege is not None
+                else user.privilege
+            )
+            target_privilege = str(target_privilege or "0")
+            role_code = (
+                (sync_record.role_name or "").upper()
+                if sync_record is not None and sync_record.role_name
+                else _role_code_for_privilege(target_privilege)
+            )
+            responses.append(
+                DeviceRoleUserResponse(
+                    user_id=user.id,
+                    employee_id=user.employee_id,
+                    employee_record_id=user.employee_record_id,
+                    pin=user.pin,
+                    name=user.name,
+                    department=user.department,
+                    enabled=bool(user.enabled),
+                    role_code=role_code,
+                    target_privilege=target_privilege,
+                    sync_status=sync_record.sync_status if sync_record is not None else None,
+                    retry_count=sync_record.retry_count if sync_record is not None else 0,
+                    last_sync_time=sync_record.last_sync_time if sync_record is not None else None,
+                    last_error=sync_record.last_error if sync_record is not None else None,
+                )
+            )
+        return responses
+
+
+@router.post("/api/devices/{device_sn}/role-users/{user_id}", response_model=DeviceRoleResponse)
+def api_set_device_role_user(device_sn: str, user_id: int, payload: DeviceRoleRequest) -> DeviceRoleResponse:
+    role_code = (payload.role_code or "").strip().upper()
+    if role_code not in DEVICE_ROLE_MAP:
+        raise HTTPException(status_code=422, detail="Unsupported role_code. Use NORMAL or ADMIN.")
+
+    with SessionLocal() as session:
+        device = (
+            session.query(Device)
+            .filter(Device.device_sn == device_sn, Device.record_attendance.is_(True))
+            .one_or_none()
+        )
+        if device is None:
+            raise HTTPException(status_code=404, detail="Attendance device not found.")
+
+        user = session.get(DeviceUser, user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="ADMS user not found.")
+        if not user.employee_id:
+            raise HTTPException(status_code=422, detail="Only Mingdao users with employee_id can be synchronized to devices.")
+        if not user.pin:
+            raise HTTPException(status_code=422, detail="User has no device PIN.")
+
+        _set_user_device_role(session, user, device.device_sn, role_code)
+        session.commit()
+
+    role = DEVICE_ROLE_MAP[role_code]
+    return DeviceRoleResponse(
+        success=True,
+        user_id=user_id,
+        employee_id=user.employee_id,
+        role_code=role_code,
+        target_privilege=role["privilege"],
+        sync_records=1,
+        devices=[device_sn],
+        message=f"{role['label']} queued for {device_sn}.",
     )

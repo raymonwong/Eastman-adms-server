@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mingdao User Role Setup - Eastman ADMS Server</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --line: #dfe6ef;
+      --line-soft: #edf1f6;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --blue: #2563eb;
+      --green: #16a34a;
+      --orange: #d97706;
+      --red: #dc2626;
+      --shadow: 0 10px 32px rgba(15, 23, 42, 0.07);
+      --radius: 12px;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .page {
+      width: min(1440px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 18px 0 28px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .title {
+      margin: 0;
+      color: #0f172a;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .subtitle {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .zh {
+      color: var(--muted);
+      font-size: 0.9em;
+      font-weight: 600;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line-soft);
+      background: #fbfdff;
+    }
+
+    .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      color: #17365d;
+      font-size: 15px;
+      font-weight: 800;
+    }
+
+    .icon {
+      width: 18px;
+      height: 18px;
+    }
+
+    .panel-body {
+      padding: 12px 14px;
+    }
+
+    .device-list {
+      display: grid;
+      gap: 8px;
+      max-height: calc(100vh - 170px);
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .device-card {
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      padding: 10px;
+      transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+    }
+
+    .device-card:hover,
+    .device-card.active {
+      border-color: rgba(37, 99, 235, 0.55);
+      background: #f8fbff;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+    }
+
+    .device-name {
+      color: #111827;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    .device-meta {
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+
+    .device-stats {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      padding: 2px 7px;
+      background: #fff;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .pill.green { color: var(--green); border-color: rgba(22, 163, 74, .25); background: #f0fdf4; }
+    .pill.orange { color: var(--orange); border-color: rgba(217, 119, 6, .28); background: #fff7ed; }
+    .pill.red { color: var(--red); border-color: rgba(220, 38, 38, .25); background: #fef2f2; }
+    .pill.blue { color: var(--blue); border-color: rgba(37, 99, 235, .22); background: #eff6ff; }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) 160px auto;
+      gap: 8px;
+      align-items: end;
+      margin-bottom: 10px;
+    }
+
+    .form-control,
+    .form-select {
+      border-color: var(--line);
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 0.18rem rgba(37, 99, 235, 0.13);
+    }
+
+    .device-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .summary-card {
+      border: 1px solid var(--line-soft);
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: #f9fbfd;
+    }
+
+    .summary-label {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .summary-value {
+      margin-top: 2px;
+      color: #0f172a;
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .table-wrap {
+      max-height: calc(100vh - 315px);
+      overflow: auto;
+      border: 1px solid var(--line-soft);
+      border-radius: 10px;
+    }
+
+    table {
+      min-width: 940px;
+      margin: 0 !important;
+    }
+
+    thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #f8fafc !important;
+      color: #17365d;
+      font-size: 12px;
+      font-weight: 800;
+      border-bottom: 1px solid var(--line) !important;
+    }
+
+    th,
+    td {
+      padding: 8px 10px !important;
+      vertical-align: middle;
+    }
+
+    td {
+      color: #1f2937;
+      font-size: 13px;
+    }
+
+    .user-name {
+      color: #0f172a;
+      font-weight: 800;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .role-select {
+      min-width: 150px;
+    }
+
+    .state {
+      min-height: 160px;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .toast-line {
+      display: none;
+      margin-bottom: 10px;
+      padding: 9px 11px;
+      border-radius: 10px;
+      border: 1px solid rgba(22, 163, 74, .25);
+      background: #f0fdf4;
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .toast-line.error {
+      border-color: rgba(220, 38, 38, .25);
+      background: #fef2f2;
+      color: var(--red);
+    }
+
+    .embed-note {
+      margin-bottom: 14px;
+      padding: 10px 12px;
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      background: #eff6ff;
+      color: #1e40af;
+      font-size: 13px;
+      font-weight: 650;
+    }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+      .device-list { max-height: none; }
+      .toolbar, .device-summary { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="topbar">
+      <div>
+        <h1 class="title">Mingdao User Role Setup <span class="zh">/ 明道云用户权限管理</span></h1>
+        <div class="subtitle">Select an attendance device, then set Mingdao users as device administrators. <span class="zh">/ 先选设备，再把明道云用户设置为该设备管理员。</span></div>
+      </div>
+      <button id="refreshBtn" type="button" class="btn btn-outline-primary btn-sm">
+        <i data-lucide="refresh-cw" class="icon"></i> Refresh <span class="zh">/ 刷新</span>
+      </button>
+    </div>
+
+    <div class="embed-note">
+      This page is designed for Mingdao custom links and embedded opening. Role changes are queued; the device applies them on the next GETREQUEST.
+      <span class="zh">/ 本页面适合明道云自定义链接或嵌入打开。角色变更会进入队列，设备下次 GETREQUEST 时执行。</span>
+    </div>
+
+    <div class="layout">
+      <section class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title"><i data-lucide="monitor-check" class="icon"></i> Attendance Devices <span class="zh">/ 考勤设备</span></h2>
+          <span id="deviceCount" class="pill blue">-</span>
+        </div>
+        <div class="panel-body">
+          <div id="deviceList" class="device-list">
+            <div class="state">Loading devices...<br><span class="zh">正在加载设备……</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title"><i data-lucide="shield-check" class="icon"></i> Device Roles <span class="zh">/ 设备角色</span></h2>
+          <span id="selectedDeviceLabel" class="muted">No device selected / 未选择设备</span>
+        </div>
+        <div class="panel-body">
+          <div id="toastLine" class="toast-line"></div>
+
+          <div class="device-summary">
+            <div class="summary-card">
+              <div class="summary-label">Admins <span class="zh">/ 管理员</span></div>
+              <div id="adminCount" class="summary-value">-</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Pending <span class="zh">/ 待同步</span></div>
+              <div id="pendingCount" class="summary-value">-</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Synced <span class="zh">/ 已同步</span></div>
+              <div id="syncedCount" class="summary-value">-</div>
+            </div>
+            <div class="summary-card">
+              <div class="summary-label">Failed <span class="zh">/ 失败</span></div>
+              <div id="failedCount" class="summary-value">-</div>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <input id="searchInput" class="form-control" placeholder="Search employee ID / PIN / name / department 搜索工号 / PIN / 姓名 / 部门">
+            <select id="roleFilter" class="form-select">
+              <option value="all">All Roles / 全部角色</option>
+              <option value="ADMIN">Admins / 管理员</option>
+              <option value="NORMAL">Normal / 普通用户</option>
+              <option value="PENDING">Pending / 待同步</option>
+              <option value="FAILED">Failed / 失败</option>
+            </select>
+            <button id="reloadUsersBtn" type="button" class="btn btn-primary">Query <span class="zh">/ 查询</span></button>
+          </div>
+
+          <div id="usersArea" class="state">
+            Select one attendance device first.<br><span class="zh">请先选择一台考勤设备。</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    let devices = [];
+    let selectedDeviceSn = '';
+    let users = [];
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialDeviceSn = urlParams.get('device_sn') || urlParams.get('sn') || '';
+    const initialSearch = urlParams.get('employee_id') || urlParams.get('pin') || urlParams.get('q') || '';
+
+    function esc(value) {
+      return String(value ?? '').replace(/[&<>"']/g, function (char) {
+        return ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[char];
+      });
+    }
+
+    function formatTime(value) {
+      return value ? String(value).replace('T', ' ').slice(0, 19) : '-';
+    }
+
+    function showToast(message, tone) {
+      const toast = document.getElementById('toastLine');
+      toast.textContent = message;
+      toast.className = `toast-line ${tone === 'error' ? 'error' : ''}`;
+      toast.style.display = 'block';
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(function () {
+        toast.style.display = 'none';
+      }, 4500);
+    }
+
+    function deviceLabel(device) {
+      return [device.device_name || 'Unnamed Device', device.device_sn, device.location].filter(Boolean).join(' · ');
+    }
+
+    async function loadDevices() {
+      document.getElementById('deviceList').innerHTML = '<div class="state">Loading devices...<br><span class="zh">正在加载设备……</span></div>';
+      try {
+        const response = await fetch('/api/devices/admin', {cache: 'no-store'});
+        if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+        devices = await response.json();
+        renderDevices();
+        if (!selectedDeviceSn && devices.length) {
+          const preferredDevice = initialDeviceSn
+            ? devices.find(function (device) { return device.device_sn === initialDeviceSn; })
+            : null;
+          selectDevice((preferredDevice || devices[0]).device_sn);
+        } else if (selectedDeviceSn) {
+          updateSelectedDeviceSummary();
+        }
+      } catch (error) {
+        document.getElementById('deviceList').innerHTML = `<div class="state text-danger">Load devices failed<br>${esc(error.message || error)}</div>`;
+      }
+    }
+
+    function renderDevices() {
+      document.getElementById('deviceCount').textContent = `${devices.length} Devices / 台`;
+      if (!devices.length) {
+        document.getElementById('deviceList').innerHTML = '<div class="state">No attendance devices enabled.<br><span class="zh">暂无启用记录考勤的设备。</span></div>';
+        return;
+      }
+      document.getElementById('deviceList').innerHTML = devices.map(function (device) {
+        const active = device.device_sn === selectedDeviceSn ? ' active' : '';
+        return `
+          <button type="button" class="device-card${active}" data-device-sn="${esc(device.device_sn)}">
+            <div class="device-name">${esc(device.device_name || 'Unnamed Device')}</div>
+            <div class="device-meta mono">${esc(device.device_sn)}</div>
+            <div class="device-meta">${esc(device.location || 'No location / 未设置位置')} · Last online: ${esc(formatTime(device.last_online))}</div>
+            <div class="device-stats">
+              <span class="pill green">Admin ${esc(device.admin_count || 0)}</span>
+              <span class="pill orange">P ${esc(device.pending_count || 0)}</span>
+              <span class="pill blue">S ${esc(device.synced_count || 0)}</span>
+              <span class="pill red">F ${esc(device.failed_count || 0)}</span>
+            </div>
+          </button>
+        `;
+      }).join('');
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    function updateSelectedDeviceSummary() {
+      const device = devices.find(item => item.device_sn === selectedDeviceSn);
+      if (!device) return;
+      document.getElementById('selectedDeviceLabel').textContent = deviceLabel(device);
+      document.getElementById('adminCount').textContent = device.admin_count || 0;
+      document.getElementById('pendingCount').textContent = device.pending_count || 0;
+      document.getElementById('syncedCount').textContent = device.synced_count || 0;
+      document.getElementById('failedCount').textContent = device.failed_count || 0;
+    }
+
+    function selectDevice(deviceSn) {
+      selectedDeviceSn = deviceSn;
+      renderDevices();
+      updateSelectedDeviceSummary();
+      loadDeviceUsers();
+    }
+
+    function filteredUsers() {
+      const filter = document.getElementById('roleFilter').value;
+      if (filter === 'all') return users;
+      if (filter === 'PENDING' || filter === 'FAILED') {
+        return users.filter(user => String(user.sync_status || '').toUpperCase() === filter);
+      }
+      return users.filter(user => String(user.role_code || '').toUpperCase() === filter);
+    }
+
+    async function loadDeviceUsers() {
+      if (!selectedDeviceSn) return;
+      const keyword = document.getElementById('searchInput').value.trim();
+      document.getElementById('usersArea').innerHTML = '<div class="state">Loading users...<br><span class="zh">正在加载用户……</span></div>';
+      try {
+        const response = await fetch(`/api/devices/${encodeURIComponent(selectedDeviceSn)}/role-users?q=${encodeURIComponent(keyword)}`, {cache: 'no-store'});
+        if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+        users = await response.json();
+        renderUsers();
+      } catch (error) {
+        document.getElementById('usersArea').innerHTML = `<div class="state text-danger">Load users failed<br>${esc(error.message || error)}</div>`;
+      }
+    }
+
+    function roleBadge(user) {
+      if (user.role_code === 'ADMIN') {
+        return '<span class="pill green">ADMIN / 管理员</span>';
+      }
+      if (user.role_code === 'NORMAL') {
+        return '<span class="pill blue">NORMAL / 普通用户</span>';
+      }
+      return `<span class="pill orange">${esc(user.role_code || 'PRI')} / Pri${esc(user.target_privilege || '-')}</span>`;
+    }
+
+    function syncBadge(user) {
+      const status = String(user.sync_status || '-').toUpperCase();
+      if (status === 'PENDING') return '<span class="pill orange">PENDING / 待同步</span>';
+      if (status === 'SYNCED') return '<span class="pill green">SYNCED / 已同步</span>';
+      if (status === 'FAILED') return '<span class="pill red">FAILED / 失败</span>';
+      if (status === 'SYNCING') return '<span class="pill blue">SYNCING / 同步中</span>';
+      return '<span class="pill">NO SYNC / 未同步</span>';
+    }
+
+    function renderUsers() {
+      const rows = filteredUsers();
+      if (!rows.length) {
+        document.getElementById('usersArea').innerHTML = '<div class="state">No matching users.<br><span class="zh">没有匹配用户。</span></div>';
+        return;
+      }
+      document.getElementById('usersArea').innerHTML = `
+        <div class="table-wrap">
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>Employee / 员工</th>
+                <th>Employee ID / 工号</th>
+                <th>PIN / 打卡机编号</th>
+                <th>Department / 部门</th>
+                <th>Role / 角色</th>
+                <th>Sync / 同步</th>
+                <th>Last Sync / 最后同步</th>
+                <th>Action / 操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows.map(userRow).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function userRow(user) {
+      const nextRole = user.role_code === 'ADMIN' ? 'NORMAL' : 'ADMIN';
+      const nextLabel = user.role_code === 'ADMIN' ? 'Set Normal / 恢复普通' : 'Set Admin / 设为管理员';
+      return `
+        <tr>
+          <td><div class="user-name">${esc(user.name || '-')}</div><div class="muted mono">${esc(user.employee_record_id || '-')}</div></td>
+          <td class="mono">${esc(user.employee_id || '-')}</td>
+          <td class="mono">${esc(user.pin || '-')}</td>
+          <td>${esc(user.department || 'Not Set / 未设置')}</td>
+          <td>${roleBadge(user)}</td>
+          <td>${syncBadge(user)}<div class="muted mono">R${esc(user.retry_count || 0)}</div></td>
+          <td class="mono">${esc(formatTime(user.last_sync_time))}</td>
+          <td>
+            <button class="btn btn-sm ${nextRole === 'ADMIN' ? 'btn-primary' : 'btn-outline-secondary'}" data-user-id="${esc(user.user_id)}" data-role-code="${esc(nextRole)}">
+              ${nextLabel}
+            </button>
+          </td>
+        </tr>
+      `;
+    }
+
+    async function setUserRole(userId, roleCode, button) {
+      if (!selectedDeviceSn) return;
+      button.disabled = true;
+      const oldText = button.textContent;
+      button.textContent = 'Saving...';
+      try {
+        const response = await fetch(`/api/devices/${encodeURIComponent(selectedDeviceSn)}/role-users/${encodeURIComponent(userId)}`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({role_code: roleCode, device_sns: [selectedDeviceSn]}),
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.detail || `${response.status} ${response.statusText}`);
+        showToast(result.message || 'Role sync queued. / 角色同步已加入队列。');
+        await loadDevices();
+        await loadDeviceUsers();
+      } catch (error) {
+        showToast(`Failed: ${error.message || error}`, 'error');
+        button.disabled = false;
+        button.textContent = oldText;
+      }
+    }
+
+    document.getElementById('deviceList').addEventListener('click', function (event) {
+      const card = event.target.closest('[data-device-sn]');
+      if (!card) return;
+      selectDevice(card.dataset.deviceSn);
+    });
+    document.getElementById('usersArea').addEventListener('click', function (event) {
+      const button = event.target.closest('[data-user-id][data-role-code]');
+      if (!button) return;
+      setUserRole(button.dataset.userId, button.dataset.roleCode, button);
+    });
+    document.getElementById('reloadUsersBtn').addEventListener('click', loadDeviceUsers);
+    document.getElementById('roleFilter').addEventListener('change', renderUsers);
+    document.getElementById('searchInput').addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') loadDeviceUsers();
+    });
+    document.getElementById('refreshBtn').addEventListener('click', async function () {
+      await loadDevices();
+      if (selectedDeviceSn) await loadDeviceUsers();
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+      document.getElementById('searchInput').value = initialSearch;
+      loadDevices();
+      if (window.lucide) window.lucide.createIcons();
+    });
+  </script>
+</body>
+</html>

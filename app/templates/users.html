@@ -892,6 +892,13 @@
       return '<span class="status-badge badge-disabled" title="Disabled / 停用"><i data-lucide="x" class="icon"></i></span>';
     }
 
+    function privilegeRoleName(privilege) {
+      const value = String(privilege ?? '').trim();
+      if (value === '14') return 'ADMIN';
+      if (value === '0' || value === '') return 'NORMAL';
+      return 'PRI';
+    }
+
     function syncDetails(user) {
       const details = Array.isArray(user.sync_details) ? user.sync_details : [];
       if (!details.length) return '';
@@ -900,9 +907,10 @@
           ${details.map(function (item) {
             const status = String(item.sync_status || '').toUpperCase();
             const retry = Number(item.retry_count || 0);
-            const role = item.role_name ? `${item.role_name}/Pri${item.target_privilege || '-'}` : '';
-            const roleText = role ? ` · <span class="role-detail">${esc(role)}</span>` : '';
-            return `<div><span class="mono">${esc(item.device_sn || '-')}</span>${roleText} · <span class="sync-detail-status ${esc(status)}">${esc(status || '-')}</span> · R${esc(retry)}</div>`;
+            const privilege = item.target_privilege || user.privilege || '0';
+            const roleName = item.role_name || privilegeRoleName(privilege);
+            const role = `${roleName}/Pri${privilege || '0'}`;
+            return `<div><span class="mono">${esc(item.device_sn || '-')}</span> · <span class="role-detail">${esc(role)}</span> · <span class="sync-detail-status ${esc(status)}">${esc(status || '-')}</span> · R${esc(retry)}</div>`;
           }).join('')}
         </div>
       `;

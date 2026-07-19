@@ -17,6 +17,7 @@
       --blue: #8fb3d9;
       --green: #24d685;
       --red: #ff4d4f;
+      --amber: #f8c36a;
       --radius: 8px;
     }
 
@@ -203,18 +204,68 @@
     .warning-note {
       display: none;
       margin-bottom: 10px;
-      padding: 8px 10px;
-      border: 1px solid rgba(245, 159, 0, 0.35);
-      border-radius: 6px;
-      color: #f8c36a;
-      background: rgba(245, 159, 0, 0.08);
-      font-size: 12px;
+      padding: 10px 12px;
+      border: 1px solid rgba(245, 159, 0, 0.45);
+      border-radius: 8px;
+      color: var(--amber);
+      background: rgba(245, 159, 0, 0.1);
+      font-size: 13px;
+      font-weight: 800;
     }
 
     .timezone-note {
-      display: block;
-      margin-top: 10px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-top: 12px;
       margin-bottom: 0;
+      padding: 14px 16px;
+      border-width: 2px;
+      border-color: rgba(245, 159, 0, 0.58);
+      background: linear-gradient(90deg, rgba(245, 159, 0, 0.18), rgba(245, 159, 0, 0.06));
+      color: #ffd166;
+      font-size: 15px;
+      line-height: 1.55;
+      box-shadow: 0 0 0 1px rgba(245, 159, 0, 0.06), 0 10px 28px rgba(245, 159, 0, 0.08);
+    }
+
+    .timezone-note .icon {
+      width: 22px;
+      height: 22px;
+      margin-top: 1px;
+      color: #ffd166;
+    }
+
+    .timezone-note strong {
+      color: #ffe6a3;
+      font-size: 16px;
+    }
+
+    .timezone-note .zh-sub {
+      color: #f7d796;
+      font-size: 0.92em;
+    }
+
+    .group-row td {
+      padding: 8px 10px !important;
+      background: #172330 !important;
+      color: var(--blue);
+      font-size: 13px;
+      font-weight: 900;
+      border-top: 1px solid rgba(255, 255, 255, 0.13);
+    }
+
+    .group-row.disabled td {
+      color: #ff8b8d;
+      background: #241b20 !important;
+    }
+
+    .device-row.disabled {
+      opacity: 0.82;
+    }
+
+    .device-row.disabled td {
+      background: rgba(255, 77, 79, 0.035);
     }
 
     .table-state {
@@ -345,12 +396,17 @@
           <h1 class="title">Device Management <span class="zh-sub">/ 设备管理</span></h1>
           <div class="subtitle">Configuration only <span class="zh-sub">/ 仅用于设备配置</span> · Devices are discovered automatically <span class="zh-sub">/ 设备自动发现</span></div>
           <div class="warning-note timezone-note">
-            Timezone Notice: this server currently supports UTC+4 devices only. For devices in other timezones, contact development to upgrade the server before adding them.
-            <span class="zh-sub">/ 时区提示：当前服务器仅支持 UTC+4 时区设备。其他时区设备如需新增，请先联系开发升级服务器。</span>
+            <i data-lucide="triangle-alert" class="icon"></i>
+            <div>
+              <strong>Timezone Notice</strong><br>
+              This server currently supports UTC+4 devices only. For devices in other timezones, contact development to upgrade the server before adding them.
+              <span class="zh-sub">/ 时区提示：当前服务器仅支持 UTC+4 时区设备。其他时区设备如需新增，请先联系开发升级服务器。</span>
+            </div>
           </div>
         </div>
         <div class="d-flex gap-2 flex-wrap">
           <a href="/users" class="btn btn-outline-info btn-console">ADMS Users <span class="zh-sub">/ 用户列表</span></a>
+          <a href="/devices/admin" target="_blank" rel="noopener" class="btn btn-outline-warning btn-console">Mingdao User Role Setup <span class="zh-sub">/ 明道云用户权限管理</span></a>
           <button id="refreshBtn" type="button" class="btn btn-outline-info btn-console">Refresh <span class="zh-sub">/ 刷新</span></button>
         </div>
       </div>
@@ -602,17 +658,19 @@
       });
     }
 
-    function renderDevices() {
-      const rows = filteredDevices();
-      updateDuplicateWarning();
-      document.getElementById('deviceCount').textContent = `${rows.length} / ${devices.length}`;
-      if (!rows.length) {
-        document.getElementById('deviceTableBody').innerHTML = tableState('No devices<br><span class="zh-sub">暂无设备</span>');
-        return;
-      }
-      document.getElementById('deviceTableBody').innerHTML = rows.map(function (device) {
+    function groupHeader(title, subtitle, count, disabled) {
+      return `
+        <tr class="group-row ${disabled ? 'disabled' : ''}">
+          <td colspan="8">${title} <span class="zh-sub">/ ${subtitle}</span> <span class="muted">(${count})</span></td>
+        </tr>
+      `;
+    }
+
+    function renderDeviceRows(rows) {
+      return rows.map(function (device) {
+        const disabledClass = device.record_attendance ? '' : ' disabled';
         return `
-          <tr title="${esc(deviceDisplay(device))}">
+          <tr class="device-row${disabledClass}" title="${esc(deviceDisplay(device))}">
             <td>${esc(displayDeviceName(device))}</td>
             <td>${esc(device.device_sn)}</td>
             <td>${esc(device.location || '-')}</td>
@@ -624,6 +682,24 @@
           </tr>
         `;
       }).join('');
+    }
+
+    function renderDevices() {
+      const rows = filteredDevices();
+      updateDuplicateWarning();
+      document.getElementById('deviceCount').textContent = `${rows.length} / ${devices.length}`;
+      if (!rows.length) {
+        document.getElementById('deviceTableBody').innerHTML = tableState('No devices<br><span class="zh-sub">暂无设备</span>');
+        return;
+      }
+      const enabledRows = rows.filter(function (device) { return Boolean(device.record_attendance); });
+      const disabledRows = rows.filter(function (device) { return !device.record_attendance; });
+      document.getElementById('deviceTableBody').innerHTML = [
+        groupHeader('Attendance Recording Enabled', '已启用记录考勤', enabledRows.length, false),
+        renderDeviceRows(enabledRows),
+        groupHeader('Attendance Recording Disabled', '已停用或不记录考勤', disabledRows.length, true),
+        renderDeviceRows(disabledRows),
+      ].filter(Boolean).join('');
     }
 
     async function loadDevices() {
