@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Mingdao User Role Setup - Eastman ADMS Server</title>
+  <title>Attendance Device User Permission Management - Eastman ADMS Server</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   <style>
@@ -67,7 +67,7 @@
 
     .layout {
       display: grid;
-      grid-template-columns: 360px minmax(0, 1fr);
+      grid-template-columns: 260px minmax(0, 1fr);
       gap: 14px;
     }
 
@@ -111,7 +111,7 @@
 
     .device-list {
       display: grid;
-      gap: 8px;
+      gap: 7px;
       max-height: calc(100vh - 170px);
       overflow: auto;
       padding-right: 2px;
@@ -121,9 +121,9 @@
       width: 100%;
       text-align: left;
       border: 1px solid var(--line);
-      border-radius: 10px;
+      border-radius: 9px;
       background: #fff;
-      padding: 10px;
+      padding: 9px 10px;
       transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
     }
 
@@ -138,6 +138,9 @@
       color: #111827;
       font-weight: 800;
       font-size: 14px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .mono {
@@ -149,13 +152,6 @@
       color: var(--muted);
       font-size: 12px;
       overflow-wrap: anywhere;
-    }
-
-    .device-stats {
-      display: flex;
-      gap: 6px;
-      flex-wrap: wrap;
-      margin-top: 8px;
     }
 
     .pill {
@@ -233,7 +229,7 @@
     }
 
     table {
-      min-width: 940px;
+      min-width: 760px;
       margin: 0 !important;
     }
 
@@ -320,7 +316,7 @@
   <main class="page">
     <div class="topbar">
       <div>
-        <h1 class="title">Mingdao User Role Setup <span class="zh">/ 明道云用户权限管理</span></h1>
+        <h1 class="title">Attendance Device User Permission Management <span class="zh">/ 考勤机用户权限管理</span></h1>
         <div class="subtitle">Select an attendance device, then set Mingdao users as device administrators. <span class="zh">/ 先选设备，再把明道云用户设置为该设备管理员。</span></div>
       </div>
       <button id="refreshBtn" type="button" class="btn btn-outline-primary btn-sm">
@@ -336,7 +332,7 @@
     <div class="layout">
       <section class="panel">
         <div class="panel-head">
-          <h2 class="panel-title"><i data-lucide="monitor-check" class="icon"></i> Attendance Devices <span class="zh">/ 考勤设备</span></h2>
+          <h2 class="panel-title"><i data-lucide="monitor-check" class="icon"></i> Devices <span class="zh">/ 设备</span></h2>
           <span id="deviceCount" class="pill blue">-</span>
         </div>
         <div class="panel-body">
@@ -374,7 +370,7 @@
           </div>
 
           <div class="toolbar">
-            <input id="searchInput" class="form-control" placeholder="Search employee ID / PIN / name / department 搜索工号 / PIN / 姓名 / 部门">
+            <input id="searchInput" class="form-control" placeholder="Search employee ID / PIN / name 搜索工号 / PIN / 姓名">
             <select id="roleFilter" class="form-select">
               <option value="all">All Roles / 全部角色</option>
               <option value="ADMIN">Admins / 管理员</option>
@@ -447,7 +443,7 @@
     }
 
     function renderDevices() {
-      document.getElementById('deviceCount').textContent = `${devices.length} Devices / 台`;
+      document.getElementById('deviceCount').textContent = `${devices.length}`;
       if (!devices.length) {
         document.getElementById('deviceList').innerHTML = '<div class="state">No attendance devices enabled.<br><span class="zh">暂无启用记录考勤的设备。</span></div>';
         return;
@@ -458,13 +454,6 @@
           <button type="button" class="device-card${active}" data-device-sn="${esc(device.device_sn)}">
             <div class="device-name">${esc(device.device_name || 'Unnamed Device')}</div>
             <div class="device-meta mono">${esc(device.device_sn)}</div>
-            <div class="device-meta">${esc(device.location || 'No location / 未设置位置')} · Last online: ${esc(formatTime(device.last_online))}</div>
-            <div class="device-stats">
-              <span class="pill green">Admin ${esc(device.admin_count || 0)}</span>
-              <span class="pill orange">P ${esc(device.pending_count || 0)}</span>
-              <span class="pill blue">S ${esc(device.synced_count || 0)}</span>
-              <span class="pill red">F ${esc(device.failed_count || 0)}</span>
-            </div>
           </button>
         `;
       }).join('');
@@ -490,11 +479,32 @@
 
     function filteredUsers() {
       const filter = document.getElementById('roleFilter').value;
-      if (filter === 'all') return users;
+      let rows = users;
       if (filter === 'PENDING' || filter === 'FAILED') {
-        return users.filter(user => String(user.sync_status || '').toUpperCase() === filter);
+        rows = users.filter(user => String(user.sync_status || '').toUpperCase() === filter);
+      } else if (filter !== 'all') {
+        rows = users.filter(user => String(user.role_code || '').toUpperCase() === filter);
       }
-      return users.filter(user => String(user.role_code || '').toUpperCase() === filter);
+      return rows.slice().sort(compareUsers);
+    }
+
+    function numericPart(value) {
+      const match = String(value || '').match(/\d+/);
+      return match ? Number(match[0]) : Number.MAX_SAFE_INTEGER;
+    }
+
+    function roleRank(user) {
+      return String(user.role_code || '').toUpperCase() === 'ADMIN' ? 0 : 1;
+    }
+
+    function compareUsers(a, b) {
+      const roleDiff = roleRank(a) - roleRank(b);
+      if (roleDiff !== 0) return roleDiff;
+      const employeeDiff = numericPart(a.employee_id) - numericPart(b.employee_id);
+      if (employeeDiff !== 0) return employeeDiff;
+      const pinDiff = numericPart(a.pin) - numericPart(b.pin);
+      if (pinDiff !== 0) return pinDiff;
+      return String(a.employee_id || '').localeCompare(String(b.employee_id || ''));
     }
 
     async function loadDeviceUsers() {
@@ -544,7 +554,6 @@
                 <th>Employee / 员工</th>
                 <th>Employee ID / 工号</th>
                 <th>PIN / 打卡机编号</th>
-                <th>Department / 部门</th>
                 <th>Role / 角色</th>
                 <th>Sync / 同步</th>
                 <th>Last Sync / 最后同步</th>
@@ -564,12 +573,11 @@
       const nextLabel = user.role_code === 'ADMIN' ? 'Set Normal / 恢复普通' : 'Set Admin / 设为管理员';
       return `
         <tr>
-          <td><div class="user-name">${esc(user.name || '-')}</div><div class="muted mono">${esc(user.employee_record_id || '-')}</div></td>
+          <td><div class="user-name">${esc(user.name || '-')}</div></td>
           <td class="mono">${esc(user.employee_id || '-')}</td>
           <td class="mono">${esc(user.pin || '-')}</td>
-          <td>${esc(user.department || 'Not Set / 未设置')}</td>
           <td>${roleBadge(user)}</td>
-          <td>${syncBadge(user)}<div class="muted mono">R${esc(user.retry_count || 0)}</div></td>
+          <td>${syncBadge(user)}</td>
           <td class="mono">${esc(formatTime(user.last_sync_time))}</td>
           <td>
             <button class="btn btn-sm ${nextRole === 'ADMIN' ? 'btn-primary' : 'btn-outline-secondary'}" data-user-id="${esc(user.user_id)}" data-role-code="${esc(nextRole)}">
