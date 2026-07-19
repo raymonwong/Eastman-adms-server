@@ -31,6 +31,14 @@ verify_fingerprint_table() {
     log "Required device_user_fingerprint columns are missing."
     exit 1
   fi
+
+  log "Verifying fingerprint distribution queue table"
+  local sync_column_count
+  sync_column_count="$(compose exec -T mysql mysql -u"${MYSQL_USERNAME}" -p"${MYSQL_PASSWORD}" "${MYSQL_DATABASE}" -N -e "SHOW COLUMNS FROM device_user_fingerprint_sync WHERE Field IN ('fingerprint_id','device_sn','pin','finger_id','template_hash','sync_status','last_sync_time','retry_count','last_error');" 2>/dev/null | wc -l | tr -d ' ')"
+  if [ "${sync_column_count}" != "9" ]; then
+    log "Required device_user_fingerprint_sync columns are missing."
+    exit 1
+  fi
 }
 
 verify_fp_parser() {
@@ -120,9 +128,10 @@ main() {
   printf '========================================\n'
   printf 'DT012.1 FP Upload Parser Ready\n'
   printf 'Table: device_user_fingerprint\n'
+  printf 'Queue: device_user_fingerprint_sync\n'
   printf 'Parser: OPERLOG body record type FP\n'
   printf 'Heartbeat raw_request retention: 3 days\n'
-  printf 'Distribution: not implemented in DT012.1\n'
+  printf 'Distribution: queued on FP change and delivered by GETREQUEST\n'
   printf '========================================\n'
 }
 

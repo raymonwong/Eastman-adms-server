@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 
 from app.database import SessionLocal
 from app.integration_config import get_config_values, save_config_values
-from app.models import Device, DeviceUser, DeviceUserSync
+from app.models import Device, DeviceUser, DeviceUserFingerprint, DeviceUserFingerprintSync, DeviceUserSync
 
 USER_RECONCILIATION_CONFIG_KEYS = {
     "enabled": "USER_RECONCILIATION_ENABLED",
@@ -109,6 +109,7 @@ def save_user_reconciliation_config(*, enabled: bool, frequency: str, weekday: i
 
 def run_user_reconciliation() -> dict[str, object]:
     sync_records = 0
+    fingerprint_sync_records = 0
     with SessionLocal() as session:
         devices = (
             session.query(Device)
@@ -132,6 +133,17 @@ def run_user_reconciliation() -> dict[str, object]:
                 .filter(DeviceUserSync.device_sn.not_in(active_device_sns))
                 .delete(synchronize_session=False)
             )
+            (
+                session.query(DeviceUserFingerprintSync)
+                .filter(DeviceUserFingerprintSync.device_sn.not_in(active_device_sns))
+                .delete(synchronize_session=False)
+            )
+
+        fingerprints = (
+            session.query(DeviceUserFingerprint)
+            .order_by(DeviceUserFingerprint.pin.asc(), DeviceUserFingerprint.finger_id.asc())
+            .all()
+        )
 
         for device in devices:
             for user in users:
@@ -149,20 +161,54 @@ def run_user_reconciliation() -> dict[str, object]:
                 sync_record.last_error = None
                 sync_records += 1
 
+            for fingerprint in fingerprints:
+                fingerprint_sync = (
+                    session.query(DeviceUserFingerprintSync)
+                    .filter(
+                        DeviceUserFingerprintSync.pin == fingerprint.pin,
+                        DeviceUserFingerprintSync.finger_id == fingerprint.finger_id,
+                        DeviceUserFingerprintSync.device_sn == device.device_sn,
+                    )
+                    .one_or_none()
+                )
+                if fingerprint_sync is None:
+                    fingerprint_sync = DeviceUserFingerprintSync(
+                        fingerprint_id=fingerprint.id,
+                        device_sn=device.device_sn,
+                        pin=fingerprint.pin,
+                        finger_id=fingerprint.finger_id,
+                        template_hash=fingerprint.template_hash,
+                    )
+                    session.add(fingerprint_sync)
+                else:
+                    fingerprint_sync.fingerprint_id = fingerprint.id
+                    fingerprint_sync.template_hash = fingerprint.template_hash
+                # A device can delete fingerprints locally without notifying ADMS.
+                # The reconciliation schedule therefore re-queues every stored
+                # fingerprint, so each attendance device can restore missing FP data.
+                fingerprint_sync.sync_status = "PENDING"
+                fingerprint_sync.retry_count = 0
+                fingerprint_sync.last_error = None
+                fingerprint_sync.last_sync_time = None
+                fingerprint_sync_records += 1
+
         session.commit()
 
     now_text = datetime.now(_timezone()).isoformat(timespec="seconds")
-    result_text = f"Queued {sync_records} user sync records"
+    total_sync_records = sync_records + fingerprint_sync_records
+    result_text = f"Queued {sync_records} user sync records and {fingerprint_sync_records} fingerprint sync records"
     save_config_values(
         {
             USER_RECONCILIATION_CONFIG_KEYS["last_run_at"]: now_text,
             USER_RECONCILIATION_CONFIG_KEYS["last_result"]: result_text,
-            USER_RECONCILIATION_CONFIG_KEYS["last_sync_records"]: str(sync_records),
+            USER_RECONCILIATION_CONFIG_KEYS["last_sync_records"]: str(total_sync_records),
         }
     )
     return {
         "success": True,
-        "sync_records": sync_records,
+        "sync_records": total_sync_records,
+        "user_sync_records": sync_records,
+        "fingerprint_sync_records": fingerprint_sync_records,
         "last_run_at": now_text,
         "message": result_text,
     }

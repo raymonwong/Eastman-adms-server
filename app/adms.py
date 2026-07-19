@@ -17,6 +17,7 @@ from app.models import (
     DeviceSyncState,
     DeviceUser,
     DeviceUserFingerprint,
+    DeviceUserFingerprintSync,
     DeviceUserSync,
     OperationEvent,
     RawRequest,
@@ -40,6 +41,7 @@ OPERATION_NAME_MAP = {
 }
 SYNC_DATA_TYPES = ("ATTLOG", "OPERLOG", "USER", "FINGER", "FACE", "PHOTO")
 SYNC_PENDING_STATUSES = ("PENDING", "FAILED")
+FINGERPRINT_COMMAND_ID_OFFSET = 900000000
 
 
 def _debug_log(event_type: str, fields: dict[str, object | None]) -> None:
@@ -109,6 +111,7 @@ def _upsert_device(
 
     with SessionLocal() as session:
         device = session.query(Device).filter(Device.device_sn == device_sn).one_or_none()
+        is_new_device = device is None
         if device is None:
             device = Device(
                 device_sn=device_sn,
@@ -121,6 +124,7 @@ def _upsert_device(
                 show_in_console=True,
             )
             session.add(device)
+            session.flush()
         else:
             if not device.device_name:
                 device.device_name = f"New Machine ({device_sn})"
@@ -132,6 +136,8 @@ def _upsert_device(
             device.device_type = device_type
             device.language = language
             device.push_options = push_options
+        if is_new_device and device.record_attendance:
+            _queue_initial_sync_for_device(session, device_sn)
         session.commit()
         return device.id
 
@@ -332,6 +338,142 @@ def _build_userinfo_command(sync_record: DeviceUserSync, user: DeviceUser) -> st
     return f"C:{sync_record.id}:DATA UPDATE USERINFO " + "\t".join(fields)
 
 
+def _build_fingerprint_command(sync_record: DeviceUserFingerprintSync, fingerprint: DeviceUserFingerprint) -> str:
+    pin = _command_value(fingerprint.pin)
+    finger_id = _command_value(fingerprint.finger_id)
+    template_data = _command_value(fingerprint.template_data)
+    if not pin:
+        raise ValueError(f"Fingerprint sync {sync_record.id} has no PIN")
+    if not finger_id:
+        raise ValueError(f"Fingerprint sync {sync_record.id} has no finger ID")
+    if not template_data:
+        raise ValueError(f"Fingerprint sync {sync_record.id} has no template data")
+
+    command_id = FINGERPRINT_COMMAND_ID_OFFSET + sync_record.id
+    fields = [
+        f"PIN={pin}",
+        f"FID={finger_id}",
+        f"Size={fingerprint.template_size or len(template_data)}",
+        f"Valid={_command_value(fingerprint.valid or '1')}",
+        f"TMP={template_data}",
+    ]
+    return f"C:{command_id}:DATA UPDATE FINGERTMP " + "\t".join(fields)
+
+
+def _queue_fingerprint_sync_records(
+    session,
+    fingerprint: DeviceUserFingerprint,
+    *,
+    exclude_device_sn: str | None = None,
+) -> int:
+    device_sns = [
+        device_sn
+        for (device_sn,) in (
+            session.query(Device.device_sn)
+            .filter(Device.record_attendance.is_(True))
+            .order_by(Device.device_sn.asc())
+            .all()
+        )
+        if device_sn and device_sn != exclude_device_sn
+    ]
+
+    queued_count = 0
+    for device_sn in device_sns:
+        sync_record = (
+            session.query(DeviceUserFingerprintSync)
+            .filter(
+                DeviceUserFingerprintSync.pin == fingerprint.pin,
+                DeviceUserFingerprintSync.finger_id == fingerprint.finger_id,
+                DeviceUserFingerprintSync.device_sn == device_sn,
+            )
+            .one_or_none()
+        )
+        if sync_record is None:
+            sync_record = DeviceUserFingerprintSync(
+                fingerprint_id=fingerprint.id,
+                device_sn=device_sn,
+                pin=fingerprint.pin,
+                finger_id=fingerprint.finger_id,
+                template_hash=fingerprint.template_hash,
+            )
+            session.add(sync_record)
+            queued_count += 1
+            continue
+
+        if sync_record.template_hash != fingerprint.template_hash or sync_record.sync_status != "SYNCED":
+            sync_record.fingerprint_id = fingerprint.id
+            sync_record.template_hash = fingerprint.template_hash
+            sync_record.sync_status = "PENDING"
+            sync_record.retry_count = 0
+            sync_record.last_error = None
+            sync_record.last_sync_time = None
+            queued_count += 1
+
+    return queued_count
+
+
+def _queue_initial_sync_for_device(session, device_sn: str) -> tuple[int, int]:
+    user_count = 0
+    users = (
+        session.query(DeviceUser)
+        .filter(DeviceUser.enabled.is_(True))
+        .filter(DeviceUser.employee_id.is_not(None), DeviceUser.employee_id != "")
+        .filter(DeviceUser.pin.is_not(None), DeviceUser.pin != "")
+        .order_by(DeviceUser.employee_id.asc())
+        .all()
+    )
+    for user in users:
+        sync_record = (
+            session.query(DeviceUserSync)
+            .filter(DeviceUserSync.employee_id == user.employee_id, DeviceUserSync.device_sn == device_sn)
+            .one_or_none()
+        )
+        if sync_record is None:
+            sync_record = DeviceUserSync(employee_id=user.employee_id, device_sn=device_sn)
+            session.add(sync_record)
+        sync_record.sync_status = "PENDING"
+        sync_record.retry_count = 0
+        sync_record.last_error = None
+        sync_record.last_sync_time = None
+        user_count += 1
+
+    fingerprint_count = 0
+    fingerprints = (
+        session.query(DeviceUserFingerprint)
+        .order_by(DeviceUserFingerprint.pin.asc(), DeviceUserFingerprint.finger_id.asc())
+        .all()
+    )
+    for fingerprint in fingerprints:
+        sync_record = (
+            session.query(DeviceUserFingerprintSync)
+            .filter(
+                DeviceUserFingerprintSync.pin == fingerprint.pin,
+                DeviceUserFingerprintSync.finger_id == fingerprint.finger_id,
+                DeviceUserFingerprintSync.device_sn == device_sn,
+            )
+            .one_or_none()
+        )
+        if sync_record is None:
+            sync_record = DeviceUserFingerprintSync(
+                fingerprint_id=fingerprint.id,
+                device_sn=device_sn,
+                pin=fingerprint.pin,
+                finger_id=fingerprint.finger_id,
+                template_hash=fingerprint.template_hash,
+            )
+            session.add(sync_record)
+        else:
+            sync_record.fingerprint_id = fingerprint.id
+            sync_record.template_hash = fingerprint.template_hash
+        sync_record.sync_status = "PENDING"
+        sync_record.retry_count = 0
+        sync_record.last_error = None
+        sync_record.last_sync_time = None
+        fingerprint_count += 1
+
+    return user_count, fingerprint_count
+
+
 def _find_next_user_sync_command(device_sn: str | None, received_at: datetime) -> str | None:
     if not device_sn:
         return None
@@ -435,6 +577,112 @@ def _find_next_user_sync_command(device_sn: str | None, received_at: datetime) -
     return command
 
 
+def _find_next_fingerprint_sync_command(device_sn: str | None, received_at: datetime) -> str | None:
+    if not device_sn:
+        return None
+
+    with SessionLocal() as session:
+        device = session.query(Device).filter(Device.device_sn == device_sn).one_or_none()
+        if device is not None and not device.record_attendance:
+            return None
+
+        timeout_before = received_at - timedelta(seconds=_user_sync_ack_timeout_seconds())
+        sync_record = (
+            session.query(DeviceUserFingerprintSync)
+            .filter(DeviceUserFingerprintSync.device_sn == device_sn)
+            .filter(
+                (DeviceUserFingerprintSync.sync_status.in_(SYNC_PENDING_STATUSES))
+                | (
+                    (DeviceUserFingerprintSync.sync_status == "SYNCING")
+                    & (DeviceUserFingerprintSync.last_sync_time < timeout_before)
+                )
+            )
+            .order_by(DeviceUserFingerprintSync.updated_at.asc(), DeviceUserFingerprintSync.id.asc())
+            .first()
+        )
+
+        if sync_record is None:
+            return None
+
+        current_status = (sync_record.sync_status or "").upper()
+        if current_status == "SYNCING":
+            sync_record.retry_count += 1
+            if sync_record.retry_count >= _user_sync_max_retry():
+                sync_record.sync_status = "FAILED"
+                sync_record.last_error = "Device fingerprint command ACK timeout"
+                sync_record.last_sync_time = received_at
+                session.commit()
+                _debug_log(
+                    "FP SYNC FAILED",
+                    {
+                        "Device": device_sn,
+                        "PIN": sync_record.pin,
+                        "Finger ID": sync_record.finger_id,
+                        "Reason": sync_record.last_error,
+                    },
+                )
+                return None
+
+        if current_status == "FAILED" and sync_record.retry_count >= _user_sync_max_retry():
+            return None
+
+        fingerprint = session.get(DeviceUserFingerprint, sync_record.fingerprint_id)
+        if fingerprint is None or fingerprint.template_hash != sync_record.template_hash:
+            latest_fingerprint = (
+                session.query(DeviceUserFingerprint)
+                .filter(
+                    DeviceUserFingerprint.pin == sync_record.pin,
+                    DeviceUserFingerprint.finger_id == sync_record.finger_id,
+                )
+                .one_or_none()
+            )
+            if latest_fingerprint is None:
+                sync_record.sync_status = "FAILED"
+                sync_record.last_error = "Fingerprint template not found"
+                sync_record.last_sync_time = received_at
+                session.commit()
+                return None
+            fingerprint = latest_fingerprint
+            sync_record.fingerprint_id = fingerprint.id
+            sync_record.template_hash = fingerprint.template_hash
+
+        try:
+            command = _build_fingerprint_command(sync_record, fingerprint)
+        except Exception as exc:
+            sync_record.sync_status = "FAILED"
+            sync_record.last_error = str(exc)
+            sync_record.last_sync_time = received_at
+            session.commit()
+            _debug_log(
+                "FP SYNC FAILED",
+                {
+                    "Device": device_sn,
+                    "PIN": sync_record.pin,
+                    "Finger ID": sync_record.finger_id,
+                    "Reason": exc,
+                },
+            )
+            return None
+
+        sync_record.sync_status = "SYNCING"
+        sync_record.last_sync_time = received_at
+        sync_record.last_error = None
+        queued_pin = sync_record.pin
+        queued_finger_id = sync_record.finger_id
+        session.commit()
+
+    _debug_log(
+        "FP SYNC START",
+        {
+            "Device": device_sn,
+            "Command ID": command.split(":", 2)[1],
+            "PIN": queued_pin,
+            "Finger ID": queued_finger_id,
+        },
+    )
+    return command
+
+
 def _parse_devicecmd_ack(body_text: str) -> dict[str, str]:
     values: dict[str, str] = {}
     parsed_query = parse_qs(body_text, keep_blank_values=True)
@@ -469,7 +717,7 @@ def _handle_devicecmd_ack(request: Request, context: dict[str, object], body: by
     command_id = values.get("id") or values.get("cmdid") or values.get("command_id")
 
     _debug_log(
-        "USER ACK RECEIVED",
+        "DEVICECMD ACK RECEIVED",
         {
             "Device": context["device_sn"] or "",
             "Command ID": command_id or "",
@@ -480,8 +728,46 @@ def _handle_devicecmd_ack(request: Request, context: dict[str, object], body: by
     if not command_id or not command_id.isdigit():
         return
 
+    numeric_command_id = int(command_id)
+    if numeric_command_id >= FINGERPRINT_COMMAND_ID_OFFSET:
+        sync_id = numeric_command_id - FINGERPRINT_COMMAND_ID_OFFSET
+        with SessionLocal() as session:
+            sync_record = session.get(DeviceUserFingerprintSync, sync_id)
+            if sync_record is None or sync_record.device_sn != context["device_sn"]:
+                return
+
+            if _devicecmd_success(values):
+                sync_record.sync_status = "SYNCED"
+                sync_record.last_error = None
+                sync_record.last_sync_time = context["received_at"]
+                event_type = "FP SYNC SUCCESS"
+                fields = {
+                    "Device": sync_record.device_sn,
+                    "PIN": sync_record.pin,
+                    "Finger ID": sync_record.finger_id,
+                    "Command ID": numeric_command_id,
+                }
+            else:
+                sync_record.retry_count += 1
+                sync_record.sync_status = "FAILED"
+                sync_record.last_error = ack_source or "Device fingerprint command failed"
+                sync_record.last_sync_time = context["received_at"]
+                event_type = "FP SYNC FAILED"
+                fields = {
+                    "Device": sync_record.device_sn,
+                    "PIN": sync_record.pin,
+                    "Finger ID": sync_record.finger_id,
+                    "Command ID": numeric_command_id,
+                    "Retry Count": sync_record.retry_count,
+                    "Reason": sync_record.last_error,
+                }
+            session.commit()
+
+        _debug_log(event_type, fields)
+        return
+
     with SessionLocal() as session:
-        sync_record = session.get(DeviceUserSync, int(command_id))
+        sync_record = session.get(DeviceUserSync, numeric_command_id)
         if sync_record is None or sync_record.device_sn != context["device_sn"]:
             return
 
@@ -848,7 +1134,7 @@ def _parse_fp_line(
     )
 
 
-def _save_fingerprint(fingerprint: DeviceUserFingerprint) -> tuple[int, bool]:
+def _save_fingerprint(fingerprint: DeviceUserFingerprint) -> tuple[int, bool, int]:
     with SessionLocal() as session:
         existing = (
             session.query(DeviceUserFingerprint)
@@ -860,8 +1146,14 @@ def _save_fingerprint(fingerprint: DeviceUserFingerprint) -> tuple[int, bool]:
         )
         if existing is None:
             session.add(fingerprint)
+            session.flush()
+            queued_count = _queue_fingerprint_sync_records(
+                session,
+                fingerprint,
+                exclude_device_sn=fingerprint.source_device_sn,
+            )
             session.commit()
-            return fingerprint.id, True
+            return fingerprint.id, True, queued_count
 
         if existing.template_hash == fingerprint.template_hash:
             existing.device_sn = fingerprint.device_sn
@@ -869,7 +1161,7 @@ def _save_fingerprint(fingerprint: DeviceUserFingerprint) -> tuple[int, bool]:
             existing.raw_request_id = fingerprint.raw_request_id
             existing.receive_time = fingerprint.receive_time
             session.commit()
-            return existing.id, False
+            return existing.id, False, 0
 
         existing.device_sn = fingerprint.device_sn
         existing.template_size = fingerprint.template_size
@@ -879,8 +1171,13 @@ def _save_fingerprint(fingerprint: DeviceUserFingerprint) -> tuple[int, bool]:
         existing.source_device_sn = fingerprint.source_device_sn
         existing.raw_request_id = fingerprint.raw_request_id
         existing.receive_time = fingerprint.receive_time
+        queued_count = _queue_fingerprint_sync_records(
+            session,
+            existing,
+            exclude_device_sn=fingerprint.source_device_sn,
+        )
         session.commit()
-        return existing.id, True
+        return existing.id, True, queued_count
 
 
 def _save_device_user(user: DeviceUser) -> int:
@@ -1005,13 +1302,14 @@ def _parse_and_save_operlog(context: dict[str, object], body: bytes) -> int:
                         "Template Size": fingerprint.template_size,
                     },
                 )
-                fingerprint_id, changed = _save_fingerprint(fingerprint)
+                fingerprint_id, changed, queued_count = _save_fingerprint(fingerprint)
                 saved_count += 1
                 _debug_log(
                     "FP SAVED",
                     {
                         "Fingerprint ID": fingerprint_id,
                         "Changed": changed,
+                        "Queued Sync Records": queued_count,
                         "Raw Request ID": fingerprint.raw_request_id,
                     },
                 )
@@ -1153,6 +1451,8 @@ async def iclock_getrequest(request: Request) -> PlainTextResponse:
         },
     )
     command = _find_next_user_sync_command(context["device_sn"], context["received_at"])
+    if not command:
+        command = _find_next_fingerprint_sync_command(context["device_sn"], context["received_at"])
     if command:
         response_body = command
         context["response_body"] = response_body

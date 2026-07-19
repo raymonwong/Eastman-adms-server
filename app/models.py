@@ -335,6 +335,44 @@ class DeviceUserFingerprint(Base):
     )
 
 
+class DeviceUserFingerprintSync(Base):
+    __tablename__ = "device_user_fingerprint_sync"
+    __table_args__ = (
+        UniqueConstraint(
+            "pin",
+            "finger_id",
+            "device_sn",
+            name="uq_device_user_fingerprint_sync_pin_finger_device",
+        ),
+        CheckConstraint(
+            "sync_status IN ('PENDING','SYNCING','SYNCED','FAILED')",
+            name="ck_device_user_fingerprint_sync_status",
+        ),
+        Index("ix_device_user_fingerprint_sync_fingerprint_id", "fingerprint_id"),
+        Index("ix_device_user_fingerprint_sync_device_sn", "device_sn"),
+        Index("ix_device_user_fingerprint_sync_status", "sync_status"),
+        Index("ix_device_user_fingerprint_sync_pin_finger", "pin", "finger_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    fingerprint_id: Mapped[int] = mapped_column(ForeignKey("device_user_fingerprint.id"), nullable=False)
+    device_sn: Mapped[str] = mapped_column(ForeignKey("device.device_sn"), nullable=False)
+    pin: Mapped[str] = mapped_column(String(64), nullable=False)
+    finger_id: Mapped[str] = mapped_column(String(32), nullable=False)
+    template_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    sync_status: Mapped[str] = mapped_column(String(32), server_default="PENDING", nullable=False)
+    last_sync_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    retry_count: Mapped[int] = mapped_column(Integer, server_default="0", nullable=False)
+    last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+
 class SyncLog(Base):
     __tablename__ = "sync_log"
 

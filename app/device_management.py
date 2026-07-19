@@ -7,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 
 from app.database import SessionLocal
-from app.models import Device, DeviceUser, DeviceUserSync
+from app.models import Device, DeviceUser, DeviceUserFingerprint, DeviceUserFingerprintSync, DeviceUserSync
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
@@ -83,6 +83,47 @@ def _rebuild_device_user_sync_records(session, device_sn: str) -> int:
     return sync_count
 
 
+def _rebuild_device_fingerprint_sync_records(session, device_sn: str) -> int:
+    sync_count = 0
+    fingerprints = (
+        session.query(DeviceUserFingerprint)
+        .order_by(DeviceUserFingerprint.pin.asc(), DeviceUserFingerprint.finger_id.asc())
+        .all()
+    )
+
+    for fingerprint in fingerprints:
+        sync_record = (
+            session.query(DeviceUserFingerprintSync)
+            .filter(
+                DeviceUserFingerprintSync.pin == fingerprint.pin,
+                DeviceUserFingerprintSync.finger_id == fingerprint.finger_id,
+                DeviceUserFingerprintSync.device_sn == device_sn,
+            )
+            .one_or_none()
+        )
+        if sync_record is None:
+            sync_record = DeviceUserFingerprintSync(
+                fingerprint_id=fingerprint.id,
+                device_sn=device_sn,
+                pin=fingerprint.pin,
+                finger_id=fingerprint.finger_id,
+                template_hash=fingerprint.template_hash,
+            )
+            session.add(sync_record)
+        elif sync_record.template_hash != fingerprint.template_hash or sync_record.sync_status != "SYNCED":
+            sync_record.fingerprint_id = fingerprint.id
+            sync_record.template_hash = fingerprint.template_hash
+            sync_record.sync_status = "PENDING"
+            sync_record.retry_count = 0
+            sync_record.last_error = None
+            sync_record.last_sync_time = None
+        else:
+            continue
+        sync_count += 1
+
+    return sync_count
+
+
 def _update_device(sn: str, payload: DeviceUpdateRequest) -> DeviceResponse:
     with SessionLocal() as session:
         device = session.query(Device).filter(Device.device_sn == sn).one_or_none()
@@ -101,8 +142,14 @@ def _update_device(sn: str, payload: DeviceUpdateRequest) -> DeviceResponse:
                 .filter(DeviceUserSync.device_sn == device.device_sn)
                 .delete(synchronize_session=False)
             )
+            (
+                session.query(DeviceUserFingerprintSync)
+                .filter(DeviceUserFingerprintSync.device_sn == device.device_sn)
+                .delete(synchronize_session=False)
+            )
         elif not previous_record_attendance and payload.record_attendance:
             _rebuild_device_user_sync_records(session, device.device_sn)
+            _rebuild_device_fingerprint_sync_records(session, device.device_sn)
 
         session.commit()
         session.refresh(device)

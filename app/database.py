@@ -461,7 +461,7 @@ def ensure_dt014_attendance_mingdao_sync(engine: Engine) -> None:
 
 def ensure_dt012_1_fingerprint_tables(engine: Engine) -> None:
     # DT012.1 stores FP records uploaded by real devices inside OPERLOG bodies.
-    # Distribution to other devices is intentionally out of scope for this stage.
+    # DT012.2 distributes the latest stored template to other attendance devices.
     statements = (
         """
         CREATE TABLE IF NOT EXISTS device_user_fingerprint (
@@ -488,6 +488,31 @@ def ensure_dt012_1_fingerprint_tables(engine: Engine) -> None:
         "CREATE INDEX ix_device_user_fingerprint_source_device_sn ON device_user_fingerprint (source_device_sn)",
         "CREATE INDEX ix_device_user_fingerprint_template_hash ON device_user_fingerprint (template_hash)",
         "ALTER TABLE device_user_fingerprint ADD CONSTRAINT fk_device_user_fingerprint_raw_request_id FOREIGN KEY (raw_request_id) REFERENCES raw_request(id)",
+        """
+        CREATE TABLE IF NOT EXISTS device_user_fingerprint_sync (
+            id INT NOT NULL AUTO_INCREMENT,
+            fingerprint_id INT NOT NULL,
+            device_sn VARCHAR(64) NOT NULL,
+            pin VARCHAR(64) NOT NULL,
+            finger_id VARCHAR(32) NOT NULL,
+            template_hash VARCHAR(64) NOT NULL,
+            sync_status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
+            last_sync_time DATETIME NULL,
+            retry_count INT NOT NULL DEFAULT 0,
+            last_error TEXT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            CONSTRAINT uq_device_user_fingerprint_sync_pin_finger_device UNIQUE (pin, finger_id, device_sn),
+            CONSTRAINT ck_device_user_fingerprint_sync_status CHECK (sync_status IN ('PENDING','SYNCING','SYNCED','FAILED')),
+            CONSTRAINT fk_device_user_fingerprint_sync_fingerprint_id FOREIGN KEY (fingerprint_id) REFERENCES device_user_fingerprint(id),
+            CONSTRAINT fk_device_user_fingerprint_sync_device_sn FOREIGN KEY (device_sn) REFERENCES device(device_sn)
+        )
+        """,
+        "CREATE INDEX ix_device_user_fingerprint_sync_fingerprint_id ON device_user_fingerprint_sync (fingerprint_id)",
+        "CREATE INDEX ix_device_user_fingerprint_sync_device_sn ON device_user_fingerprint_sync (device_sn)",
+        "CREATE INDEX ix_device_user_fingerprint_sync_status ON device_user_fingerprint_sync (sync_status)",
+        "CREATE INDEX ix_device_user_fingerprint_sync_pin_finger ON device_user_fingerprint_sync (pin, finger_id)",
     )
 
     with engine.begin() as connection:
