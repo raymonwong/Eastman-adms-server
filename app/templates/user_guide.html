@@ -42,6 +42,15 @@
     .prep { margin: 8px 10px 0; border: 1px solid var(--line); background: #fbfdff; border-radius: 5px; color: var(--muted); padding: 5px 8px; font-size: 12px; display: flex; gap: 6px; align-items: center; }
     .prep .icon { width: 14px; height: 14px; color: var(--blue); }
     .flow-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 46px; align-items: stretch; padding: 10px 38px 10px 58px; position: relative; }
+    .flow-row.six { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 34px; padding-left: 44px; padding-right: 28px; }
+    .flow-row.six .step { padding-left: 38px; }
+    .flow-row.six .step::after { right: -30px; width: 24px; }
+    .flow-row.six .step::before { right: -33px; }
+    .flow-row.seven { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 22px; padding-left: 32px; padding-right: 22px; }
+    .flow-row.seven .step { padding: 8px 8px 7px 34px; min-height: 78px; }
+    .flow-row.seven .num { left: 8px; width: 22px; height: 22px; font-size: 12px; }
+    .flow-row.seven .step::after { right: -19px; width: 15px; }
+    .flow-row.seven .step::before { right: -22px; }
     .step { border: 1px solid var(--line-strong); border-radius: 7px; background: var(--paper); min-height: 72px; padding: 9px 10px 8px 42px; position: relative; display: flex; flex-direction: column; justify-content: center; }
     .step::after { content: ""; position: absolute; top: 50%; right: -39px; width: 32px; border-top: 2px solid #4d75b8; }
     .step::before { content: ""; position: absolute; top: calc(50% - 4px); right: -42px; width: 9px; height: 9px; border-top: 2px solid #4d75b8; border-right: 2px solid #4d75b8; transform: rotate(45deg); }
@@ -104,6 +113,30 @@
     <section class="card">
       <div class="card-head">
         <div>
+          <div class="card-title"><i data-lucide="monitor-up" class="icon"></i><span class="en">Attendance Device Setup</span><span class="zh">打卡机安装配置</span></div>
+          <div class="card-desc"><span class="en">Initial setup for a new attendance device before daily HR operations.</span><span class="zh">新增打卡机的首次安装配置，独立于日常 HR 操作。</span></div>
+        </div>
+      </div>
+      <div class="section-body">
+        <article class="flow-section">
+          <div class="flow-title"><i data-lucide="monitor-up" class="icon"></i><span class="en">Add a New Device</span><span class="zh">新增打卡机</span></div>
+          <div class="flow-row seven">
+            <div class="step"><span class="num">1</span><div class="step-name"><span class="en">Configure device IP</span><span class="zh">配置本机 IP</span></div><div class="step-detail"><span class="en">Set the device IP, gateway, DNS, and network connection.</span><span class="zh">设置打卡机本机 IP、网关、DNS 和网络连接。</span></div></div>
+            <div class="step"><span class="num">2</span><div class="step-name"><span class="en">Configure ADMS server</span><span class="zh">配置 ADMS 服务器</span></div><div class="step-detail"><span class="en">Set ADMS server IP and port on the device.</span><span class="zh">配置设备连接的 ADMS 服务器地址与端口。</span></div></div>
+            <div class="step"><span class="num">3</span><div class="step-name"><span class="en">Set device time</span><span class="zh">设置机器时间</span></div><div class="step-detail"><span class="en">Set timezone to UTC+4 and verify the local date and time.</span><span class="zh">将设备时区设为 UTC+4，并确认本机日期和时间正确。</span></div></div>
+            <div class="step"><span class="num">4</span><div class="step-name"><span class="en">Device connects ADMS</span><span class="zh">设备连接 ADMS</span></div><div class="step-detail"><span class="en">The device connects and authenticates with ADMS.</span><span class="zh">设备连接 ADMS 服务器并完成认证。</span></div></div>
+            <div class="step"><span class="num">5</span><div class="step-name"><span class="en">Auto discovery</span><span class="zh">自动发现并登记</span></div><div class="step-detail"><span class="en">ADMS discovers and registers the device.</span><span class="zh">ADMS 自动发现设备并登记设备信息。</span></div></div>
+            <div class="step"><span class="num">6</span><div class="step-name"><span class="en">Sync users and fingerprints</span><span class="zh">同步员工与指纹</span></div><div class="step-detail"><span class="en">ADMS sends users, roles, and fingerprints.</span><span class="zh">设备同步员工、角色和指纹数据。</span></div></div>
+            <div class="step done"><span class="num"><i data-lucide="check" class="icon"></i></span><div class="step-name"><span class="en">Device online</span><span class="zh">设备上线</span></div><div class="step-detail"><span class="en">The device is online and can receive jobs.</span><span class="zh">设备已成功上线并可接收任务。</span></div></div>
+          </div>
+          <div class="warning-line"><i data-lucide="triangle-alert" class="icon"></i><span class="en">Important: before testing attendance, compare the device time with Dubai time. Wrong device time will create wrong attendance records.</span><span class="zh">重要：测试打卡前，请核对打卡机时间是否为迪拜时间。设备时间错误会直接生成错误的考勤记录。</span></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
           <div class="card-title"><i data-lucide="users-round" class="icon"></i><span class="en">HR Administrator Operations</span><span class="zh">HR 管理员操作</span></div>
           <div class="card-desc"><span class="en">Employee and attendance-device setup performed by HR administrators.</span><span class="zh">HR 管理员负责员工及打卡设备配置。</span></div>
         </div>
@@ -147,17 +180,6 @@
           <div class="prep"><i data-lucide="info" class="icon"></i><span class="en">Normal users punch only. Device admins manage the device. Enroll admins can perform enrollment according to device-side role permissions.</span><span class="zh">普通用户仅打卡；管理员可管理设备；登记管理员按设备端角色权限执行录入。</span></div>
         </article>
 
-        <article class="flow-section">
-          <div class="flow-title"><i data-lucide="monitor-up" class="icon"></i><span class="en">Add a New Device</span><span class="zh">新增打卡机</span></div>
-          <div class="flow-row">
-            <div class="step"><span class="num">1</span><div class="step-name"><span class="en">Configure ADMS server</span><span class="zh">配置服务器地址</span></div><div class="step-detail"><span class="en">Set ADMS server IP and port on the device.</span><span class="zh">配置设备连接的 ADMS 服务器地址与端口。</span></div></div>
-            <div class="step"><span class="num">2</span><div class="step-name"><span class="en">Device connects ADMS</span><span class="zh">设备连接 ADMS</span></div><div class="step-detail"><span class="en">The device connects and authenticates with ADMS.</span><span class="zh">设备连接 ADMS 服务器并完成认证。</span></div></div>
-            <div class="step"><span class="num">3</span><div class="step-name"><span class="en">Auto discovery</span><span class="zh">自动发现并登记</span></div><div class="step-detail"><span class="en">ADMS discovers and registers the device.</span><span class="zh">ADMS 自动发现设备并登记设备信息。</span></div></div>
-            <div class="step"><span class="num">4</span><div class="step-name"><span class="en">Sync users and fingerprints</span><span class="zh">同步员工与指纹</span></div><div class="step-detail"><span class="en">ADMS sends users, roles, and fingerprints.</span><span class="zh">设备同步员工、角色和指纹数据。</span></div></div>
-            <div class="step done"><span class="num"><i data-lucide="check" class="icon"></i></span><div class="step-name"><span class="en">Device online</span><span class="zh">设备上线</span></div><div class="step-detail"><span class="en">The device is online and can receive jobs.</span><span class="zh">设备已成功上线并可接收任务。</span></div></div>
-          </div>
-          <div class="warning-line"><i data-lucide="triangle-alert" class="icon"></i><span class="en">Current devices must use UTC+4 time configuration.</span><span class="zh">注意：当前设备时区按 UTC+4 配置。</span></div>
-        </article>
       </div>
     </section>
 

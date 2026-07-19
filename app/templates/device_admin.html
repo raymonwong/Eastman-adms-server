@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -57,6 +57,20 @@
       margin-top: 4px;
       color: var(--muted);
       font-size: 13px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .language-select {
+      width: 116px;
+      height: 32px;
+      font-size: 12px;
+      font-weight: 700;
     }
 
     .zh {
@@ -339,73 +353,79 @@
   <main class="page">
     <div class="topbar">
       <div>
-        <h1 class="title">Attendance Device User Permission Management <span class="zh">/ 考勤机用户权限管理</span></h1>
-        <div class="subtitle">Select an attendance device, then assign Mingdao users as Normal, Enroll Admin, or Admin on that device. <span class="zh">/ 先选设备，再把明道云用户设置为普通用户、登记管理员或管理员。</span></div>
+        <h1 class="title" data-i18n="pageTitle">Attendance Device User Permission Management</h1>
+        <div class="subtitle" data-i18n="pageSubtitle">Select an attendance device, then assign Mingdao users as Normal, Enroll Admin, or Admin on that device.</div>
       </div>
-      <button id="refreshBtn" type="button" class="btn btn-outline-primary btn-sm">
-        <i data-lucide="refresh-cw" class="icon"></i> Refresh <span class="zh">/ 刷新</span>
-      </button>
+      <div class="top-actions">
+        <select id="languageSelect" class="form-select language-select" aria-label="Language">
+          <option value="en">English</option>
+          <option value="zh">中文</option>
+        </select>
+        <button id="refreshBtn" type="button" class="btn btn-outline-primary btn-sm">
+          <i data-lucide="refresh-cw" class="icon"></i> <span data-i18n="refresh">Refresh</span>
+        </button>
+      </div>
     </div>
 
     <div class="layout">
       <section class="panel">
         <div class="panel-head">
-          <h2 class="panel-title"><i data-lucide="monitor-check" class="icon"></i> Devices <span class="zh">/ 设备</span></h2>
+          <h2 class="panel-title"><i data-lucide="monitor-check" class="icon"></i> <span data-i18n="devices">Devices</span></h2>
           <span id="deviceCount" class="pill blue">-</span>
         </div>
         <div class="panel-body">
           <div id="deviceList" class="device-list">
-            <div class="state">Loading devices...<br><span class="zh">正在加载设备……</span></div>
+            <div class="state" data-i18n="loadingDevices">Loading devices...</div>
           </div>
         </div>
       </section>
 
       <section class="panel">
         <div class="panel-head">
-          <h2 class="panel-title"><i data-lucide="shield-check" class="icon"></i> Device Roles <span class="zh">/ 设备角色</span></h2>
-          <span id="selectedDeviceLabel" class="muted">No device selected / 未选择设备</span>
+          <h2 class="panel-title"><i data-lucide="shield-check" class="icon"></i> <span data-i18n="deviceRoles">Device Roles</span></h2>
+          <span id="selectedDeviceLabel" class="muted" data-i18n="noDeviceSelected">No device selected</span>
         </div>
         <div class="panel-body">
           <div id="toastLine" class="toast-line"></div>
 
           <div class="device-summary">
             <div class="summary-card">
-              <div class="summary-label">Admins <span class="zh">/ 管理员</span></div>
+              <div class="summary-label" data-i18n="admins">Admins</div>
               <div id="adminCount" class="summary-value">-</div>
             </div>
             <div class="summary-card">
-              <div class="summary-label">Enroll Admins <span class="zh">/ 登记管理员</span></div>
+              <div class="summary-label" data-i18n="enrollAdmins">Enroll Admins</div>
               <div id="enrollAdminCount" class="summary-value">-</div>
             </div>
             <div class="summary-card">
-              <div class="summary-label">Pending <span class="zh">/ 待同步</span></div>
+              <div class="summary-label" data-i18n="pending">Pending</div>
               <div id="pendingCount" class="summary-value">-</div>
             </div>
             <div class="summary-card">
-              <div class="summary-label">Synced <span class="zh">/ 已同步</span></div>
+              <div class="summary-label" data-i18n="synced">Synced</div>
               <div id="syncedCount" class="summary-value">-</div>
             </div>
             <div class="summary-card">
-              <div class="summary-label">Failed <span class="zh">/ 失败</span></div>
+              <div class="summary-label" data-i18n="failed">Failed</div>
               <div id="failedCount" class="summary-value">-</div>
             </div>
           </div>
 
           <div class="toolbar">
-            <input id="searchInput" class="form-control" placeholder="Search employee ID / PIN / name 搜索工号 / PIN / 姓名">
+            <input id="searchInput" class="form-control" data-i18n-placeholder="searchPlaceholder" placeholder="Search employee ID / PIN / name">
             <select id="roleFilter" class="form-select">
-              <option value="all">All Roles / 全部角色</option>
-              <option value="ADMIN">Admins / 管理员</option>
-              <option value="ENROLL_ADMIN">Enroll Admins / 登记管理员</option>
-              <option value="NORMAL">Normal / 普通用户</option>
-              <option value="PENDING">Pending / 待同步</option>
-              <option value="FAILED">Failed / 失败</option>
+              <option value="all" data-i18n="allRoles">All Roles</option>
+              <option value="ADMIN" data-i18n="admins">Admins</option>
+              <option value="ENROLL_ADMIN" data-i18n="enrollAdmins">Enroll Admins</option>
+              <option value="NORMAL" data-i18n="normalUsers">Normal</option>
+              <option value="PENDING" data-i18n="pending">Pending</option>
+              <option value="FAILED" data-i18n="failed">Failed</option>
             </select>
-            <button id="reloadUsersBtn" type="button" class="btn btn-primary">Query <span class="zh">/ 查询</span></button>
+            <button id="reloadUsersBtn" type="button" class="btn btn-primary" data-i18n="query">Query</button>
           </div>
 
           <div id="usersArea" class="state">
-            Select one attendance device first.<br><span class="zh">请先选择一台考勤设备。</span>
+            Select one attendance device first.
           </div>
         </div>
       </section>
@@ -416,9 +436,125 @@
     let devices = [];
     let selectedDeviceSn = '';
     let users = [];
+    const languageKey = 'admsDeviceAdminLanguage';
+    const translations = {
+      en: {
+        pageTitle: 'Attendance Device User Permission Management',
+        pageSubtitle: 'Select an attendance device, then assign Mingdao users as Normal, Enroll Admin, or Admin on that device.',
+        refresh: 'Refresh',
+        devices: 'Devices',
+        deviceRoles: 'Device Roles',
+        noDeviceSelected: 'No device selected',
+        admins: 'Admins',
+        enrollAdmins: 'Enroll Admins',
+        pending: 'Pending',
+        synced: 'Synced',
+        failed: 'Failed',
+        normalUsers: 'Normal',
+        allRoles: 'All Roles',
+        query: 'Query',
+        searchPlaceholder: 'Search employee ID / PIN / name',
+        loadingDevices: 'Loading devices...',
+        loadingUsers: 'Loading users...',
+        noEnabledDevices: 'No attendance devices enabled.',
+        selectDeviceFirst: 'Select one attendance device first.',
+        loadDevicesFailed: 'Load devices failed',
+        loadUsersFailed: 'Load users failed',
+        noMatchingUsers: 'No matching users.',
+        employee: 'Employee',
+        employeeId: 'Employee ID',
+        pin: 'PIN',
+        role: 'Role',
+        sync: 'Sync',
+        action: 'Action',
+        normal: 'Normal',
+        enrollAdmin: 'Enroll Admin',
+        admin: 'Admin',
+        syncing: 'Syncing',
+        noSync: 'No Sync',
+        apply: 'Apply',
+        saving: 'Saving...',
+        roleQueued: 'Role sync queued.',
+        failedPrefix: 'Failed',
+        unnamedDevice: 'Unnamed Device',
+        enrollAdminHint: 'Pri=2. Detailed permissions are configured on the device.'
+      },
+      zh: {
+        pageTitle: '考勤机用户权限管理',
+        pageSubtitle: '先选择考勤设备，再把明道云用户设置为普通用户、登记管理员或管理员。',
+        refresh: '刷新',
+        devices: '设备',
+        deviceRoles: '设备角色',
+        noDeviceSelected: '未选择设备',
+        admins: '管理员',
+        enrollAdmins: '登记管理员',
+        pending: '待同步',
+        synced: '已同步',
+        failed: '失败',
+        normalUsers: '普通用户',
+        allRoles: '全部角色',
+        query: '查询',
+        searchPlaceholder: '搜索工号 / PIN / 姓名',
+        loadingDevices: '正在加载设备……',
+        loadingUsers: '正在加载用户……',
+        noEnabledDevices: '暂无启用记录考勤的设备。',
+        selectDeviceFirst: '请先选择一台考勤设备。',
+        loadDevicesFailed: '加载设备失败',
+        loadUsersFailed: '加载用户失败',
+        noMatchingUsers: '没有匹配用户。',
+        employee: '员工',
+        employeeId: '工号',
+        pin: '打卡机编号',
+        role: '角色',
+        sync: '同步',
+        action: '操作',
+        normal: '普通',
+        enrollAdmin: '登记管理员',
+        admin: '管理员',
+        syncing: '同步中',
+        noSync: '未同步',
+        apply: '应用',
+        saving: '保存中……',
+        roleQueued: '角色同步已加入队列。',
+        failedPrefix: '失败',
+        unnamedDevice: '未命名设备',
+        enrollAdminHint: 'Pri=2，细化权限在设备本机配置。'
+      }
+    };
+    let currentLanguage = detectInitialLanguage();
     const urlParams = new URLSearchParams(window.location.search);
     const initialDeviceSn = urlParams.get('device_sn') || urlParams.get('sn') || '';
     const initialSearch = urlParams.get('employee_id') || urlParams.get('pin') || urlParams.get('q') || '';
+
+    function detectInitialLanguage() {
+      const saved = window.localStorage.getItem(languageKey);
+      if (saved && translations[saved]) return saved;
+      const languages = navigator.languages && navigator.languages.length
+        ? navigator.languages
+        : [navigator.language || ''];
+      const hasChinese = languages.some(function (language) {
+        return String(language || '').toLowerCase().startsWith('zh');
+      });
+      return hasChinese ? 'zh' : 'en';
+    }
+
+    function t(key) {
+      return (translations[currentLanguage] && translations[currentLanguage][key])
+        || translations.en[key]
+        || key;
+    }
+
+    function applyLanguage() {
+      document.documentElement.lang = currentLanguage === 'zh' ? 'zh-CN' : 'en';
+      document.querySelectorAll('[data-i18n]').forEach(function (element) {
+        element.textContent = t(element.dataset.i18n);
+      });
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(function (element) {
+        element.placeholder = t(element.dataset.i18nPlaceholder);
+      });
+      const selector = document.getElementById('languageSelect');
+      if (selector) selector.value = currentLanguage;
+    }
 
     function esc(value) {
       return String(value ?? '').replace(/[&<>"']/g, function (char) {
@@ -446,7 +582,7 @@
     }
 
     async function loadDevices() {
-      document.getElementById('deviceList').innerHTML = '<div class="state">Loading devices...<br><span class="zh">正在加载设备……</span></div>';
+      document.getElementById('deviceList').innerHTML = `<div class="state">${esc(t('loadingDevices'))}</div>`;
       try {
         const response = await fetch('/api/devices/admin', {cache: 'no-store'});
         if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
@@ -461,21 +597,21 @@
           updateSelectedDeviceSummary();
         }
       } catch (error) {
-        document.getElementById('deviceList').innerHTML = `<div class="state text-danger">Load devices failed<br>${esc(error.message || error)}</div>`;
+        document.getElementById('deviceList').innerHTML = `<div class="state text-danger">${esc(t('loadDevicesFailed'))}<br>${esc(error.message || error)}</div>`;
       }
     }
 
     function renderDevices() {
       document.getElementById('deviceCount').textContent = `${devices.length}`;
       if (!devices.length) {
-        document.getElementById('deviceList').innerHTML = '<div class="state">No attendance devices enabled.<br><span class="zh">暂无启用记录考勤的设备。</span></div>';
+        document.getElementById('deviceList').innerHTML = `<div class="state">${esc(t('noEnabledDevices'))}</div>`;
         return;
       }
       document.getElementById('deviceList').innerHTML = devices.map(function (device) {
         const active = device.device_sn === selectedDeviceSn ? ' active' : '';
         return `
           <button type="button" class="device-card${active}" data-device-sn="${esc(device.device_sn)}">
-            <div class="device-name">${esc(device.device_name || 'Unnamed Device')}</div>
+            <div class="device-name">${esc(device.device_name || t('unnamedDevice'))}</div>
             <div class="device-meta mono">${esc(device.device_sn)}</div>
           </button>
         `;
@@ -538,43 +674,43 @@
     async function loadDeviceUsers() {
       if (!selectedDeviceSn) return;
       const keyword = document.getElementById('searchInput').value.trim();
-      document.getElementById('usersArea').innerHTML = '<div class="state">Loading users...<br><span class="zh">正在加载用户……</span></div>';
+      document.getElementById('usersArea').innerHTML = `<div class="state">${esc(t('loadingUsers'))}</div>`;
       try {
         const response = await fetch(`/api/devices/${encodeURIComponent(selectedDeviceSn)}/role-users?q=${encodeURIComponent(keyword)}`, {cache: 'no-store'});
         if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
         users = await response.json();
         renderUsers();
       } catch (error) {
-        document.getElementById('usersArea').innerHTML = `<div class="state text-danger">Load users failed<br>${esc(error.message || error)}</div>`;
+        document.getElementById('usersArea').innerHTML = `<div class="state text-danger">${esc(t('loadUsersFailed'))}<br>${esc(error.message || error)}</div>`;
       }
     }
 
     function roleBadge(user) {
       if (user.role_code === 'ADMIN') {
-        return '<span class="pill purple">ADMIN / 管理员</span>';
+        return `<span class="pill purple">${esc(t('admin'))}</span>`;
       }
       if (user.role_code === 'ENROLL_ADMIN') {
-        return '<span class="pill orange" title="Pri=2. Detailed permissions are configured on the device. / Pri=2，细化权限在设备本机配置。">ENROLL ADMIN / 登记管理员</span>';
+        return `<span class="pill orange" title="${esc(t('enrollAdminHint'))}">${esc(t('enrollAdmin'))}</span>`;
       }
       if (user.role_code === 'NORMAL') {
-        return '<span class="pill blue">NORMAL / 普通用户</span>';
+        return `<span class="pill blue">${esc(t('normal'))}</span>`;
       }
       return `<span class="pill orange">${esc(user.role_code || 'PRI')} / Pri${esc(user.target_privilege || '-')}</span>`;
     }
 
     function syncBadge(user) {
       const status = String(user.sync_status || '-').toUpperCase();
-      if (status === 'PENDING') return '<span class="pill orange">PENDING / 待同步</span>';
-      if (status === 'SYNCED') return '<span class="pill green">SYNCED / 已同步</span>';
-      if (status === 'FAILED') return '<span class="pill red">FAILED / 失败</span>';
-      if (status === 'SYNCING') return '<span class="pill blue">SYNCING / 同步中</span>';
-      return '<span class="pill">NO SYNC / 未同步</span>';
+      if (status === 'PENDING') return `<span class="pill orange">${esc(t('pending'))}</span>`;
+      if (status === 'SYNCED') return `<span class="pill green">${esc(t('synced'))}</span>`;
+      if (status === 'FAILED') return `<span class="pill red">${esc(t('failed'))}</span>`;
+      if (status === 'SYNCING') return `<span class="pill blue">${esc(t('syncing'))}</span>`;
+      return `<span class="pill">${esc(t('noSync'))}</span>`;
     }
 
     function renderUsers() {
       const rows = filteredUsers();
       if (!rows.length) {
-        document.getElementById('usersArea').innerHTML = '<div class="state">No matching users.<br><span class="zh">没有匹配用户。</span></div>';
+        document.getElementById('usersArea').innerHTML = `<div class="state">${esc(t('noMatchingUsers'))}</div>`;
         return;
       }
       document.getElementById('usersArea').innerHTML = `
@@ -582,12 +718,12 @@
           <table class="table table-hover align-middle">
             <thead>
               <tr>
-                <th>Employee / 员工</th>
-                <th>Employee ID / 工号</th>
-                <th>PIN / 打卡机编号</th>
-                <th>Role / 角色</th>
-                <th>Sync / 同步</th>
-                <th>Action / 操作</th>
+                <th>${esc(t('employee'))}</th>
+                <th>${esc(t('employeeId'))}</th>
+                <th>${esc(t('pin'))}</th>
+                <th>${esc(t('role'))}</th>
+                <th>${esc(t('sync'))}</th>
+                <th>${esc(t('action'))}</th>
               </tr>
             </thead>
             <tbody>
@@ -610,12 +746,12 @@
           <td>
             <div class="role-action">
               <select class="form-select form-select-sm role-select" data-role-select-for="${esc(user.user_id)}">
-                <option value="NORMAL" ${roleCode === 'NORMAL' ? 'selected' : ''}>Normal / 普通</option>
-                <option value="ENROLL_ADMIN" ${roleCode === 'ENROLL_ADMIN' ? 'selected' : ''}>Enroll Admin / 登记</option>
-                <option value="ADMIN" ${roleCode === 'ADMIN' ? 'selected' : ''}>Admin / 管理员</option>
+                <option value="NORMAL" ${roleCode === 'NORMAL' ? 'selected' : ''}>${esc(t('normal'))}</option>
+                <option value="ENROLL_ADMIN" ${roleCode === 'ENROLL_ADMIN' ? 'selected' : ''}>${esc(t('enrollAdmin'))}</option>
+                <option value="ADMIN" ${roleCode === 'ADMIN' ? 'selected' : ''}>${esc(t('admin'))}</option>
               </select>
               <button class="btn btn-sm btn-primary" data-user-id="${esc(user.user_id)}">
-                Apply / 应用
+                ${esc(t('apply'))}
               </button>
             </div>
           </td>
@@ -627,7 +763,7 @@
       if (!selectedDeviceSn) return;
       button.disabled = true;
       const oldText = button.textContent;
-      button.textContent = 'Saving...';
+      button.textContent = t('saving');
       try {
         const response = await fetch(`/api/devices/${encodeURIComponent(selectedDeviceSn)}/role-users/${encodeURIComponent(userId)}`, {
           method: 'POST',
@@ -636,11 +772,11 @@
         });
         const result = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(result.detail || `${response.status} ${response.statusText}`);
-        showToast(result.message || 'Role sync queued. / 角色同步已加入队列。');
+        showToast(result.message || t('roleQueued'));
         await loadDevices();
         await loadDeviceUsers();
       } catch (error) {
-        showToast(`Failed: ${error.message || error}`, 'error');
+        showToast(`${t('failedPrefix')}: ${error.message || error}`, 'error');
         button.disabled = false;
         button.textContent = oldText;
       }
@@ -668,9 +804,23 @@
       await loadDevices();
       if (selectedDeviceSn) await loadDeviceUsers();
     });
+    document.getElementById('languageSelect').addEventListener('change', function (event) {
+      currentLanguage = event.target.value;
+      window.localStorage.setItem(languageKey, currentLanguage);
+      applyLanguage();
+      renderDevices();
+      updateSelectedDeviceSummary();
+      if (users.length) {
+        renderUsers();
+      } else if (!selectedDeviceSn) {
+        document.getElementById('usersArea').innerHTML = `<div class="state">${esc(t('selectDeviceFirst'))}</div>`;
+      }
+    });
 
     document.addEventListener('DOMContentLoaded', function () {
+      applyLanguage();
       document.getElementById('searchInput').value = initialSearch;
+      document.getElementById('usersArea').innerHTML = `<div class="state">${esc(t('selectDeviceFirst'))}</div>`;
       loadDevices();
       if (window.lucide) window.lucide.createIcons();
     });
