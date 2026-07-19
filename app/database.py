@@ -361,6 +361,8 @@ def ensure_dt010_1_user_sync(engine: Engine) -> None:
             employee_id VARCHAR(64) NOT NULL,
             device_sn VARCHAR(64) NOT NULL,
             sync_status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
+            target_privilege VARCHAR(32) NULL,
+            role_name VARCHAR(64) NULL,
             last_sync_time DATETIME NULL,
             retry_count INT NOT NULL DEFAULT 0,
             last_error TEXT NULL,
@@ -376,6 +378,8 @@ def ensure_dt010_1_user_sync(engine: Engine) -> None:
         "CREATE INDEX ix_device_user_sync_employee_id ON device_user_sync (employee_id)",
         "CREATE INDEX ix_device_user_sync_device_sn ON device_user_sync (device_sn)",
         "CREATE INDEX ix_device_user_sync_status ON device_user_sync (sync_status)",
+        "ALTER TABLE device_user_sync ADD COLUMN target_privilege VARCHAR(32) NULL",
+        "ALTER TABLE device_user_sync ADD COLUMN role_name VARCHAR(64) NULL",
         """
         DELETE dus FROM device_user_sync dus
         LEFT JOIN device_user du ON du.employee_id = dus.employee_id

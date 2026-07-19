@@ -291,6 +291,8 @@ class DeviceUserSync(Base):
     employee_id: Mapped[str] = mapped_column(ForeignKey("device_user.employee_id"), nullable=False)
     device_sn: Mapped[str] = mapped_column(ForeignKey("device.device_sn"), nullable=False)
     sync_status: Mapped[str] = mapped_column(String(32), server_default="PENDING", nullable=False)
+    target_privilege: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    role_name: Mapped[str | None] = mapped_column(String(64), nullable=True)
     last_sync_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     retry_count: Mapped[int] = mapped_column(Integer, server_default="0", nullable=False)
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)

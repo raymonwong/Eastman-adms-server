@@ -1,7 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -13,6 +13,11 @@ from app.models import Device, DeviceUser, DeviceUserFingerprint, DeviceUserSync
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
+
+DEVICE_ROLE_MAP = {
+    "NORMAL": {"privilege": "0", "label": "Normal User / 普通用户"},
+    "ADMIN": {"privilege": "14", "label": "Administrator / 管理员"},
+}
 
 
 class AdmsUserResponse(BaseModel):
@@ -35,6 +40,30 @@ class AdmsUserResponse(BaseModel):
     failed_sync: int
     fingerprint_count: int
     sync_details: list[dict[str, object | None]]
+
+
+class DeviceOptionResponse(BaseModel):
+    device_sn: str
+    device_name: str | None
+    location: str | None
+    status: str | None
+    label: str
+
+
+class DeviceRoleRequest(BaseModel):
+    role_code: str
+    device_sns: list[str]
+
+
+class DeviceRoleResponse(BaseModel):
+    success: bool
+    user_id: int
+    employee_id: str
+    role_code: str
+    target_privilege: str
+    sync_records: int
+    devices: list[str]
+    message: str
 
 
 def _pin_aliases(pin: str | None) -> set[str]:
@@ -86,9 +115,18 @@ def _sync_details(session, employee_id: str | None) -> list[dict[str, object | N
             "retry_count": record.retry_count,
             "last_sync_time": record.last_sync_time,
             "last_error": record.last_error,
+            "target_privilege": record.target_privilege,
+            "role_name": record.role_name,
         }
         for record in records
     ]
+
+
+def _device_label(device: Device) -> str:
+    parts = [device.device_name or "Unnamed Device", device.device_sn]
+    if device.location:
+        parts.append(device.location)
+    return " · ".join(parts)
 
 
 def _fingerprint_count(session, user: DeviceUser) -> int:
@@ -152,3 +190,89 @@ async def adms_users_page(request: Request):
 @router.get("/api/adms-users", response_model=list[AdmsUserResponse])
 def api_list_adms_users() -> list[AdmsUserResponse]:
     return _list_adms_users()
+
+
+@router.get("/api/adms-users/devices", response_model=list[DeviceOptionResponse])
+def api_list_role_devices() -> list[DeviceOptionResponse]:
+    with SessionLocal() as session:
+        devices = (
+            session.query(Device)
+            .filter(Device.record_attendance.is_(True))
+            .order_by(Device.updated_at.desc(), Device.device_sn.asc())
+            .all()
+        )
+        return [
+            DeviceOptionResponse(
+                device_sn=device.device_sn,
+                device_name=device.device_name,
+                location=device.location,
+                status=device.status,
+                label=_device_label(device),
+            )
+            for device in devices
+        ]
+
+
+@router.post("/api/adms-users/{user_id}/role", response_model=DeviceRoleResponse)
+def api_set_device_role(user_id: int, payload: DeviceRoleRequest) -> DeviceRoleResponse:
+    role_code = (payload.role_code or "").strip().upper()
+    if role_code not in DEVICE_ROLE_MAP:
+        raise HTTPException(status_code=422, detail="Unsupported role_code. Use NORMAL or ADMIN.")
+
+    device_sns = sorted({str(device_sn or "").strip() for device_sn in payload.device_sns if str(device_sn or "").strip()})
+    if not device_sns:
+        raise HTTPException(status_code=422, detail="At least one device_sn is required.")
+
+    role = DEVICE_ROLE_MAP[role_code]
+    target_privilege = role["privilege"]
+
+    with SessionLocal() as session:
+        user = session.get(DeviceUser, user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="ADMS user not found.")
+        if not user.employee_id:
+            raise HTTPException(status_code=422, detail="Only Mingdao users with employee_id can be synchronized to devices.")
+        if not user.pin:
+            raise HTTPException(status_code=422, detail="User has no device PIN.")
+
+        devices = (
+            session.query(Device)
+            .filter(Device.device_sn.in_(device_sns))
+            .filter(Device.record_attendance.is_(True))
+            .order_by(Device.device_sn.asc())
+            .all()
+        )
+        valid_device_sns = [device.device_sn for device in devices]
+        if not valid_device_sns:
+            raise HTTPException(status_code=422, detail="No enabled attendance devices were selected.")
+
+        sync_records = 0
+        for device_sn in valid_device_sns:
+            sync_record = (
+                session.query(DeviceUserSync)
+                .filter(DeviceUserSync.employee_id == user.employee_id, DeviceUserSync.device_sn == device_sn)
+                .one_or_none()
+            )
+            if sync_record is None:
+                sync_record = DeviceUserSync(employee_id=user.employee_id, device_sn=device_sn)
+                session.add(sync_record)
+
+            sync_record.target_privilege = target_privilege
+            sync_record.role_name = role_code
+            sync_record.sync_status = "PENDING"
+            sync_record.retry_count = 0
+            sync_record.last_error = None
+            sync_records += 1
+
+        session.commit()
+
+    return DeviceRoleResponse(
+        success=True,
+        user_id=user_id,
+        employee_id=user.employee_id,
+        role_code=role_code,
+        target_privilege=target_privilege,
+        sync_records=sync_records,
+        devices=valid_device_sns,
+        message=f"{role['label']} queued for {sync_records} device(s).",
+    )

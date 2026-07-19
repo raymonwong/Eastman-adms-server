@@ -313,7 +313,8 @@ def _build_userinfo_command(sync_record: DeviceUserSync, user: DeviceUser) -> st
 
     # Disabled Mingdao users are not deleted in DT011; send them as normal users
     # with no administrator privilege until a later explicit delete task exists.
-    privilege = "0" if not user.enabled else _command_value(user.privilege or "0")
+    target_privilege = getattr(sync_record, "target_privilege", None)
+    privilege = "0" if not user.enabled else _command_value(target_privilege or user.privilege or "0")
     card = _command_value(user.card_no or user.card)
     fields = [
         f"PIN={pin}",
