@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="zh-CN" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Help Center - ADMS Console</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      --bg: #071016; --sidebar: #0d1721; --panel: #101923; --card: #0b141d;
+      --line: rgba(159, 184, 210, 0.18); --text: #dce8f5; --muted: #8ea2b8;
+      --blue: #8fb3d9; --green: #2bd47d; --cyan: #22d3ee; --red: #ff5d6c;
+      --yellow: #fbbf24; --radius: 8px;
+    }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 14px; line-height: 1.42; }
+    .app-frame { display: grid; grid-template-columns: 148px minmax(0, 1fr); min-height: 100vh; }
+    .sidebar { background: var(--sidebar); border-right: 1px solid var(--line); padding: 14px 10px; position: sticky; top: 0; height: 100vh; }
+    .brand { padding: 4px 8px 14px; border-bottom: 1px solid var(--line); margin-bottom: 10px; }
+    .brand-title { font-size: 12px; color: #fff; font-weight: 900; }
+    .brand-subtitle { color: var(--muted); font-size: 10px; margin-top: 6px; }
+    .nav-link-console { display: flex; gap: 8px; align-items: center; color: var(--muted); text-decoration: none; padding: 10px 8px; border-radius: 6px; margin-bottom: 4px; font-size: 12px; }
+    .nav-link-console.active, .nav-link-console:hover { background: #16344d; color: #eff7ff; }
+    .settings-group-label { color: var(--muted); font-size: 11px; font-weight: 900; padding: 10px 8px 4px; text-transform: uppercase; letter-spacing: 0.02em; }
+    .settings-sub-link { padding-left: 18px; font-size: 11px; }
+    .icon { width: 18px; height: 18px; flex: 0 0 auto; }
+    .sidebar-version { position: absolute; bottom: 12px; left: 18px; color: var(--muted); font-size: 10px; }
+    .zh-sub { color: var(--muted); font-size: 0.86em; font-weight: 700; }
+    .shell { max-width: 1420px; margin: 0 auto; width: 100%; padding: 18px 26px 34px; }
+    .page-head { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; margin-bottom: 14px; }
+    .page-title { margin: 0; color: #f3f8ff; font-size: 24px; font-weight: 900; }
+    .page-subtitle { color: var(--muted); font-size: 12px; margin-top: 4px; max-width: 920px; }
+    .hero-note { border: 1px solid rgba(34, 211, 238, 0.28); background: rgba(34, 211, 238, 0.08); border-radius: var(--radius); color: #b7eff8; padding: 12px 14px; margin-bottom: 14px; }
+    .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; margin-bottom: 14px; }
+    .panel-header { min-height: 40px; padding: 10px 14px; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; color: var(--blue); font-weight: 900; }
+    .panel-body { padding: 14px; }
+    .function-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .function-card, .guide-card, .note-card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; min-width: 0; }
+    .function-title { display: flex; align-items: center; gap: 8px; color: #f3f8ff; font-weight: 900; margin-bottom: 8px; }
+    .function-card p, .guide-card p, .note-card p { color: var(--muted); margin: 0; font-size: 12px; }
+    .guide-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .guide-title { display: flex; align-items: center; gap: 8px; color: #f3f8ff; font-weight: 900; margin-bottom: 10px; }
+    .flow { display: flex; align-items: stretch; gap: 7px; flex-wrap: wrap; margin: 10px 0; }
+    .flow-node { border: 1px solid rgba(143, 179, 217, 0.35); background: rgba(143, 179, 217, 0.08); border-radius: 8px; padding: 8px 10px; color: #eaf5ff; font-size: 12px; font-weight: 900; min-width: 112px; display: flex; align-items: center; gap: 6px; }
+    .flow-arrow { color: var(--cyan); display: flex; align-items: center; font-weight: 900; }
+    .steps { margin: 10px 0 0; padding-left: 0; list-style: none; display: grid; gap: 7px; }
+    .steps li { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 8px; color: var(--muted); font-size: 12px; }
+    .step-no { width: 22px; height: 22px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(34, 211, 238, 0.45); color: var(--cyan); font-size: 11px; font-weight: 900; }
+    .role-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .role-table th, .role-table td { border-bottom: 1px solid var(--line); padding: 9px 8px; vertical-align: top; }
+    .role-table th { color: var(--blue); font-weight: 900; background: rgba(255,255,255,0.03); }
+    .badge-soft { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 8px; font-size: 12px; font-weight: 900; border: 1px solid var(--line); }
+    .badge-cyan { color: var(--cyan); background: rgba(34, 211, 238, 0.10); border-color: rgba(34, 211, 238, 0.28); }
+    .badge-yellow { color: var(--yellow); background: rgba(251, 191, 36, 0.10); border-color: rgba(251, 191, 36, 0.28); }
+    .note-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .note-card strong { color: #f3f8ff; display: block; margin-bottom: 6px; }
+    @media (max-width: 1100px) {
+      .function-grid, .note-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .guide-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 760px) {
+      .app-frame { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; display: flex; overflow-x: auto; gap: 8px; }
+      .brand, .sidebar-version, .settings-group-label { display: none; }
+      .shell { padding: 14px 12px 22px; }
+      .function-grid, .note-grid { grid-template-columns: 1fr; }
+      .page-head { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-frame">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-title">ADMS CONSOLE</div>
+        <div class="brand-subtitle">Attendance Data<br>Management Server</div>
+      </div>
+      <a class="nav-link-console" href="/console"><i data-lucide="layout-dashboard" class="icon"></i><span>Operation Monitor<br><span class="zh-sub">运行监控</span></span></a>
+      <a class="nav-link-console" href="/dms"><i data-lucide="monitor-cog" class="icon"></i><span>Device Management<br><span class="zh-sub">设备管理</span></span></a>
+      <a class="nav-link-console" href="/users"><i data-lucide="users" class="icon"></i><span>ADMS Users<br><span class="zh-sub">用户列表</span></span></a>
+      <div class="settings-group-label">Protocol Console <span class="zh-sub">/ 协议控制台</span></div>
+      <a class="nav-link-console settings-sub-link" href="/settings/integration"><i data-lucide="cable" class="icon"></i><span>Inbound API<br><span class="zh-sub">对外 API</span></span></a>
+      <a class="nav-link-console settings-sub-link" href="/settings/attendance-sync"><i data-lucide="clipboard-check" class="icon"></i><span>Attendance Sync<br><span class="zh-sub">考勤同步</span></span></a>
+      <div class="settings-group-label">System Settings <span class="zh-sub">/ 系统配置</span></div>
+      <a class="nav-link-console settings-sub-link" href="/settings/backup"><i data-lucide="database-backup" class="icon"></i><span>Backup Settings<br><span class="zh-sub">备份设置</span></span></a>
+      <a class="nav-link-console settings-sub-link" href="/settings/alerts"><i data-lucide="bell-ring" class="icon"></i><span>Alert Settings<br><span class="zh-sub">告警设置</span></span></a>
+      <a class="nav-link-console settings-sub-link active" href="/settings/help"><i data-lucide="circle-help" class="icon"></i><span>Help Center<br><span class="zh-sub">帮助中心</span></span></a>
+      <div class="sidebar-version">v1.0.0</div>
+    </aside>
+
+    <main class="shell">
+      <section class="page-head">
+        <div>
+          <h1 class="page-title">Help Center <span class="zh-sub">/ 帮助中心</span></h1>
+          <div class="page-subtitle">System functions and user operation guide for daily ADMS administration. <span class="zh-sub">/ ADMS 日常管理的系统功能说明与用户操作指南。</span></div>
+        </div>
+        <span class="badge-soft badge-cyan"><i data-lucide="book-open" class="icon"></i> English first <span class="zh-sub">/ 中文辅助</span></span>
+      </section>
+
+      <div class="hero-note">
+        This page is a practical operating map. Use it to understand where each function lives, then follow the diagrams for employee creation, role setup, fingerprint enrollment, backup, and alerts.
+        <br><span class="zh-sub">本页是操作地图：先看功能在哪里，再按图示完成新增员工、设置角色、录入指纹、备份和告警配置。</span>
+      </div>
+
+      <section class="panel">
+        <div class="panel-header"><i data-lucide="layout-dashboard" class="icon"></i> System Functions <span class="zh-sub">/ 系统功能</span></div>
+        <div class="panel-body">
+          <div class="function-grid">
+            <div class="function-card">
+              <div class="function-title"><i data-lucide="monitor-check" class="icon"></i> Operation Monitor</div>
+              <p>Shows server status, device online state, latest attendance, event log, and abnormal priorities.<br><span class="zh-sub">显示服务器状态、设备在线、最近考勤、实时事件和异常优先级。</span></p>
+            </div>
+            <div class="function-card">
+              <div class="function-title"><i data-lucide="monitor-cog" class="icon"></i> Device Management</div>
+              <p>Manages discovered devices, attendance recording, console visibility, and UTC+4 device notice.<br><span class="zh-sub">管理自动发现设备、是否记录考勤、是否显示在监控页，以及 UTC+4 时区提示。</span></p>
+            </div>
+            <div class="function-card">
+              <div class="function-title"><i data-lucide="users" class="icon"></i> ADMS Users</div>
+              <p>Displays Mingdao users, PIN, employee record ID, sync state, fingerprint count, and device roles.<br><span class="zh-sub">显示明道用户、打卡机 PIN、员工记录 ID、同步状态、指纹数量和设备角色。</span></p>
+            </div>
+            <div class="function-card">
+              <div class="function-title"><i data-lucide="shield-check" class="icon"></i> Device Role Page</div>
+              <p>Assigns Normal, Device Admin, or Enroll Admin for each attendance device.<br><span class="zh-sub">按设备给员工设置普通用户、管理员或登记管理员。</span></p>
+            </div>
+            <div class="function-card">
+              <div class="function-title"><i data-lucide="cable" class="icon"></i> Inbound API</div>
+              <p>Receives employee data from Mingdao workflows and provides token, examples, and API test tools.<br><span class="zh-sub">接收明道工作流员工数据，提供 Token、示例和接口测试。</span></p>
+            </div>
+            <div class="function-card">
+              <div class="function-title"><i data-lucide="clipboard-check" class="icon"></i> Attendance Sync</div>
+              <p>Uploads ADMS attendance records to Mingdao with duplicate prevention, retry, and diagnostic log.<br><span class="zh-sub">将 ADMS 考勤记录上传到明道，包含去重、重试和诊断日志。</span></p>
+            </div>
+            <div class="function-card">
+              <div class="function-title"><i data-lucide="database-backup" class="icon"></i> Backup Settings</div>
+              <p>Supports daily backup, manual backup, retention, download, and restore instructions.<br><span class="zh-sub">支持每日备份、手动备份、保留数量、下载和恢复说明。</span></p>
+            </div>
+            <div class="function-card">
+              <div class="function-title"><i data-lucide="bell-ring" class="icon"></i> Alert Settings</div>
+              <p>Monitors offline devices, sync failures, stale backup files, and optional webhook delivery.<br><span class="zh-sub">监控设备离线、同步失败、备份过期，并可发送 Webhook 告警。</span></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header"><i data-lucide="route" class="icon"></i> User Operation Guide <span class="zh-sub">/ 用户操作说明</span></div>
+        <div class="panel-body">
+          <div class="guide-grid">
+            <article class="guide-card">
+              <div class="guide-title"><i data-lucide="user-plus" class="icon"></i> Add a New Employee <span class="zh-sub">/ 新增员工</span></div>
+              <div class="flow">
+                <div class="flow-node">Mingdao Employee</div><div class="flow-arrow">→</div>
+                <div class="flow-node">POST /api/v1/users</div><div class="flow-arrow">→</div>
+                <div class="flow-node">ADMS User</div><div class="flow-arrow">→</div>
+                <div class="flow-node">Device GETREQUEST</div>
+              </div>
+              <p>When a Mingdao employee is created or updated, the workflow sends employee_record_id, employee_id, PIN, name, department, enabled, and privilege to ADMS.</p>
+              <p><span class="zh-sub">明道新增或更新员工时，工作流把员工记录 ID、工号、PIN、姓名、部门、启用状态和权限发送到 ADMS。</span></p>
+              <ol class="steps">
+                <li><span class="step-no">1</span><span>Create or update the employee record in Mingdao. <span class="zh-sub">在明道创建或更新员工档案。</span></span></li>
+                <li><span class="step-no">2</span><span>The workflow calls the ADMS Inbound API. <span class="zh-sub">工作流调用 ADMS 对外 API。</span></span></li>
+                <li><span class="step-no">3</span><span>ADMS queues synchronization for all attendance devices that record attendance. <span class="zh-sub">ADMS 为所有记录考勤的设备创建同步任务。</span></span></li>
+                <li><span class="step-no">4</span><span>The device receives the user on its next GETREQUEST. <span class="zh-sub">设备下次 GETREQUEST 时接收用户。</span></span></li>
+              </ol>
+            </article>
+
+            <article class="guide-card">
+              <div class="guide-title"><i data-lucide="user-x" class="icon"></i> Resignation or Disable <span class="zh-sub">/ 离职或停用</span></div>
+              <div class="flow">
+                <div class="flow-node">Mingdao Status</div><div class="flow-arrow">→</div>
+                <div class="flow-node">enabled=false</div><div class="flow-arrow">→</div>
+                <div class="flow-node">ADMS Disabled</div><div class="flow-arrow">→</div>
+                <div class="flow-node">Device Disable</div>
+              </div>
+              <p>For resigned employees, send the same employee payload with enabled=false. ADMS marks the user as disabled and sends disable commands instead of deleting immediately.</p>
+              <p><span class="zh-sub">员工离职时，发送同一员工数据并设置 enabled=false。ADMS 标记为停用，并下发停用命令，不立即删除。</span></p>
+            </article>
+
+            <article class="guide-card">
+              <div class="guide-title"><i data-lucide="shield" class="icon"></i> Set Device Role <span class="zh-sub">/ 设置打卡机角色</span></div>
+              <div class="flow">
+                <div class="flow-node">Select Device</div><div class="flow-arrow">→</div>
+                <div class="flow-node">Find Employee</div><div class="flow-arrow">→</div>
+                <div class="flow-node">Choose Role</div><div class="flow-arrow">→</div>
+                <div class="flow-node">Queued Command</div>
+              </div>
+              <p>Open the device role management link, select a device, then set the employee as Normal, Admin, or Enroll Admin. The role is applied on the next device request.</p>
+              <p><span class="zh-sub">打开设备角色管理链接，选择设备，再把员工设置为普通用户、管理员或登记管理员。设备下次请求时应用角色。</span></p>
+              <div class="table-responsive mt-3">
+                <table class="role-table">
+                  <thead><tr><th>Role / 角色</th><th>Meaning / 含义</th></tr></thead>
+                  <tbody>
+                    <tr><td>Normal User<br><span class="zh-sub">普通用户</span></td><td>Punch attendance only. <span class="zh-sub">仅用于打卡。</span></td></tr>
+                    <tr><td>Device Admin<br><span class="zh-sub">管理员</span></td><td>Full device administration permission according to device firmware. <span class="zh-sub">按设备固件拥有完整管理权限。</span></td></tr>
+                    <tr><td>Enroll Admin<br><span class="zh-sub">登记管理员</span></td><td>ADMS assigns the enrollment role group; detailed permissions are configured on the device. <span class="zh-sub">ADMS 只分配登记角色组，细化权限在打卡机上配置。</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </article>
+
+            <article class="guide-card">
+              <div class="guide-title"><i data-lucide="fingerprint" class="icon"></i> Enroll Fingerprint <span class="zh-sub">/ 录入指纹</span></div>
+              <div class="flow">
+                <div class="flow-node">Enroll on Device</div><div class="flow-arrow">→</div>
+                <div class="flow-node">OPERLOG FP</div><div class="flow-arrow">→</div>
+                <div class="flow-node">ADMS Latest FP</div><div class="flow-arrow">→</div>
+                <div class="flow-node">Other Devices</div>
+              </div>
+              <p>Enroll or update a fingerprint on any attendance device. The device uploads FP data to ADMS, ADMS keeps the latest template, then distributes it to other participating devices.</p>
+              <p><span class="zh-sub">在任一台打卡机录入或更新指纹。设备把 FP 数据上传到 ADMS，ADMS 保存最新模板，再分发到其他参与考勤的设备。</span></p>
+            </article>
+
+            <article class="guide-card">
+              <div class="guide-title"><i data-lucide="monitor-up" class="icon"></i> Add a New Device <span class="zh-sub">/ 新增打卡机</span></div>
+              <div class="flow">
+                <div class="flow-node">Set ADMS IP</div><div class="flow-arrow">→</div>
+                <div class="flow-node">Device Online</div><div class="flow-arrow">→</div>
+                <div class="flow-node">Auto Register</div><div class="flow-arrow">→</div>
+                <div class="flow-node">Download Data</div>
+              </div>
+              <p>Configure the server IP, port, ADMS server type, and HTTPS setting according to the deployment. ADMS discovers the device and synchronizes users, roles, and fingerprints.</p>
+              <p><span class="zh-sub">按部署配置服务器 IP、端口、ADMS 类型和 HTTPS。ADMS 会发现设备并同步用户、角色和指纹。</span></p>
+            </article>
+
+            <article class="guide-card">
+              <div class="guide-title"><i data-lucide="database-backup" class="icon"></i> Backup and Restore <span class="zh-sub">/ 备份与恢复</span></div>
+              <div class="flow">
+                <div class="flow-node">Daily Backup</div><div class="flow-arrow">→</div>
+                <div class="flow-node">Manual Backup</div><div class="flow-arrow">→</div>
+                <div class="flow-node">Download Copy</div><div class="flow-arrow">→</div>
+                <div class="flow-node">Restore Server</div>
+              </div>
+              <p>Use automatic backups for daily protection, manual backup before risky changes, and periodically download backup packages to a local computer or cloud drive.</p>
+              <p><span class="zh-sub">日常依赖自动备份，高风险操作前执行手动备份，并定期下载到本地电脑或网盘保存。</span></p>
+            </article>
+
+            <article class="guide-card">
+              <div class="guide-title"><i data-lucide="bell-ring" class="icon"></i> Configure Alerts <span class="zh-sub">/ 配置告警</span></div>
+              <div class="flow">
+                <div class="flow-node">Set Thresholds</div><div class="flow-arrow">→</div>
+                <div class="flow-node">Optional Webhook</div><div class="flow-arrow">→</div>
+                <div class="flow-node">Alert Page</div><div class="flow-arrow">→</div>
+                <div class="flow-node">Notification</div>
+              </div>
+              <p>Set offline, sync failure, and backup stale thresholds. Webhook delivery is optional; alerts always remain visible in the Console.</p>
+              <p><span class="zh-sub">设置离线、同步失败和备份过期阈值。Webhook 是可选项；告警始终会在 Console 中显示。</span></p>
+            </article>
+
+            <article class="guide-card">
+              <div class="guide-title"><i data-lucide="refresh-cw" class="icon"></i> Daily Reconciliation <span class="zh-sub">/ 每日兜底同步</span></div>
+              <div class="flow">
+                <div class="flow-node">Schedule</div><div class="flow-arrow">→</div>
+                <div class="flow-node">Compare ADMS Users</div><div class="flow-arrow">→</div>
+                <div class="flow-node">Queue Missing Data</div><div class="flow-arrow">→</div>
+                <div class="flow-node">Device Applies</div>
+              </div>
+              <p>The scheduled reconciliation re-queues missing users, roles, and fingerprints for devices that record attendance.</p>
+              <p><span class="zh-sub">定时兜底同步会为记录考勤的设备重新排队缺失用户、角色和指纹。</span></p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header"><i data-lucide="triangle-alert" class="icon"></i> Important Notes <span class="zh-sub">/ 注意事项</span></div>
+        <div class="panel-body">
+          <div class="note-grid">
+            <div class="note-card">
+              <strong>Timezone / 时区</strong>
+              <p>The current server is designed for UTC+4 attendance devices. For other timezones, contact development before adding devices.<br><span class="zh-sub">当前服务器按 UTC+4 打卡机设计。其他时区新增设备前请联系开发升级。</span></p>
+            </div>
+            <div class="note-card">
+              <strong>Source of Truth / 数据源</strong>
+              <p>Mingdao owns employee profile data. Attendance devices are terminals and should not overwrite employee names, departments, or enabled status.<br><span class="zh-sub">员工基础资料以明道为准。打卡机只是终端，不覆盖姓名、部门和启用状态。</span></p>
+            </div>
+            <div class="note-card">
+              <strong>Backup Discipline / 备份习惯</strong>
+              <p>Keep server backups and download important backup packages outside the server. This is the fastest recovery path after server failure.<br><span class="zh-sub">服务器内保留备份，同时把重要备份包下载到服务器外，故障时恢复最快。</span></p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

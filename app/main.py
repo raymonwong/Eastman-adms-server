@@ -12,6 +12,7 @@ from app.backup_settings import router as backup_settings_router
 from app.console import router as console_router
 from app.database import check_database_connection, configure_session_factory, create_database_engine, create_database_tables
 from app.device_management import router as device_management_router
+from app.help_center import router as help_center_router
 from app.integration_settings import router as integration_settings_router
 from app.mingdao_attendance import attendance_auto_sync_interval_seconds, sync_pending_attendance_to_mingdao
 from app.mingdao_users import router as mingdao_users_router
@@ -111,6 +112,7 @@ app.include_router(alert_settings_router)
 app.include_router(backup_settings_router)
 app.include_router(console_router)
 app.include_router(device_management_router)
+app.include_router(help_center_router)
 app.include_router(integration_settings_router)
 app.include_router(mingdao_users_router)
 app.include_router(user_console_router)
