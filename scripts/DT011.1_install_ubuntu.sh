@@ -31,9 +31,13 @@ load_env() {
 
 cleanup_test_data() {
   compose exec -T mysql mysql -u"${MYSQL_USERNAME}" -p"${MYSQL_PASSWORD}" "${MYSQL_DATABASE}" -e "
+SET FOREIGN_KEY_CHECKS=0;
+DELETE FROM device_user_fingerprint_sync WHERE device_sn='${TEST_DEVICE_SN}' OR pin='${TEST_PIN}';
+DELETE FROM device_user_fingerprint WHERE device_sn='${TEST_DEVICE_SN}' OR source_device_sn='${TEST_DEVICE_SN}' OR pin='${TEST_PIN}';
 DELETE FROM device_user_sync WHERE employee_id='${TEST_EMPLOYEE_ID}' OR device_sn='${TEST_DEVICE_SN}';
-DELETE FROM device_user WHERE employee_id='${TEST_EMPLOYEE_ID}';
+DELETE FROM device_user WHERE employee_id='${TEST_EMPLOYEE_ID}' OR pin='${TEST_PIN}';
 DELETE FROM device WHERE device_sn='${TEST_DEVICE_SN}';
+SET FOREIGN_KEY_CHECKS=1;
 " >/dev/null 2>&1 || true
 }
 
