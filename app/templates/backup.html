@@ -114,6 +114,7 @@
       <a class="nav-link-console settings-sub-link" href="/settings/attendance-sync"><i data-lucide="clipboard-check" class="icon"></i><span>Attendance Sync<br><span class="zh-sub">考勤同步</span></span></a>
       <div class="settings-group-label">System Settings <span class="zh-sub">/ 系统配置</span></div>
       <a class="nav-link-console settings-sub-link active" href="/settings/backup"><i data-lucide="database-backup" class="icon"></i><span>Backup Settings<br><span class="zh-sub">备份设置</span></span></a>
+      <a class="nav-link-console settings-sub-link" href="/settings/alerts"><i data-lucide="bell-ring" class="icon"></i><span>Alert Settings<br><span class="zh-sub">告警设置</span></span></a>
       <div class="sidebar-version">v1.0.0</div>
     </aside>
 
@@ -185,8 +186,8 @@
                   </div>
                   <div>
                     <label class="field-label" for="hostDir">Host Backup Directory <span class="zh-sub">/ 服务器备份目录</span></label>
-                    <input id="hostDir" class="form-control mono" type="text">
-                    <div class="help-text">Use this path for SSH/SFTP manual download. <span class="zh-sub">/ SSH/SFTP 手动下载时使用这个目录。</span></div>
+                    <input id="hostDir" class="form-control mono" type="text" readonly aria-readonly="true">
+                    <div class="help-text">Fixed server path. Use this path for SSH/SFTP manual download. <span class="zh-sub">/ 固定服务器路径，仅用于 SSH/SFTP 手动下载。</span></div>
                   </div>
                   <div class="config-grid-span">
                     <label class="field-label" for="containerDir">Console Download Directory <span class="zh-sub">/ 页面下载目录</span></label>

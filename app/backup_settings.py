@@ -172,11 +172,12 @@ def backup_data() -> JSONResponse:
 
 @router.post("/api/settings/backup")
 def save_backup_config(payload: BackupConfigRequest) -> dict[str, object]:
+    current_config = _backup_config()
     values = {
         BACKUP_CONFIG_KEYS["enabled"]: "true" if payload.enabled else "false",
         BACKUP_CONFIG_KEYS["time"]: payload.time,
         BACKUP_CONFIG_KEYS["retention_count"]: str(payload.retention_count),
-        BACKUP_CONFIG_KEYS["host_dir"]: payload.host_dir,
+        BACKUP_CONFIG_KEYS["host_dir"]: str(current_config["host_dir"]),
         BACKUP_CONFIG_KEYS["container_dir"]: payload.container_dir,
     }
     os.environ.update(values)

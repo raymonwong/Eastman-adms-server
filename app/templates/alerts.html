@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="zh-CN" data-bs-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Alert Settings - ADMS Console</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      --bg: #071016; --sidebar: #0d1721; --panel: #101923; --card: #0b141d;
+      --line: rgba(159, 184, 210, 0.18); --text: #dce8f5; --muted: #8ea2b8;
+      --blue: #8fb3d9; --green: #2bd47d; --cyan: #22d3ee; --red: #ff5d6c;
+      --yellow: #fbbf24; --radius: 8px;
+    }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 14px; line-height: 1.4; }
+    .app-frame { display: grid; grid-template-columns: 148px minmax(0, 1fr); min-height: 100vh; }
+    .sidebar { background: var(--sidebar); border-right: 1px solid var(--line); padding: 14px 10px; position: sticky; top: 0; height: 100vh; }
+    .brand { padding: 4px 8px 14px; border-bottom: 1px solid var(--line); margin-bottom: 10px; }
+    .brand-title { font-size: 12px; color: #fff; font-weight: 900; }
+    .brand-subtitle { color: var(--muted); font-size: 10px; margin-top: 6px; }
+    .nav-link-console { display: flex; gap: 8px; align-items: center; color: var(--muted); text-decoration: none; padding: 10px 8px; border-radius: 6px; margin-bottom: 4px; font-size: 12px; }
+    .nav-link-console.active, .nav-link-console:hover { background: #16344d; color: #eff7ff; }
+    .settings-group-label { color: var(--muted); font-size: 11px; font-weight: 900; padding: 10px 8px 4px; text-transform: uppercase; letter-spacing: 0.02em; }
+    .settings-sub-link { padding-left: 18px; font-size: 11px; }
+    .icon { width: 18px; height: 18px; flex: 0 0 auto; }
+    .sidebar-version { position: absolute; bottom: 12px; left: 18px; color: var(--muted); font-size: 10px; }
+    .zh-sub { color: var(--muted); font-size: 0.86em; font-weight: 700; }
+    .shell { max-width: 1360px; margin: 0 auto; width: 100%; padding: 18px 26px 28px; }
+    .page-head { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; margin-bottom: 14px; }
+    .page-title { margin: 0; color: #f3f8ff; font-size: 24px; font-weight: 900; }
+    .page-subtitle { color: var(--muted); font-size: 12px; margin-top: 4px; }
+    .page-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+    .refresh-time { color: var(--muted); font-size: 11px; }
+    .overview { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+    .status-card, .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+    .status-card { padding: 10px; min-width: 0; }
+    .status-card .label { color: var(--muted); font-size: 11px; font-weight: 900; }
+    .status-card .value { margin-top: 5px; color: #f6fbff; font-size: 20px; font-weight: 900; word-break: break-word; }
+    .grid-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(380px, 0.55fr); gap: 12px; align-items: start; }
+    .panel { overflow: hidden; margin-bottom: 12px; }
+    .panel-header { min-height: 38px; padding: 9px 14px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; color: var(--blue); font-weight: 900; }
+    .panel-body { padding: 14px; }
+    .config-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .config-grid-span { grid-column: 1 / -1; }
+    .field-label { display: flex; align-items: baseline; gap: 5px; color: var(--muted); font-size: 12px; font-weight: 900; margin-bottom: 5px; white-space: nowrap; }
+    .form-control, .form-select { background: var(--card) !important; border-color: rgba(255,255,255,0.16) !important; color: var(--text) !important; }
+    .help-text { color: var(--muted); font-size: 11px; margin-top: 5px; }
+    .field-error { color: var(--red); font-size: 11px; margin-top: 4px; min-height: 14px; }
+    .btn-console { min-height: 32px; font-size: 13px; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; }
+    .button-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin-top: 12px; }
+    .notice { color: #bfdbfe; background: rgba(59, 130, 246, 0.10); border: 1px solid rgba(59, 130, 246, 0.30); border-radius: var(--radius); padding: 10px; margin-bottom: 12px; }
+    .badge-soft { display: inline-flex; align-items: center; gap: 6px; border-radius: 999px; padding: 3px 8px; font-size: 12px; font-weight: 900; border: 1px solid var(--line); }
+    .badge-ok { color: var(--green); background: rgba(43, 212, 125, 0.10); border-color: rgba(43, 212, 125, 0.28); }
+    .badge-warn { color: var(--yellow); background: rgba(251, 191, 36, 0.10); border-color: rgba(251, 191, 36, 0.28); }
+    .badge-danger { color: var(--red); background: rgba(255, 93, 108, 0.10); border-color: rgba(255, 93, 108, 0.28); }
+    .table { --bs-table-bg: transparent; --bs-table-color: var(--text); --bs-table-border-color: var(--line); font-size: 13px; margin-bottom: 0; }
+    .table th { color: var(--blue); font-size: 12px; }
+    .empty-state { color: var(--muted); text-align: center; padding: 32px 12px; border: 1px dashed var(--line); border-radius: var(--radius); }
+    .feedback { min-height: 20px; margin-top: 8px; color: var(--green); font-size: 12px; }
+    .mono, code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    @media (max-width: 980px) {
+      .app-frame { grid-template-columns: 1fr; }
+      .sidebar { position: static; height: auto; display: flex; overflow-x: auto; gap: 8px; }
+      .brand, .sidebar-version, .settings-group-label { display: none; }
+      .shell { padding: 14px 12px 20px; }
+      .overview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid-main, .config-grid { grid-template-columns: 1fr; }
+      .page-head { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-frame">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-title">ADMS CONSOLE</div>
+        <div class="brand-subtitle">Attendance Data<br>Management Server</div>
+      </div>
+      <a class="nav-link-console" href="/console"><i data-lucide="layout-dashboard" class="icon"></i><span>Operation Monitor<br><span class="zh-sub">运行监控</span></span></a>
+      <a class="nav-link-console" href="/dms"><i data-lucide="monitor-cog" class="icon"></i><span>Device Management<br><span class="zh-sub">设备管理</span></span></a>
+      <a class="nav-link-console" href="/users"><i data-lucide="users" class="icon"></i><span>ADMS Users<br><span class="zh-sub">用户列表</span></span></a>
+      <div class="settings-group-label">Protocol Console <span class="zh-sub">/ 协议控制台</span></div>
+      <a class="nav-link-console settings-sub-link" href="/settings/integration"><i data-lucide="cable" class="icon"></i><span>Inbound API<br><span class="zh-sub">对外 API</span></span></a>
+      <a class="nav-link-console settings-sub-link" href="/settings/attendance-sync"><i data-lucide="clipboard-check" class="icon"></i><span>Attendance Sync<br><span class="zh-sub">考勤同步</span></span></a>
+      <div class="settings-group-label">System Settings <span class="zh-sub">/ 系统配置</span></div>
+      <a class="nav-link-console settings-sub-link" href="/settings/backup"><i data-lucide="database-backup" class="icon"></i><span>Backup Settings<br><span class="zh-sub">备份设置</span></span></a>
+      <a class="nav-link-console settings-sub-link active" href="/settings/alerts"><i data-lucide="bell-ring" class="icon"></i><span>Alert Settings<br><span class="zh-sub">告警设置</span></span></a>
+      <div class="sidebar-version">v1.0.0</div>
+    </aside>
+
+    <main class="shell">
+      <section class="page-head">
+        <div>
+          <h1 class="page-title">Alert Settings <span class="zh-sub">/ 告警设置</span></h1>
+          <div class="page-subtitle">Monitor offline devices, sync failures, stale backups, and optional webhook notifications. <span class="zh-sub">/ 监控设备离线、同步失败、备份过期，并可选 Webhook 通知。</span></div>
+        </div>
+        <div class="page-actions">
+          <button id="refreshBtn" class="btn btn-outline-info btn-sm btn-console" type="button"><i data-lucide="refresh-cw" class="icon"></i> Refresh <span class="zh-sub">/ 刷新</span></button>
+          <span id="serverTime" class="refresh-time">Server time / 服务器时间：{{ data.server_time }}</span>
+        </div>
+      </section>
+
+      <section class="overview">
+        <div class="status-card">
+          <div class="label">Alert Engine <span class="zh-sub">/ 告警引擎</span></div>
+          <div id="overviewEnabled" class="value">{{ "ON" if data.enabled else "OFF" }}</div>
+        </div>
+        <div class="status-card">
+          <div class="label">Active Alerts <span class="zh-sub">/ 当前告警</span></div>
+          <div id="overviewAlerts" class="value">{{ data.alert_count }}</div>
+        </div>
+        <div class="status-card">
+          <div class="label">Critical <span class="zh-sub">/ 严重</span></div>
+          <div id="overviewCritical" class="value">{{ data.critical_count }}</div>
+        </div>
+        <div class="status-card">
+          <div class="label">Warning <span class="zh-sub">/ 警告</span></div>
+          <div id="overviewWarning" class="value">{{ data.warning_count }}</div>
+        </div>
+        <div class="status-card">
+          <div class="label">Webhook <span class="zh-sub">/ 通知渠道</span></div>
+          <div id="overviewWebhook" class="value">{{ "ON" if data.webhook_configured else "OFF" }}</div>
+        </div>
+      </section>
+
+      <div class="grid-main">
+        <section>
+          <div class="panel">
+            <div class="panel-header">
+              <span>Alert Policy <span class="zh-sub">/ 告警策略</span></span>
+              <span id="policyBadge" class="badge-soft {{ 'badge-ok' if data.enabled else 'badge-warn' }}">{{ "Enabled" if data.enabled else "Disabled" }} <span class="zh-sub">/ {{ "启用" if data.enabled else "停用" }}</span></span>
+            </div>
+            <div class="panel-body">
+              <div class="notice">
+                Webhook is optional. If empty, alerts are shown only on this page. <span class="zh-sub">/ Webhook 可选；为空时只在本页面显示告警。</span>
+              </div>
+              <form id="alertForm">
+                <div class="config-grid">
+                  <div>
+                    <label class="field-label" for="alertEnabled">Enable Alerts <span class="zh-sub">/ 启用告警</span></label>
+                    <select id="alertEnabled" class="form-select">
+                      <option value="true">Enabled / 启用</option>
+                      <option value="false">Disabled / 停用</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="field-label" for="checkInterval">Check Interval <span class="zh-sub">/ 检查间隔秒</span></label>
+                    <input id="checkInterval" class="form-control mono" type="number" min="30" max="3600">
+                  </div>
+                  <div class="config-grid-span">
+                    <label class="field-label" for="webhookUrl">Webhook URL <span class="zh-sub">/ 通知 Webhook</span></label>
+                    <input id="webhookUrl" class="form-control mono" type="url" placeholder="https://...">
+                    <div class="help-text">ADMS sends JSON POST notifications when this is configured. <span class="zh-sub">/ 填写后 ADMS 会以 JSON POST 发送告警。</span></div>
+                  </div>
+                  <div>
+                    <label class="field-label" for="cooldownMinutes">Notification Cooldown <span class="zh-sub">/ 通知冷却分钟</span></label>
+                    <input id="cooldownMinutes" class="form-control mono" type="number" min="1" max="1440">
+                  </div>
+                  <div>
+                    <label class="field-label" for="deviceOfflineMinutes">Device Offline After <span class="zh-sub">/ 设备离线分钟</span></label>
+                    <input id="deviceOfflineMinutes" class="form-control mono" type="number" min="1" max="1440">
+                  </div>
+                  <div>
+                    <label class="field-label" for="heartbeatTimeoutMinutes">Heartbeat Timeout <span class="zh-sub">/ 心跳超时分钟</span></label>
+                    <input id="heartbeatTimeoutMinutes" class="form-control mono" type="number" min="1" max="1440">
+                  </div>
+                  <div>
+                    <label class="field-label" for="backupMaxAgeHours">Backup Stale After <span class="zh-sub">/ 备份过期小时</span></label>
+                    <input id="backupMaxAgeHours" class="form-control mono" type="number" min="1" max="8760">
+                  </div>
+                  <div>
+                    <label class="field-label" for="attendanceFailedThreshold">Attendance Failed Threshold <span class="zh-sub">/ 考勤失败阈值</span></label>
+                    <input id="attendanceFailedThreshold" class="form-control mono" type="number" min="1">
+                  </div>
+                  <div>
+                    <label class="field-label" for="userFailedThreshold">User Failed Threshold <span class="zh-sub">/ 用户失败阈值</span></label>
+                    <input id="userFailedThreshold" class="form-control mono" type="number" min="1">
+                  </div>
+                  <div>
+                    <label class="field-label" for="fingerprintFailedThreshold">Fingerprint Failed Threshold <span class="zh-sub">/ 指纹失败阈值</span></label>
+                    <input id="fingerprintFailedThreshold" class="form-control mono" type="number" min="1">
+                  </div>
+                </div>
+                <div id="formError" class="field-error"></div>
+                <div class="button-row">
+                  <button id="testBtn" class="btn btn-outline-warning btn-console" type="button"><i data-lucide="send" class="icon"></i> Send Test Alert <span class="zh-sub">/ 发送测试告警</span></button>
+                  <button id="saveBtn" class="btn btn-info btn-console" type="submit"><i data-lucide="save" class="icon"></i> Save Alert Settings <span class="zh-sub">/ 保存告警设置</span></button>
+                </div>
+                <div id="saveFeedback" class="feedback"></div>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <aside>
+          <div class="panel">
+            <div class="panel-header">
+              <span>Current Alert Status <span class="zh-sub">/ 当前告警状态</span></span>
+              <span id="alertCountLabel">{{ data.alert_count }} alerts <span class="zh-sub">/ 条</span></span>
+            </div>
+            <div class="panel-body">
+              <div class="table-responsive">
+                <table class="table align-middle">
+                  <thead>
+                    <tr>
+                      <th>Severity <span class="zh-sub">/ 等级</span></th>
+                      <th>Alert <span class="zh-sub">/ 告警</span></th>
+                      <th>Message <span class="zh-sub">/ 信息</span></th>
+                    </tr>
+                  </thead>
+                  <tbody id="alertRows"></tbody>
+                </table>
+              </div>
+              <div id="emptyAlerts" class="empty-state d-none">No active alerts. <span class="zh-sub">/ 当前无告警。</span></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const initialData = {{ data | tojson }};
+    const $ = (id) => document.getElementById(id);
+    const text = (id, value) => { $(id).textContent = value; };
+    const esc = (value) => String(value ?? '-').replace(/[&<>"']/g, (char) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+
+    function severityBadge(severity) {
+      if (severity === 'critical') return '<span class="badge-soft badge-danger">Critical / 严重</span>';
+      if (severity === 'warning') return '<span class="badge-soft badge-warn">Warning / 警告</span>';
+      return '<span class="badge-soft badge-ok">Info / 信息</span>';
+    }
+
+    function render(data) {
+      const config = data.config || {};
+      $('alertEnabled').value = String(Boolean(data.enabled));
+      $('webhookUrl').value = config.webhook_url || '';
+      $('checkInterval').value = config.check_interval_seconds || 60;
+      $('cooldownMinutes').value = config.cooldown_minutes || 30;
+      $('deviceOfflineMinutes').value = config.device_offline_minutes || 5;
+      $('heartbeatTimeoutMinutes').value = config.heartbeat_timeout_minutes || 5;
+      $('backupMaxAgeHours').value = config.backup_max_age_hours || 36;
+      $('attendanceFailedThreshold').value = config.attendance_failed_threshold || 1;
+      $('userFailedThreshold').value = config.user_failed_threshold || 1;
+      $('fingerprintFailedThreshold').value = config.fingerprint_failed_threshold || 1;
+      text('serverTime', `Server time / 服务器时间：${data.server_time || '-'}`);
+      text('overviewEnabled', data.enabled ? 'ON' : 'OFF');
+      text('overviewAlerts', data.alert_count ?? 0);
+      text('overviewCritical', data.critical_count ?? 0);
+      text('overviewWarning', data.warning_count ?? 0);
+      text('overviewWebhook', data.webhook_configured ? 'ON' : 'OFF');
+      text('alertCountLabel', `${data.alert_count ?? 0} alerts / 条`);
+      const policyBadge = $('policyBadge');
+      policyBadge.className = `badge-soft ${data.enabled ? 'badge-ok' : 'badge-warn'}`;
+      policyBadge.innerHTML = data.enabled ? 'Enabled <span class="zh-sub">/ 启用</span>' : 'Disabled <span class="zh-sub">/ 停用</span>';
+      const rows = $('alertRows');
+      rows.innerHTML = '';
+      (data.alerts || []).forEach((alert) => {
+        rows.insertAdjacentHTML('beforeend', `
+          <tr>
+            <td>${severityBadge(alert.severity)}</td>
+            <td><strong>${esc(alert.title)}</strong><br><span class="zh-sub mono">${esc(alert.type)}</span></td>
+            <td>${esc(alert.message)}${alert.device_sn ? `<br><span class="zh-sub mono">${esc(alert.device_sn)}</span>` : ''}</td>
+          </tr>
+        `);
+      });
+      $('emptyAlerts').classList.toggle('d-none', (data.alerts || []).length > 0);
+    }
+
+    async function refreshData() {
+      const response = await fetch('/api/settings/alerts', {cache: 'no-store'});
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      render(await response.json());
+    }
+
+    $('refreshBtn').addEventListener('click', async () => {
+      try {
+        await refreshData();
+      } catch (error) {
+        text('saveFeedback', `Refresh failed: ${error.message}`);
+      }
+    });
+
+    $('alertForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      text('formError', '');
+      text('saveFeedback', 'Saving...');
+      const payload = {
+        enabled: $('alertEnabled').value === 'true',
+        webhook_url: $('webhookUrl').value.trim(),
+        check_interval_seconds: Number($('checkInterval').value),
+        cooldown_minutes: Number($('cooldownMinutes').value),
+        device_offline_minutes: Number($('deviceOfflineMinutes').value),
+        heartbeat_timeout_minutes: Number($('heartbeatTimeoutMinutes').value),
+        backup_max_age_hours: Number($('backupMaxAgeHours').value),
+        attendance_failed_threshold: Number($('attendanceFailedThreshold').value),
+        user_failed_threshold: Number($('userFailedThreshold').value),
+        fingerprint_failed_threshold: Number($('fingerprintFailedThreshold').value),
+      };
+      try {
+        const response = await fetch('/api/settings/alerts', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(Array.isArray(data.detail) ? data.detail.map((item) => item.msg || item).join('; ') : data.detail || `HTTP ${response.status}`);
+        }
+        text('saveFeedback', data.message);
+        render(data.data);
+      } catch (error) {
+        text('formError', error.message);
+        text('saveFeedback', '');
+      }
+    });
+
+    $('testBtn').addEventListener('click', async () => {
+      text('saveFeedback', 'Sending test alert...');
+      try {
+        const response = await fetch('/api/settings/alerts/test', {method: 'POST'});
+        const data = await response.json();
+        text('saveFeedback', data.message || `HTTP ${response.status}`);
+      } catch (error) {
+        text('saveFeedback', `Test failed: ${error.message}`);
+      }
+    });
+
+    render(initialData);
+    lucide.createIcons();
+  </script>
+</body>
+</html>
