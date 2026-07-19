@@ -145,118 +145,13 @@
       <section class="panel">
         <div class="panel-header"><i data-lucide="route" class="icon"></i> User Operation Guide <span class="zh-sub">/ 用户操作说明</span></div>
         <div class="panel-body">
-          <div class="guide-grid">
-            <article class="guide-card">
-              <div class="guide-title"><i data-lucide="user-plus" class="icon"></i> Add a New Employee <span class="zh-sub">/ 新增员工</span></div>
-              <div class="flow">
-                <div class="flow-node">Mingdao Employee</div><div class="flow-arrow">→</div>
-                <div class="flow-node">POST /api/v1/users</div><div class="flow-arrow">→</div>
-                <div class="flow-node">ADMS User</div><div class="flow-arrow">→</div>
-                <div class="flow-node">Device GETREQUEST</div>
-              </div>
-              <p>When a Mingdao employee is created or updated, the workflow sends employee_record_id, employee_id, PIN, name, department, enabled, and privilege to ADMS.</p>
-              <p><span class="zh-sub">明道新增或更新员工时，工作流把员工记录 ID、工号、PIN、姓名、部门、启用状态和权限发送到 ADMS。</span></p>
-              <ol class="steps">
-                <li><span class="step-no">1</span><span>Create or update the employee record in Mingdao. <span class="zh-sub">在明道创建或更新员工档案。</span></span></li>
-                <li><span class="step-no">2</span><span>The workflow calls the ADMS Inbound API. <span class="zh-sub">工作流调用 ADMS 对外 API。</span></span></li>
-                <li><span class="step-no">3</span><span>ADMS queues synchronization for all attendance devices that record attendance. <span class="zh-sub">ADMS 为所有记录考勤的设备创建同步任务。</span></span></li>
-                <li><span class="step-no">4</span><span>The device receives the user on its next GETREQUEST. <span class="zh-sub">设备下次 GETREQUEST 时接收用户。</span></span></li>
-              </ol>
-            </article>
-
-            <article class="guide-card">
-              <div class="guide-title"><i data-lucide="user-x" class="icon"></i> Resignation or Disable <span class="zh-sub">/ 离职或停用</span></div>
-              <div class="flow">
-                <div class="flow-node">Mingdao Status</div><div class="flow-arrow">→</div>
-                <div class="flow-node">enabled=false</div><div class="flow-arrow">→</div>
-                <div class="flow-node">ADMS Disabled</div><div class="flow-arrow">→</div>
-                <div class="flow-node">Device Disable</div>
-              </div>
-              <p>For resigned employees, send the same employee payload with enabled=false. ADMS marks the user as disabled and sends disable commands instead of deleting immediately.</p>
-              <p><span class="zh-sub">员工离职时，发送同一员工数据并设置 enabled=false。ADMS 标记为停用，并下发停用命令，不立即删除。</span></p>
-            </article>
-
-            <article class="guide-card">
-              <div class="guide-title"><i data-lucide="shield" class="icon"></i> Set Device Role <span class="zh-sub">/ 设置打卡机角色</span></div>
-              <div class="flow">
-                <div class="flow-node">Select Device</div><div class="flow-arrow">→</div>
-                <div class="flow-node">Find Employee</div><div class="flow-arrow">→</div>
-                <div class="flow-node">Choose Role</div><div class="flow-arrow">→</div>
-                <div class="flow-node">Queued Command</div>
-              </div>
-              <p>Open the device role management link, select a device, then set the employee as Normal, Admin, or Enroll Admin. The role is applied on the next device request.</p>
-              <p><span class="zh-sub">打开设备角色管理链接，选择设备，再把员工设置为普通用户、管理员或登记管理员。设备下次请求时应用角色。</span></p>
-              <div class="table-responsive mt-3">
-                <table class="role-table">
-                  <thead><tr><th>Role / 角色</th><th>Meaning / 含义</th></tr></thead>
-                  <tbody>
-                    <tr><td>Normal User<br><span class="zh-sub">普通用户</span></td><td>Punch attendance only. <span class="zh-sub">仅用于打卡。</span></td></tr>
-                    <tr><td>Device Admin<br><span class="zh-sub">管理员</span></td><td>Full device administration permission according to device firmware. <span class="zh-sub">按设备固件拥有完整管理权限。</span></td></tr>
-                    <tr><td>Enroll Admin<br><span class="zh-sub">登记管理员</span></td><td>ADMS assigns the enrollment role group; detailed permissions are configured on the device. <span class="zh-sub">ADMS 只分配登记角色组，细化权限在打卡机上配置。</span></td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </article>
-
-            <article class="guide-card">
-              <div class="guide-title"><i data-lucide="fingerprint" class="icon"></i> Enroll Fingerprint <span class="zh-sub">/ 录入指纹</span></div>
-              <div class="flow">
-                <div class="flow-node">Enroll on Device</div><div class="flow-arrow">→</div>
-                <div class="flow-node">OPERLOG FP</div><div class="flow-arrow">→</div>
-                <div class="flow-node">ADMS Latest FP</div><div class="flow-arrow">→</div>
-                <div class="flow-node">Other Devices</div>
-              </div>
-              <p>Enroll or update a fingerprint on any attendance device. The device uploads FP data to ADMS, ADMS keeps the latest template, then distributes it to other participating devices.</p>
-              <p><span class="zh-sub">在任一台打卡机录入或更新指纹。设备把 FP 数据上传到 ADMS，ADMS 保存最新模板，再分发到其他参与考勤的设备。</span></p>
-            </article>
-
-            <article class="guide-card">
-              <div class="guide-title"><i data-lucide="monitor-up" class="icon"></i> Add a New Device <span class="zh-sub">/ 新增打卡机</span></div>
-              <div class="flow">
-                <div class="flow-node">Set ADMS IP</div><div class="flow-arrow">→</div>
-                <div class="flow-node">Device Online</div><div class="flow-arrow">→</div>
-                <div class="flow-node">Auto Register</div><div class="flow-arrow">→</div>
-                <div class="flow-node">Download Data</div>
-              </div>
-              <p>Configure the server IP, port, ADMS server type, and HTTPS setting according to the deployment. ADMS discovers the device and synchronizes users, roles, and fingerprints.</p>
-              <p><span class="zh-sub">按部署配置服务器 IP、端口、ADMS 类型和 HTTPS。ADMS 会发现设备并同步用户、角色和指纹。</span></p>
-            </article>
-
-            <article class="guide-card">
-              <div class="guide-title"><i data-lucide="database-backup" class="icon"></i> Backup and Restore <span class="zh-sub">/ 备份与恢复</span></div>
-              <div class="flow">
-                <div class="flow-node">Daily Backup</div><div class="flow-arrow">→</div>
-                <div class="flow-node">Manual Backup</div><div class="flow-arrow">→</div>
-                <div class="flow-node">Download Copy</div><div class="flow-arrow">→</div>
-                <div class="flow-node">Restore Server</div>
-              </div>
-              <p>Use automatic backups for daily protection, manual backup before risky changes, and periodically download backup packages to a local computer or cloud drive.</p>
-              <p><span class="zh-sub">日常依赖自动备份，高风险操作前执行手动备份，并定期下载到本地电脑或网盘保存。</span></p>
-            </article>
-
-            <article class="guide-card">
-              <div class="guide-title"><i data-lucide="bell-ring" class="icon"></i> Configure Alerts <span class="zh-sub">/ 配置告警</span></div>
-              <div class="flow">
-                <div class="flow-node">Set Thresholds</div><div class="flow-arrow">→</div>
-                <div class="flow-node">Optional Webhook</div><div class="flow-arrow">→</div>
-                <div class="flow-node">Alert Page</div><div class="flow-arrow">→</div>
-                <div class="flow-node">Notification</div>
-              </div>
-              <p>Set offline, sync failure, and backup stale thresholds. Webhook delivery is optional; alerts always remain visible in the Console.</p>
-              <p><span class="zh-sub">设置离线、同步失败和备份过期阈值。Webhook 是可选项；告警始终会在 Console 中显示。</span></p>
-            </article>
-
-            <article class="guide-card">
-              <div class="guide-title"><i data-lucide="refresh-cw" class="icon"></i> Daily Reconciliation <span class="zh-sub">/ 每日兜底同步</span></div>
-              <div class="flow">
-                <div class="flow-node">Schedule</div><div class="flow-arrow">→</div>
-                <div class="flow-node">Compare ADMS Users</div><div class="flow-arrow">→</div>
-                <div class="flow-node">Queue Missing Data</div><div class="flow-arrow">→</div>
-                <div class="flow-node">Device Applies</div>
-              </div>
-              <p>The scheduled reconciliation re-queues missing users, roles, and fingerprints for devices that record attendance.</p>
-              <p><span class="zh-sub">定时兜底同步会为记录考勤的设备重新排队缺失用户、角色和指纹。</span></p>
-            </article>
+          <div class="guide-card">
+            <div class="guide-title"><i data-lucide="map" class="icon"></i> Open Visual Operation Guide <span class="zh-sub">/ 打开图解操作说明</span></div>
+            <p>Employee setup, device role setup, fingerprint enrollment, new device onboarding, backup, alerts, and daily reconciliation are now documented on a separate visual page.</p>
+            <p><span class="zh-sub">新增员工、设置设备角色、录入指纹、新增打卡机、备份、告警和每日兜底同步已拆分到独立图解页面。</span></p>
+            <a class="btn btn-info btn-sm mt-3 fw-bold" href="/settings/user-guide" target="_blank" rel="noopener">
+              Open User Operation Guide <span class="zh-sub">/ 打开用户操作说明</span>
+            </a>
           </div>
         </div>
       </section>

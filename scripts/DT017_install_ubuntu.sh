@@ -29,8 +29,8 @@ page = urllib.request.urlopen("http://127.0.0.1:8000/settings/help", timeout=10)
 assert "Help Center" in page
 assert "System Functions" in page
 assert "User Operation Guide" in page
-assert "Add a New Employee" in page
-assert "Enroll Fingerprint" in page
+assert "/settings/user-guide" in page
+assert "Open Visual Operation Guide" in page
 assert "Backup and Restore" in page
 PY
 

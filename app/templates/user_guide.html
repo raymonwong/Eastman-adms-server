@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>User Operation Guide - ADMS</title>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --paper: #ffffff;
+      --line: #cfe0f6;
+      --line-strong: #9fc0ec;
+      --text: #0f1f3a;
+      --muted: #53657d;
+      --blue: #1f67ff;
+      --blue-soft: #eef5ff;
+      --green: #1f9d55;
+      --green-soft: #effaf3;
+      --orange: #f97316;
+      --orange-soft: #fff7ed;
+      --shadow: 0 8px 24px rgba(15, 31, 58, 0.08);
+      --radius: 8px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, "Microsoft YaHei", sans-serif; font-size: 14px; line-height: 1.42; }
+    .page { max-width: 1480px; margin: 0 auto; padding: 18px 18px 26px; }
+    .topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+    h1 { margin: 0; font-size: 24px; font-weight: 850; letter-spacing: -0.01em; }
+    .subtitle { margin-top: 4px; color: var(--muted); font-size: 13px; }
+    .lang-box { display: flex; align-items: center; gap: 8px; color: var(--muted); font-weight: 700; white-space: nowrap; }
+    .lang-box select { border: 1px solid var(--line); background: var(--paper); color: var(--text); border-radius: 6px; padding: 7px 10px; font-weight: 700; }
+    .card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 14px; overflow: hidden; }
+    .card-head { padding: 12px 14px 8px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .card-title { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 850; }
+    .card-title .icon { color: var(--blue); width: 22px; height: 22px; }
+    .card-desc { color: var(--muted); font-size: 12px; margin-top: 3px; }
+    .section-body { padding: 10px 14px 14px; }
+    .flow-section { border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: 8px; overflow: hidden; background: #fbfdff; }
+    .flow-title { display: flex; align-items: center; gap: 8px; padding: 8px 10px; color: var(--text); font-size: 15px; font-weight: 850; border-bottom: 1px solid var(--line); }
+    .flow-title .icon { width: 20px; height: 20px; color: var(--blue); }
+    .prep { margin: 8px 10px 0; border: 1px solid var(--line); background: #fbfdff; border-radius: 5px; color: var(--muted); padding: 5px 8px; font-size: 12px; display: flex; gap: 6px; align-items: center; }
+    .prep .icon { width: 14px; height: 14px; color: var(--blue); }
+    .flow-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 46px; align-items: stretch; padding: 10px 38px 10px 58px; position: relative; }
+    .step { border: 1px solid var(--line-strong); border-radius: 7px; background: var(--paper); min-height: 72px; padding: 9px 10px 8px 42px; position: relative; display: flex; flex-direction: column; justify-content: center; }
+    .step::after { content: ""; position: absolute; top: 50%; right: -39px; width: 32px; border-top: 2px solid #4d75b8; }
+    .step::before { content: ""; position: absolute; top: calc(50% - 4px); right: -42px; width: 9px; height: 9px; border-top: 2px solid #4d75b8; border-right: 2px solid #4d75b8; transform: rotate(45deg); }
+    .step:last-child::before, .step:last-child::after { display: none; }
+    .num { position: absolute; left: 10px; top: 10px; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--blue); color: #fff; font-size: 13px; font-weight: 900; box-shadow: 0 2px 5px rgba(31, 103, 255, 0.25); }
+    .step-name { font-weight: 850; font-size: 13px; margin-bottom: 2px; }
+    .step-detail { color: var(--muted); font-size: 11px; }
+    .done { border-color: #8ed4a6; background: var(--green-soft); }
+    .done .num { background: var(--green); }
+    .done .icon { color: var(--green); }
+    .done .step-name { color: var(--green); }
+    .warning-line { margin: 0 10px 10px; border: 1px solid #fdba74; background: var(--orange-soft); border-radius: 5px; color: #b45309; padding: 5px 8px; font-size: 12px; display: flex; gap: 6px; align-items: center; }
+    .warning-line .icon { width: 15px; height: 15px; color: var(--orange); }
+    .system-title { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 10px; align-items: center; color: var(--blue); font-weight: 850; margin: 18px 0 12px; }
+    .system-title::before, .system-title::after { content: ""; border-top: 2px solid #4d75b8; }
+    .system-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+    .ops-card { border: 1px solid var(--line); background: var(--paper); border-radius: var(--radius); padding: 14px; display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 12px; align-items: start; }
+    .ops-icon { width: 42px; height: 42px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: var(--blue); background: var(--blue-soft); }
+    .ops-icon .icon { width: 28px; height: 28px; }
+    .ops-title { font-weight: 850; margin-bottom: 4px; }
+    .ops-text { color: var(--muted); font-size: 12px; margin: 0; }
+    .role-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 12px; }
+    .role-table th, .role-table td { border: 1px solid var(--line); padding: 8px; vertical-align: top; }
+    .role-table th { background: var(--blue-soft); color: var(--text); }
+    .lang-en .zh, .lang-zh .en { display: none !important; }
+    .lang-en .en, .lang-zh .zh { display: inline; }
+    .lang-en .block-en, .lang-zh .block-zh { display: block; }
+    .lang-en .block-zh, .lang-zh .block-en { display: none; }
+    @media (max-width: 1100px) {
+      .flow-row { grid-template-columns: 1fr; gap: 10px; padding: 10px; }
+      .step::before, .step::after { display: none; }
+      .system-grid { grid-template-columns: 1fr; }
+    }
+    @media print {
+      body { background: #fff; }
+      .lang-box { display: none; }
+      .card { box-shadow: none; break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <main id="guidePage" class="page lang-en">
+    <section class="topbar">
+      <div>
+        <h1><span class="en">Help Center</span><span class="zh">帮助中心</span></h1>
+        <div class="subtitle">
+          <span class="en">Visual operation guide for HR administrators and ADMS service administrators.</span>
+          <span class="zh">面向 HR 管理员和 ADMS 服务管理员的图解操作说明。</span>
+        </div>
+      </div>
+      <label class="lang-box">
+        <span class="en">Language</span><span class="zh">语言</span>
+        <select id="languageSelect" aria-label="Language">
+          <option value="en">English</option>
+          <option value="zh">中文</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title"><i data-lucide="users-round" class="icon"></i><span class="en">HR Administrator Operations</span><span class="zh">HR 管理员操作</span></div>
+          <div class="card-desc"><span class="en">Employee and attendance-device setup performed by HR administrators.</span><span class="zh">HR 管理员负责员工及打卡设备配置。</span></div>
+        </div>
+      </div>
+      <div class="section-body">
+        <article class="flow-section">
+          <div class="flow-title"><i data-lucide="user-plus" class="icon"></i><span class="en">Add a New Employee</span><span class="zh">新增员工</span></div>
+          <div class="prep"><i data-lucide="clipboard-check" class="icon"></i><span class="en">Before you start: department is configured, at least one online device exists, and the current Mingdao user has employee-admin permission.</span><span class="zh">前置条件：已创建部门；至少一台在线设备；当前用户具有员工管理权限。</span></div>
+          <div class="flow-row">
+            <div class="step"><span class="num">1</span><div class="step-name"><span class="en">Create employee profile</span><span class="zh">创建员工档案</span></div><div class="step-detail"><span class="en">Create the employee in Mingdao and save required fields.</span><span class="zh">在明道中新增员工信息并保存。</span></div></div>
+            <div class="step"><span class="num">2</span><div class="step-name"><span class="en">Workflow sends data</span><span class="zh">工作流发送数据</span></div><div class="step-detail"><span class="en">Mingdao workflow calls the ADMS Inbound API.</span><span class="zh">明道工作流调用 ADMS 对外 API。</span></div></div>
+            <div class="step"><span class="num">3</span><div class="step-name"><span class="en">ADMS creates sync jobs</span><span class="zh">ADMS 创建同步任务</span></div><div class="step-detail"><span class="en">ADMS queues jobs for every attendance device.</span><span class="zh">ADMS 给所有考勤设备创建下发任务。</span></div></div>
+            <div class="step"><span class="num">4</span><div class="step-name"><span class="en">Device receives user</span><span class="zh">设备接收员工</span></div><div class="step-detail"><span class="en">The device writes the employee on its next request.</span><span class="zh">设备下次请求时写入员工信息。</span></div></div>
+            <div class="step done"><span class="num"><i data-lucide="check" class="icon"></i></span><div class="step-name"><span class="en">Synced</span><span class="zh">同步完成</span></div><div class="step-detail"><span class="en">Employee can be used on the target device.</span><span class="zh">员工已成功同步到设备。</span></div></div>
+          </div>
+          <div class="prep"><i data-lucide="shield-check" class="icon"></i><span class="en">Verification: open ADMS Users, Device Management, or the device user list to confirm the employee exists.</span><span class="zh">验证方式：在 ADMS 用户列表、设备管理或打卡机用户列表中确认员工已存在。</span></div>
+        </article>
+
+        <article class="flow-section">
+          <div class="flow-title"><i data-lucide="fingerprint" class="icon"></i><span class="en">Enroll Fingerprint</span><span class="zh">录入指纹</span></div>
+          <div class="prep"><i data-lucide="clipboard-check" class="icon"></i><span class="en">Before you start: employee exists on the device, and the operator has enrollment permission.</span><span class="zh">前置条件：员工已存在于设备；操作者具备指纹录入权限。</span></div>
+          <div class="flow-row">
+            <div class="step"><span class="num">1</span><div class="step-name"><span class="en">Enroll on device</span><span class="zh">在设备录入</span></div><div class="step-detail"><span class="en">Enroll or update the employee fingerprint on the attendance device.</span><span class="zh">在打卡设备上为员工录入或更新指纹。</span></div></div>
+            <div class="step"><span class="num">2</span><div class="step-name"><span class="en">Upload fingerprint data</span><span class="zh">上传指纹数据</span></div><div class="step-detail"><span class="en">The device uploads FP data to ADMS.</span><span class="zh">设备将指纹数据上传至 ADMS。</span></div></div>
+            <div class="step"><span class="num">3</span><div class="step-name"><span class="en">ADMS saves latest template</span><span class="zh">ADMS 保存最新模板</span></div><div class="step-detail"><span class="en">ADMS verifies and stores the newest fingerprint template.</span><span class="zh">ADMS 校验并保存最新指纹模板。</span></div></div>
+            <div class="step"><span class="num">4</span><div class="step-name"><span class="en">Distribute to devices</span><span class="zh">分发到其他设备</span></div><div class="step-detail"><span class="en">ADMS sends the template to other target devices.</span><span class="zh">ADMS 将模板分发到其他目标设备。</span></div></div>
+            <div class="step done"><span class="num"><i data-lucide="check" class="icon"></i></span><div class="step-name"><span class="en">Synced</span><span class="zh">已同步</span></div><div class="step-detail"><span class="en">Fingerprint is available on all target devices.</span><span class="zh">指纹模板已同步到所有目标设备。</span></div></div>
+          </div>
+          <div class="warning-line"><i data-lucide="triangle-alert" class="icon"></i><span class="en">If the device is offline, the sync job waits and retries when the device reconnects.</span><span class="zh">设备离线时，数据保存在待同步队列，并在设备恢复后自动重试。</span></div>
+        </article>
+
+        <article class="flow-section">
+          <div class="flow-title"><i data-lucide="shield" class="icon"></i><span class="en">Set Device Role</span><span class="zh">设置设备角色</span></div>
+          <div class="flow-row">
+            <div class="step"><span class="num">1</span><div class="step-name"><span class="en">Select device</span><span class="zh">选择打卡设备</span></div><div class="step-detail"><span class="en">Choose the device that needs a role change.</span><span class="zh">选择需要设置角色的打卡设备。</span></div></div>
+            <div class="step"><span class="num">2</span><div class="step-name"><span class="en">Find employee</span><span class="zh">查找员工</span></div><div class="step-detail"><span class="en">Search by employee ID, PIN, name, or department.</span><span class="zh">通过工号、PIN、姓名或部门查找员工。</span></div></div>
+            <div class="step"><span class="num">3</span><div class="step-name"><span class="en">Choose role</span><span class="zh">选择设备角色</span></div><div class="step-detail"><span class="en">Select Normal, Admin, or Enroll Admin.</span><span class="zh">选择普通用户、管理员或登记管理员。</span></div></div>
+            <div class="step"><span class="num">4</span><div class="step-name"><span class="en">Save and queue</span><span class="zh">保存并排队</span></div><div class="step-detail"><span class="en">ADMS queues the role command for that device.</span><span class="zh">保存设置并加入同步队列发送到设备。</span></div></div>
+            <div class="step done"><span class="num"><i data-lucide="check" class="icon"></i></span><div class="step-name"><span class="en">Role active</span><span class="zh">角色生效</span></div><div class="step-detail"><span class="en">The device applies the role on the next request.</span><span class="zh">设备已更新角色设置并生效。</span></div></div>
+          </div>
+          <div class="prep"><i data-lucide="info" class="icon"></i><span class="en">Normal users punch only. Device admins manage the device. Enroll admins can perform enrollment according to device-side role permissions.</span><span class="zh">普通用户仅打卡；管理员可管理设备；登记管理员按设备端角色权限执行录入。</span></div>
+        </article>
+
+        <article class="flow-section">
+          <div class="flow-title"><i data-lucide="monitor-up" class="icon"></i><span class="en">Add a New Device</span><span class="zh">新增打卡机</span></div>
+          <div class="flow-row">
+            <div class="step"><span class="num">1</span><div class="step-name"><span class="en">Configure ADMS server</span><span class="zh">配置服务器地址</span></div><div class="step-detail"><span class="en">Set ADMS server IP and port on the device.</span><span class="zh">配置设备连接的 ADMS 服务器地址与端口。</span></div></div>
+            <div class="step"><span class="num">2</span><div class="step-name"><span class="en">Device connects ADMS</span><span class="zh">设备连接 ADMS</span></div><div class="step-detail"><span class="en">The device connects and authenticates with ADMS.</span><span class="zh">设备连接 ADMS 服务器并完成认证。</span></div></div>
+            <div class="step"><span class="num">3</span><div class="step-name"><span class="en">Auto discovery</span><span class="zh">自动发现并登记</span></div><div class="step-detail"><span class="en">ADMS discovers and registers the device.</span><span class="zh">ADMS 自动发现设备并登记设备信息。</span></div></div>
+            <div class="step"><span class="num">4</span><div class="step-name"><span class="en">Sync users and fingerprints</span><span class="zh">同步员工与指纹</span></div><div class="step-detail"><span class="en">ADMS sends users, roles, and fingerprints.</span><span class="zh">设备同步员工、角色和指纹数据。</span></div></div>
+            <div class="step done"><span class="num"><i data-lucide="check" class="icon"></i></span><div class="step-name"><span class="en">Device online</span><span class="zh">设备上线</span></div><div class="step-detail"><span class="en">The device is online and can receive jobs.</span><span class="zh">设备已成功上线并可接收任务。</span></div></div>
+          </div>
+          <div class="warning-line"><i data-lucide="triangle-alert" class="icon"></i><span class="en">Current devices must use UTC+4 time configuration.</span><span class="zh">注意：当前设备时区按 UTC+4 配置。</span></div>
+        </article>
+      </div>
+    </section>
+
+    <div class="system-title"><span><span class="en">System Operations</span><span class="zh">系统工作</span></span></div>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title"><i data-lucide="server-cog" class="icon"></i><span class="en">ADMS Service Administrator Notes</span><span class="zh">ADMS 服务管理员说明</span></div>
+          <div class="card-desc"><span class="en">These tasks are maintained by the ADMS administrator and do not require routine HR action.</span><span class="zh">以下工作由 ADMS 服务管理员维护，HR 日常无需操作。</span></div>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="system-grid">
+          <div class="ops-card">
+            <span class="ops-icon"><i data-lucide="database-backup" class="icon"></i></span>
+            <div><div class="ops-title"><span class="en">Backup and Restore</span><span class="zh">备份与恢复</span></div><p class="ops-text"><span class="en">Automatic daily backups are kept on the server. Download backup packages before risky changes and use the restore guide after server failure.</span><span class="zh">系统每日自动备份。服务器管理员应在高风险变更前手动备份，定期下载备份包至服务器外保存；需要恢复时按恢复说明执行并确认数据完整性。</span></p></div>
+          </div>
+          <div class="ops-card">
+            <span class="ops-icon"><i data-lucide="bell-ring" class="icon"></i></span>
+            <div><div class="ops-title"><span class="en">System Alerts</span><span class="zh">系统告警</span></div><p class="ops-text"><span class="en">The system monitors offline devices, sync failures, and backup freshness. Alerts appear in Console and can also be sent by webhook.</span><span class="zh">系统持续监控设备离线、同步失败和备份过期。告警始终显示在控制台，服务器管理员可配置阈值及 Webhook，并负责跟进异常。</span></p></div>
+          </div>
+          <div class="ops-card">
+            <span class="ops-icon"><i data-lucide="refresh-cw" class="icon"></i></span>
+            <div><div class="ops-title"><span class="en">Daily Reconciliation</span><span class="zh">每日同步</span></div><p class="ops-text"><span class="en">Scheduled reconciliation re-queues missing users, roles, and fingerprints for attendance devices.</span><span class="zh">系统按计划自动核对设备数据，为缺失的员工、角色和指纹重新创建同步任务。服务器管理员只需查看执行结果并处理持续失败的设备。</span></p></div>
+          </div>
+        </div>
+
+        <table class="role-table">
+          <thead><tr><th><span class="en">Device Role</span><span class="zh">设备角色</span></th><th><span class="en">Permission Meaning</span><span class="zh">权限含义</span></th></tr></thead>
+          <tbody>
+            <tr><td><span class="en">Normal User</span><span class="zh">普通用户</span></td><td><span class="en">Punch attendance only.</span><span class="zh">仅用于打卡。</span></td></tr>
+            <tr><td><span class="en">Device Admin</span><span class="zh">设备管理员</span></td><td><span class="en">Can manage the attendance device according to firmware permissions.</span><span class="zh">可按设备固件权限管理打卡机。</span></td></tr>
+            <tr><td><span class="en">Enroll Admin</span><span class="zh">登记管理员</span></td><td><span class="en">ADMS assigns the enrollment role group. Detailed role permissions are configured directly on the attendance device.</span><span class="zh">ADMS 负责分配登记管理员角色组；具体可打开哪些设备菜单，需要在打卡机本机的角色权限中配置。</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    function detectLanguage() {
+      const stored = localStorage.getItem("admsUserGuideLanguage");
+      if (stored === "en" || stored === "zh") return stored;
+      const languages = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ""];
+      const first = String(languages[0] || "").toLowerCase();
+      return first.startsWith("zh") ? "zh" : "en";
+    }
+
+    function applyLanguage(lang) {
+      const page = document.getElementById("guidePage");
+      const select = document.getElementById("languageSelect");
+      page.classList.toggle("lang-zh", lang === "zh");
+      page.classList.toggle("lang-en", lang !== "zh");
+      document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+      document.title = lang === "zh" ? "用户操作说明 - ADMS" : "User Operation Guide - ADMS";
+      select.value = lang;
+      localStorage.setItem("admsUserGuideLanguage", lang);
+    }
+
+    const initialLanguage = detectLanguage();
+    applyLanguage(initialLanguage);
+    document.getElementById("languageSelect").addEventListener("change", (event) => {
+      applyLanguage(event.target.value);
+    });
+    lucide.createIcons();
+  </script>
+</body>
+</html>
