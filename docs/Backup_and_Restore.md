@@ -66,6 +66,15 @@ bash scripts/DT015_backup_restore.sh /path/to/eastman-adms-backup-YYYYMMDD_HHMMS
 
 The restore script imports `mysql.sql` from the backup package and restarts the Docker services.
 
+After restoring or replacing the server, install the daily backup schedule again:
+
+```bash
+cd /opt/eastman/Eastman-adms-server
+bash scripts/DT015_backup_cron_install.sh
+```
+
+This step is required because the cron schedule belongs to the Linux server, not only to the ADMS database. A new or rebuilt server may not have the old cron job.
+
 ## Recommended Routine
 
 - Run automatic backup once per day during low traffic, for example 03:30 Dubai time.
