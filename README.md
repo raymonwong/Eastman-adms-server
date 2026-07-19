@@ -4,6 +4,8 @@
 
 Eastman ADMS Server 是用于后续接入考勤设备、考勤平台和明道云/HAP 的服务端项目。
 
+当前系统核心功能清单见：[docs/ADMS_Function_List.md](docs/ADMS_Function_List.md)。
+
 Development Task 014 增加 Mingdao Attendance Synchronization：`/settings/attendance-sync` 现在可以将 ADMS 中已保存的 `attendance_event` 上传到明道云考勤工作表。系统只调用明道 V3 新增行记录接口；通过 `attendance_mingdao_sync.attendance_event_id` 唯一键防止同一条考勤重复上传。新考勤记录会由后台循环自动同步；失败记录会按配置的分钟间隔再次尝试新增。
 
 本阶段不修改 ADMS 协议、HTTP 返回格式、ATTLOG/OPLOG/USER Parser、用户下发逻辑或任何 ERP 业务逻辑。
