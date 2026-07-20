@@ -177,7 +177,7 @@ async def login_page(request: Request, next: str = "/console") -> HTMLResponse:
 
 
 @router.post("/login", response_class=HTMLResponse)
-async def login_submit(request: Request) -> HTMLResponse | RedirectResponse:
+async def login_submit(request: Request) -> Response:
     form = await _read_form(request)
     password = form.get("password", "")
     next_url = _safe_next_url(form.get("next", "/console"))
@@ -208,7 +208,7 @@ async def password_page(request: Request) -> HTMLResponse:
 
 
 @router.post("/settings/password", response_class=HTMLResponse)
-async def password_submit(request: Request) -> HTMLResponse | RedirectResponse:
+async def password_submit(request: Request) -> Response:
     form = await _read_form(request)
     current_password = form.get("current_password", "")
     new_password = form.get("new_password", "")
