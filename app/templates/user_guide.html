@@ -178,6 +178,14 @@
             <div class="step done"><span class="num"><i data-lucide="check" class="icon"></i></span><div class="step-name"><span class="en">Role active</span><span class="zh">角色生效</span></div><div class="step-detail"><span class="en">The device applies the role on the next request.</span><span class="zh">设备已更新角色设置并生效。</span></div></div>
           </div>
           <div class="prep"><i data-lucide="info" class="icon"></i><span class="en">Normal users punch only. Device admins manage the device. Enroll admins can perform enrollment according to device-side role permissions.</span><span class="zh">普通用户仅打卡；管理员可管理设备；登记管理员按设备端角色权限执行录入。</span></div>
+          <table class="role-table">
+            <thead><tr><th><span class="en">Device Role</span><span class="zh">设备角色</span></th><th><span class="en">Permission Meaning</span><span class="zh">权限含义</span></th></tr></thead>
+            <tbody>
+              <tr><td><span class="en">Normal User</span><span class="zh">普通用户</span></td><td><span class="en">Punch attendance only.</span><span class="zh">仅用于打卡。</span></td></tr>
+              <tr><td><span class="en">Device Admin</span><span class="zh">设备管理员</span></td><td><span class="en">Can manage the attendance device according to firmware permissions.</span><span class="zh">可按设备固件权限管理打卡机。</span></td></tr>
+              <tr><td><span class="en">Enroll Admin</span><span class="zh">登记管理员</span></td><td><span class="en">ADMS assigns the enrollment role group. Detailed role permissions are configured directly on the attendance device.</span><span class="zh">ADMS 负责分配登记管理员角色组；具体可打开哪些设备菜单，需要在打卡机本机的角色权限中配置。</span></td></tr>
+            </tbody>
+          </table>
         </article>
 
       </div>
@@ -207,15 +215,6 @@
             <div><div class="ops-title"><span class="en">Daily Reconciliation</span><span class="zh">每日同步</span></div><p class="ops-text"><span class="en">Scheduled reconciliation re-queues missing users, roles, and fingerprints for attendance devices.</span><span class="zh">系统按计划自动核对设备数据，为缺失的员工、角色和指纹重新创建同步任务。服务器管理员只需查看执行结果并处理持续失败的设备。</span></p></div>
           </div>
         </div>
-
-        <table class="role-table">
-          <thead><tr><th><span class="en">Device Role</span><span class="zh">设备角色</span></th><th><span class="en">Permission Meaning</span><span class="zh">权限含义</span></th></tr></thead>
-          <tbody>
-            <tr><td><span class="en">Normal User</span><span class="zh">普通用户</span></td><td><span class="en">Punch attendance only.</span><span class="zh">仅用于打卡。</span></td></tr>
-            <tr><td><span class="en">Device Admin</span><span class="zh">设备管理员</span></td><td><span class="en">Can manage the attendance device according to firmware permissions.</span><span class="zh">可按设备固件权限管理打卡机。</span></td></tr>
-            <tr><td><span class="en">Enroll Admin</span><span class="zh">登记管理员</span></td><td><span class="en">ADMS assigns the enrollment role group. Detailed role permissions are configured directly on the attendance device.</span><span class="zh">ADMS 负责分配登记管理员角色组；具体可打开哪些设备菜单，需要在打卡机本机的角色权限中配置。</span></td></tr>
-          </tbody>
-        </table>
       </div>
     </section>
   </main>
