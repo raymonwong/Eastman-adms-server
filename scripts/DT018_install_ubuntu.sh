@@ -36,6 +36,28 @@ ensure_console_auth_env() {
   fi
 }
 
+wait_for_api() {
+  local attempt
+  for attempt in $(seq 1 30); do
+    if docker compose exec -T api python - <<'PY' >/dev/null 2>&1
+import urllib.request
+
+urllib.request.urlopen("http://127.0.0.1:8000/health", timeout=3)
+PY
+    then
+      log "Health API ready"
+      return 0
+    fi
+
+    log "Health API not ready yet, retry ${attempt}/30"
+    sleep 2
+  done
+
+  log "Health API did not become ready in time"
+  docker compose logs --tail=80 api
+  return 1
+}
+
 main() {
   cd "${PROJECT_DIR}"
 
@@ -43,6 +65,8 @@ main() {
 
   log "Restarting API with admin password protection"
   docker compose up -d --build api
+
+  wait_for_api
 
   log "Verifying admin password routes and public exclusions"
   docker compose exec -T api python - <<'PY'
