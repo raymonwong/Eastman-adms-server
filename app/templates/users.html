@@ -242,7 +242,7 @@
 
     .reconcile-card {
       display: grid;
-      grid-template-columns: minmax(160px, 1fr) 104px 100px 76px 92px 64px;
+      grid-template-columns: minmax(150px, 1fr) 104px 100px 76px 92px 64px 132px;
       gap: 6px;
       align-items: end;
       padding: 8px 10px;
@@ -771,6 +771,7 @@
                 <input id="reconcileTime" class="form-control" type="time" min="00:00" max="06:00" step="60">
               </div>
               <button id="saveReconcileBtn" type="button" class="btn btn-outline-info btn-sm">Save <span class="zh-sub">/ 保存</span></button>
+              <button id="runReconcileBtn" type="button" class="btn btn-outline-warning btn-sm">Run Sync <span class="zh-sub">/ 立即同步</span></button>
               <div class="reconcile-status">
                 <span>Dubai <span class="zh-sub">/ 迪拜</span>: <strong>00:00-06:00</strong></span>
                 <span>Next <span class="zh-sub">/ 下次</span>: <strong id="reconcileNext">-</strong></span>
@@ -1154,6 +1155,35 @@
       }
     }
 
+    async function runUserSyncNow() {
+      const button = document.getElementById('runReconcileBtn');
+      if (!window.confirm('Run full USER and fingerprint synchronization now?\\n立即把用户和指纹重新加入下发队列？')) {
+        return;
+      }
+      button.disabled = true;
+      const originalText = button.innerHTML;
+      button.innerHTML = 'Running... <span class="zh-sub">/ 同步中……</span>';
+      try {
+        const response = await fetch('/api/adms-users/reconciliation/run', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.detail || `${response.status} ${response.statusText}`);
+        showToast(
+          `Queued ${result.user_sync_records || 0} USER + ${result.fingerprint_sync_records || 0} FP records. / 已排队 ${result.user_sync_records || 0} 条用户 + ${result.fingerprint_sync_records || 0} 条指纹同步。`,
+          'success'
+        );
+        await loadReconciliationConfig();
+        await loadUsers();
+      } catch (error) {
+        showToast(`Manual sync failed: ${error.message || error} / 手动同步失败`, 'error');
+      } finally {
+        button.disabled = false;
+        button.innerHTML = originalText;
+      }
+    }
+
     async function loadDevices() {
       if (devices.length) {
         renderRoleDeviceList();
@@ -1279,6 +1309,7 @@
       document.getElementById('reconcileWeekday').disabled = this.value !== 'weekly';
     });
     document.getElementById('saveReconcileBtn').addEventListener('click', saveReconciliationConfig);
+    document.getElementById('runReconcileBtn').addEventListener('click', runUserSyncNow);
     document.getElementById('usersContainer').addEventListener('click', function (event) {
       const button = event.target.closest('[data-role-user-id]');
       if (!button || button.disabled) return;

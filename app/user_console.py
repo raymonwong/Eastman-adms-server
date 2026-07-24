@@ -10,7 +10,7 @@ from app.database import SessionLocal
 from sqlalchemy import or_
 
 from app.models import Device, DeviceUser, DeviceUserFingerprint, DeviceUserSync
-from app.user_reconciliation import save_user_reconciliation_config, user_reconciliation_config
+from app.user_reconciliation import run_user_reconciliation, save_user_reconciliation_config, user_reconciliation_config
 
 router = APIRouter()
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
@@ -102,6 +102,15 @@ class UserReconciliationConfigRequest(BaseModel):
     frequency: str
     weekday: int
     time: str
+
+
+class ManualUserSyncResponse(BaseModel):
+    success: bool
+    sync_records: int
+    user_sync_records: int
+    fingerprint_sync_records: int
+    last_run_at: str
+    message: str
 
 
 def _pin_aliases(pin: str | None) -> set[str]:
@@ -314,6 +323,19 @@ def api_save_user_reconciliation_config(payload: UserReconciliationConfigRequest
         frequency=frequency,
         weekday=payload.weekday,
         time_value=f"{hour:02d}:{minute:02d}",
+    )
+
+
+@router.post("/api/adms-users/reconciliation/run", response_model=ManualUserSyncResponse)
+def api_run_user_reconciliation_now() -> ManualUserSyncResponse:
+    result = run_user_reconciliation()
+    return ManualUserSyncResponse(
+        success=bool(result["success"]),
+        sync_records=int(result["sync_records"]),
+        user_sync_records=int(result["user_sync_records"]),
+        fingerprint_sync_records=int(result["fingerprint_sync_records"]),
+        last_run_at=str(result["last_run_at"]),
+        message=str(result["message"]),
     )
 
 

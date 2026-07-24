@@ -119,7 +119,6 @@ def run_user_reconciliation() -> dict[str, object]:
         )
         users = (
             session.query(DeviceUser)
-            .filter(DeviceUser.enabled.is_(True))
             .filter(DeviceUser.employee_id.is_not(None), DeviceUser.employee_id != "")
             .filter(DeviceUser.pin.is_not(None), DeviceUser.pin != "")
             .order_by(DeviceUser.employee_id.asc())
