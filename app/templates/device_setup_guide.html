@@ -30,6 +30,10 @@
     .subtitle { margin-top: 4px; color: var(--muted); font-size: 13px; }
     .lang-box { display: flex; align-items: center; gap: 8px; color: var(--muted); font-weight: 700; white-space: nowrap; }
     .lang-box select { border: 1px solid var(--line); background: var(--paper); color: var(--text); border-radius: 6px; padding: 7px 10px; font-weight: 700; }
+    .tabs { display: flex; gap: 8px; margin: 0 0 12px; border-bottom: 1px solid var(--line); }
+    .tab-btn { border: 1px solid var(--line); border-bottom: 0; background: #f9fbff; color: var(--muted); border-radius: 8px 8px 0 0; padding: 10px 14px; font-weight: 850; cursor: pointer; }
+    .tab-btn.active { background: var(--paper); color: var(--blue); border-color: var(--line-strong); box-shadow: 0 -2px 10px rgba(31, 103, 255, 0.08); }
+    .guide-tab.hidden { display: none; }
     .card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 14px; overflow: hidden; }
     .card-head { padding: 12px 14px 9px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .card-title { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 850; }
@@ -51,6 +55,11 @@
     .photo-caption { color: var(--muted); font-size: 12px; margin-top: 6px; }
     .notice { border: 1px solid #fdba74; background: var(--orange-soft); border-radius: 7px; color: #b45309; padding: 8px 10px; display: flex; gap: 8px; align-items: flex-start; font-size: 13px; }
     .success { border: 1px solid #8ed4a6; background: var(--green-soft); color: var(--green); }
+    .pc-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .pc-card { border: 1px solid var(--line); border-radius: var(--radius); background: #fbfdff; padding: 13px; }
+    .pc-card h3 { margin: 0 0 8px; display: flex; align-items: center; gap: 8px; font-size: 15px; }
+    .pc-card p { margin: 0; color: var(--muted); }
+    .pc-note { margin-top: 12px; }
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th, td { border: 1px solid var(--line); padding: 9px 10px; text-align: left; vertical-align: top; }
@@ -62,17 +71,22 @@
     .lang-en .block-zh, .lang-zh .block-en { display: none; }
     @media (max-width: 1100px) {
       .quick-grid, .steps-grid { grid-template-columns: 1fr 1fr; }
+      .pc-steps { grid-template-columns: 1fr; }
       .step-body { grid-template-columns: 1fr; }
     }
     @media (max-width: 760px) {
       .page { padding: 14px 12px 22px; }
       .topbar { flex-direction: column; }
       .quick-grid, .steps-grid { grid-template-columns: 1fr; }
+      .tabs { overflow-x: auto; }
+      .tab-btn { white-space: nowrap; }
       h1 { font-size: 22px; }
     }
     @media print {
       body { background: #fff; }
       .lang-box { display: none; }
+      .tabs { display: none; }
+      .guide-tab.hidden { display: block; }
       .card { box-shadow: none; break-inside: avoid; }
       .step-card { break-inside: avoid; }
     }
@@ -97,6 +111,16 @@
       </label>
     </section>
 
+    <nav class="tabs" aria-label="Guide sections">
+      <button class="tab-btn active" type="button" data-tab-target="deviceTab">
+        <span class="en">Device Setup</span><span class="zh">打卡机设置</span>
+      </button>
+      <button class="tab-btn" type="button" data-tab-target="pcTab">
+        <span class="en">PC Network Sharing</span><span class="zh">电脑网络共享</span>
+      </button>
+    </nav>
+
+    <section id="deviceTab" class="guide-tab">
     <section class="card">
       <div class="card-head">
         <div>
@@ -274,6 +298,57 @@
         </div>
       </div>
     </section>
+    </section>
+
+    <section id="pcTab" class="guide-tab hidden">
+      <section class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title"><i data-lucide="monitor-cog" class="icon"></i><span class="en">PC Network Sharing Setup</span><span class="zh">电脑网络共享设置</span></div>
+            <div class="card-desc">
+              <span class="en">Use this when the attendance device is connected to a Windows computer by network cable and uses the computer's Wi-Fi Internet connection.</span>
+              <span class="zh">当打卡机通过网线连接 Windows 电脑，并通过电脑 Wi-Fi 上网时，按以下步骤开启网络共享。</span>
+            </div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div class="pc-steps">
+            <article class="pc-card">
+              <h3><span class="step-no">1</span><span class="en">Open Network Connections</span><span class="zh">打开网络连接</span></h3>
+              <p>
+                <span class="en">Press <code>Win + R</code> on the keyboard. In the Run box, enter <code>ncpa.cpl</code>, then click <strong>OK</strong>.</span>
+                <span class="zh">按下键盘上的 <code>Win + R</code>。在运行窗口输入 <code>ncpa.cpl</code>，然后点击 <strong>确定</strong>。</span>
+              </p>
+            </article>
+
+            <article class="pc-card">
+              <h3><span class="step-no">2</span><span class="en">Open Wi-Fi Properties</span><span class="zh">打开 Wi-Fi 属性</span></h3>
+              <p>
+                <span class="en">In the Network Connections window, find the active Wi-Fi adapter, usually shown as WLAN. Right-click it and select <strong>Properties</strong>.</span>
+                <span class="zh">在“网络连接”窗口中，找到当前正在使用的 Wi-Fi 网卡，通常带有 WLAN 字样。鼠标右键点击它，选择最下方的 <strong>属性</strong>。</span>
+              </p>
+            </article>
+
+            <article class="pc-card">
+              <h3><span class="step-no">3</span><span class="en">Share Wi-Fi to Ethernet</span><span class="zh">共享 Wi-Fi 到以太网</span></h3>
+              <p>
+                <span class="en">Open the <strong>Sharing</strong> tab. Enable <strong>Allow other network users to connect through this computer's Internet connection</strong>. In <strong>Home networking connection</strong>, select <strong>Ethernet</strong>, then click <strong>OK</strong>.</span>
+                <span class="zh">切换到 <strong>共享</strong> 选项卡。勾选 <strong>允许其他网络用户通过此计算机的 Internet 连接来连接</strong>。在“家庭网络连接”下拉菜单中选择 <strong>以太网</strong>，最后点击 <strong>确定</strong> 保存。</span>
+              </p>
+            </article>
+          </div>
+
+          <div class="notice pc-note">
+            <i data-lucide="info" class="icon"></i>
+            <div>
+              <strong><span class="en">After sharing is enabled</span><span class="zh">共享开启后</span></strong><br>
+              <span class="en">Windows usually assigns the Ethernet side a gateway such as <code>192.168.137.1</code>. Configure the attendance device IP in the same network segment, for example <code>192.168.137.200</code>, with gateway <code>192.168.137.1</code>.</span>
+              <span class="zh">Windows 通常会把以太网侧网关设置为 <code>192.168.137.1</code>。打卡机本机 IP 应配置在同一网段，例如 <code>192.168.137.200</code>，网关填写 <code>192.168.137.1</code>。</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </section>
   </main>
 
   <script>
@@ -299,6 +374,19 @@
     applyLanguage(detectLanguage());
     document.getElementById("languageSelect").addEventListener("change", (event) => {
       applyLanguage(event.target.value);
+    });
+
+    document.querySelectorAll(".tab-btn").forEach((button) => {
+      button.addEventListener("click", () => {
+        const targetId = button.dataset.tabTarget;
+        document.querySelectorAll(".tab-btn").forEach((item) => {
+          item.classList.toggle("active", item === button);
+        });
+        document.querySelectorAll(".guide-tab").forEach((panel) => {
+          panel.classList.toggle("hidden", panel.id !== targetId);
+        });
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
     });
     lucide.createIcons();
   </script>
