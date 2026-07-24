@@ -59,6 +59,36 @@
     .pc-card { border: 1px solid var(--line); border-radius: var(--radius); background: #fbfdff; padding: 13px; }
     .pc-card h3 { margin: 0 0 8px; display: flex; align-items: center; gap: 8px; font-size: 15px; }
     .pc-card p { margin: 0; color: var(--muted); }
+    .pc-topology { border: 1px solid #bdd4f3; border-radius: var(--radius); background: linear-gradient(180deg, #fbfdff, #f4f8ff); padding: 14px; margin-bottom: 14px; }
+    .pc-topology-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 900; color: var(--text); margin-bottom: 12px; }
+    .topology-flow { display: grid; grid-template-columns: minmax(120px, 1fr) 44px minmax(120px, 1fr) 44px minmax(150px, 1.2fr) 44px minmax(150px, 1.2fr); gap: 8px; align-items: center; }
+    .topology-node { border: 1px solid #cfe0f8; background: #fff; border-radius: 10px; padding: 12px; min-height: 84px; display: grid; gap: 7px; align-content: center; box-shadow: 0 4px 14px rgba(31, 103, 255, 0.07); }
+    .topology-node-main { display: flex; align-items: center; gap: 8px; color: var(--text); font-weight: 900; }
+    .topology-node-sub { color: var(--muted); font-size: 12px; line-height: 1.35; }
+    .topology-arrow { display: flex; align-items: center; justify-content: center; color: var(--blue); font-weight: 900; }
+    .topology-arrow::before { content: "->"; font-size: 22px; line-height: 1; }
+    .topology-note { margin-top: 10px; border: 1px dashed #93c5fd; background: #eef6ff; color: #174ea6; border-radius: 7px; padding: 8px 10px; font-size: 12px; font-weight: 750; }
+    .pc-visual { margin-top: 12px; border: 1px solid #bdd4f3; border-radius: 8px; background: #fff; overflow: hidden; box-shadow: 0 4px 14px rgba(31, 103, 255, 0.08); }
+    .pc-visual-title { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--blue-soft); border-bottom: 1px solid var(--line); font-size: 12px; font-weight: 850; color: #174ea6; }
+    .pc-visual-body { padding: 12px; min-height: 142px; }
+    .run-box { max-width: 330px; border: 1px solid #c8d4e6; border-radius: 7px; overflow: hidden; margin: 0 auto; background: #f8fafc; }
+    .run-row { display: flex; align-items: center; gap: 8px; padding: 10px; }
+    .run-icon { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; background: #e0ecff; color: var(--blue); font-weight: 900; }
+    .run-input { flex: 1; border: 1px solid #b8c7dc; border-radius: 5px; background: #fff; padding: 7px 8px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #0b3b93; font-weight: 800; }
+    .mock-buttons { display: flex; justify-content: flex-end; gap: 8px; padding: 8px 10px 10px; }
+    .mock-button { border: 1px solid #b8c7dc; border-radius: 5px; padding: 5px 12px; background: #fff; color: var(--text); font-size: 12px; font-weight: 750; }
+    .adapter-list { display: grid; gap: 8px; }
+    .adapter-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid #d6e3f5; border-radius: 7px; padding: 9px 10px; background: #fff; }
+    .adapter-name { display: flex; align-items: center; gap: 8px; font-weight: 850; color: var(--text); }
+    .adapter-action { border: 1px solid #8ab4f8; border-radius: 5px; color: var(--blue); background: #eef5ff; padding: 4px 8px; font-size: 12px; font-weight: 850; }
+    .sharing-box { border: 1px solid #c8d4e6; border-radius: 7px; background: #fff; overflow: hidden; }
+    .sharing-tabs { display: flex; gap: 2px; background: #f0f4fa; border-bottom: 1px solid #c8d4e6; padding: 6px 8px 0; }
+    .sharing-tab { padding: 6px 10px; border: 1px solid #c8d4e6; border-bottom: 0; border-radius: 6px 6px 0 0; background: #fff; color: var(--blue); font-size: 12px; font-weight: 850; }
+    .sharing-content { padding: 10px; }
+    .check-row { display: flex; align-items: flex-start; gap: 8px; color: var(--text); font-size: 12px; font-weight: 750; }
+    .check-box { width: 16px; height: 16px; border-radius: 4px; background: var(--blue); color: #fff; display: grid; place-items: center; flex: 0 0 auto; font-size: 12px; line-height: 1; }
+    .select-row { margin-top: 10px; display: grid; gap: 5px; color: var(--muted); font-size: 12px; font-weight: 750; }
+    .mock-select { border: 1px solid #b8c7dc; border-radius: 5px; padding: 7px 8px; color: var(--text); background: #fff; font-weight: 850; }
     .pc-note { margin-top: 12px; }
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -72,6 +102,9 @@
     @media (max-width: 1100px) {
       .quick-grid, .steps-grid { grid-template-columns: 1fr 1fr; }
       .pc-steps { grid-template-columns: 1fr; }
+      .topology-flow { grid-template-columns: 1fr; }
+      .topology-arrow { min-height: 18px; }
+      .topology-arrow::before { content: "↓"; }
       .step-body { grid-template-columns: 1fr; }
     }
     @media (max-width: 760px) {
@@ -312,6 +345,39 @@
           </div>
         </div>
         <div class="section-body">
+          <div class="pc-topology" aria-label="Wi-Fi Internet to PC to attendance device connection diagram">
+            <div class="pc-topology-title">
+              <i data-lucide="network" class="icon"></i>
+              <span class="en">Connection Diagram</span>
+              <span class="zh">连接示意图</span>
+            </div>
+            <div class="topology-flow">
+              <div class="topology-node">
+                <div class="topology-node-main"><i data-lucide="cloud" class="icon"></i><span class="en">Internet</span><span class="zh">互联网</span></div>
+                <div class="topology-node-sub"><span class="en">Office or mobile network.</span><span class="zh">办公室网络或手机热点。</span></div>
+              </div>
+              <div class="topology-arrow" aria-hidden="true"></div>
+              <div class="topology-node">
+                <div class="topology-node-main"><i data-lucide="wifi" class="icon"></i><span class="en">Wi-Fi</span><span class="zh">Wi-Fi 上网</span></div>
+                <div class="topology-node-sub"><span class="en">The Windows PC connects to the Internet by Wi-Fi.</span><span class="zh">Windows 电脑通过 Wi-Fi 连接互联网。</span></div>
+              </div>
+              <div class="topology-arrow" aria-hidden="true"></div>
+              <div class="topology-node">
+                <div class="topology-node-main"><i data-lucide="monitor" class="icon"></i><span class="en">Windows PC</span><span class="zh">Windows 电脑</span></div>
+                <div class="topology-node-sub"><span class="en">Enable Internet Connection Sharing on the Wi-Fi adapter.</span><span class="zh">在 Wi-Fi 网卡上开启 Internet 连接共享。</span></div>
+              </div>
+              <div class="topology-arrow" aria-hidden="true"></div>
+              <div class="topology-node">
+                <div class="topology-node-main"><i data-lucide="monitor-check" class="icon"></i><span class="en">Attendance Device</span><span class="zh">打卡机</span></div>
+                <div class="topology-node-sub"><span class="en">Connect to the PC by Ethernet cable.</span><span class="zh">通过网线连接到电脑以太网口。</span></div>
+              </div>
+            </div>
+            <div class="topology-note">
+              <span class="en">After sharing is enabled, Windows usually uses <code>192.168.137.1</code> on the Ethernet side. Set the attendance device to the same network segment, for example <code>192.168.137.200</code>.</span>
+              <span class="zh">开启共享后，Windows 通常会把以太网侧设置为 <code>192.168.137.1</code>。打卡机本机 IP 设置到同一网段，例如 <code>192.168.137.200</code>。</span>
+            </div>
+          </div>
+
           <div class="pc-steps">
             <article class="pc-card">
               <h3><span class="step-no">1</span><span class="en">Open Network Connections</span><span class="zh">打开网络连接</span></h3>
@@ -319,6 +385,21 @@
                 <span class="en">Press <code>Win + R</code> on the keyboard. In the Run box, enter <code>ncpa.cpl</code>, then click <strong>OK</strong>.</span>
                 <span class="zh">按下键盘上的 <code>Win + R</code>。在运行窗口输入 <code>ncpa.cpl</code>，然后点击 <strong>确定</strong>。</span>
               </p>
+              <div class="pc-visual" aria-label="Run ncpa.cpl illustration">
+                <div class="pc-visual-title"><i data-lucide="keyboard" class="icon"></i><span class="en">Run Window</span><span class="zh">运行窗口</span></div>
+                <div class="pc-visual-body">
+                  <div class="run-box">
+                    <div class="run-row">
+                      <div class="run-icon">R</div>
+                      <div class="run-input">ncpa.cpl</div>
+                    </div>
+                    <div class="mock-buttons">
+                      <span class="mock-button"><span class="en">Cancel</span><span class="zh">取消</span></span>
+                      <span class="mock-button"><span class="en">OK</span><span class="zh">确定</span></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </article>
 
             <article class="pc-card">
@@ -327,6 +408,25 @@
                 <span class="en">In the Network Connections window, find the active Wi-Fi adapter, usually shown as WLAN. Right-click it and select <strong>Properties</strong>.</span>
                 <span class="zh">在“网络连接”窗口中，找到当前正在使用的 Wi-Fi 网卡，通常带有 WLAN 字样。鼠标右键点击它，选择最下方的 <strong>属性</strong>。</span>
               </p>
+              <div class="pc-visual" aria-label="Wi-Fi properties illustration">
+                <div class="pc-visual-title"><i data-lucide="monitor" class="icon"></i><span class="en">Network Connections</span><span class="zh">网络连接</span></div>
+                <div class="pc-visual-body">
+                  <div class="adapter-list">
+                    <div class="adapter-item">
+                      <div class="adapter-name"><i data-lucide="wifi" class="icon"></i><span>Wi-Fi / WLAN</span></div>
+                      <div class="adapter-action"><span class="en">Right click</span><span class="zh">右键</span></div>
+                    </div>
+                    <div class="adapter-item">
+                      <div class="adapter-name"><i data-lucide="monitor" class="icon"></i><span>Ethernet</span></div>
+                      <div class="adapter-action"><span class="en">Cable port</span><span class="zh">网线接口</span></div>
+                    </div>
+                    <div class="adapter-item">
+                      <div class="adapter-name"><i data-lucide="settings" class="icon"></i><span class="en">Properties</span><span class="zh">属性</span></div>
+                      <div class="adapter-action"><span class="en">Select</span><span class="zh">选择</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </article>
 
             <article class="pc-card">
@@ -335,6 +435,26 @@
                 <span class="en">Open the <strong>Sharing</strong> tab. Enable <strong>Allow other network users to connect through this computer's Internet connection</strong>. In <strong>Home networking connection</strong>, select <strong>Ethernet</strong>, then click <strong>OK</strong>.</span>
                 <span class="zh">切换到 <strong>共享</strong> 选项卡。勾选 <strong>允许其他网络用户通过此计算机的 Internet 连接来连接</strong>。在“家庭网络连接”下拉菜单中选择 <strong>以太网</strong>，最后点击 <strong>确定</strong> 保存。</span>
               </p>
+              <div class="pc-visual" aria-label="Internet connection sharing illustration">
+                <div class="pc-visual-title"><i data-lucide="share-2" class="icon"></i><span class="en">Wi-Fi Properties</span><span class="zh">Wi-Fi 属性</span></div>
+                <div class="pc-visual-body">
+                  <div class="sharing-box">
+                    <div class="sharing-tabs">
+                      <span class="sharing-tab"><span class="en">Sharing</span><span class="zh">共享</span></span>
+                    </div>
+                    <div class="sharing-content">
+                      <div class="check-row">
+                        <span class="check-box">✓</span>
+                        <span><span class="en">Allow other network users to connect through this computer's Internet connection</span><span class="zh">允许其他网络用户通过此计算机的 Internet 连接来连接</span></span>
+                      </div>
+                      <div class="select-row">
+                        <span><span class="en">Home networking connection</span><span class="zh">家庭网络连接</span></span>
+                        <div class="mock-select">Ethernet / 以太网</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </article>
           </div>
 
