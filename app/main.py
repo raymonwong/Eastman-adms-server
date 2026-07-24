@@ -4,6 +4,7 @@ from contextlib import suppress
 from datetime import UTC, datetime
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from app.adms import router as adms_router
 from app.alert_settings import alert_check_interval_seconds, process_alert_notifications
@@ -109,6 +110,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title=settings.app_name, version="0.0.2", lifespan=lifespan)
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.middleware("http")(auth_middleware)
 app.include_router(adms_router)
 app.include_router(alert_settings_router)

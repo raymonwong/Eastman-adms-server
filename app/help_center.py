@@ -17,3 +17,8 @@ def help_center(request: Request) -> HTMLResponse:
 @router.get("/settings/user-guide", response_class=HTMLResponse)
 def user_guide(request: Request) -> HTMLResponse:
     return templates.TemplateResponse("user_guide.html", {"request": request})
+
+
+@router.get("/settings/device-setup-guide", response_class=HTMLResponse)
+def device_setup_guide(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse("device_setup_guide.html", {"request": request})

@@ -132,10 +132,12 @@ def _is_public_path(path: str) -> bool:
         "/api/v1/health",
         "/settings/help",
         "/settings/user-guide",
+        "/settings/device-setup-guide",
     }
     public_prefixes = (
         "/iclock/",
         "/api/v1/users",
+        "/static/",
     )
     return path in public_exact or any(path.startswith(prefix) for prefix in public_prefixes)
 

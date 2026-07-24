@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Attendance Device Setup Guide - ADMS</title>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --paper: #ffffff;
+      --line: #cfe0f6;
+      --line-strong: #9fc0ec;
+      --text: #0f1f3a;
+      --muted: #53657d;
+      --blue: #1f67ff;
+      --blue-soft: #eef5ff;
+      --green: #1f9d55;
+      --green-soft: #effaf3;
+      --orange: #f97316;
+      --orange-soft: #fff7ed;
+      --shadow: 0 8px 24px rgba(15, 31, 58, 0.08);
+      --radius: 8px;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, "Microsoft YaHei", sans-serif; font-size: 14px; line-height: 1.42; }
+    .page { max-width: 1480px; margin: 0 auto; padding: 18px 18px 30px; }
+    .topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+    h1 { margin: 0; font-size: 25px; font-weight: 850; letter-spacing: -0.01em; }
+    .subtitle { margin-top: 4px; color: var(--muted); font-size: 13px; }
+    .lang-box { display: flex; align-items: center; gap: 8px; color: var(--muted); font-weight: 700; white-space: nowrap; }
+    .lang-box select { border: 1px solid var(--line); background: var(--paper); color: var(--text); border-radius: 6px; padding: 7px 10px; font-weight: 700; }
+    .card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 14px; overflow: hidden; }
+    .card-head { padding: 12px 14px 9px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .card-title { display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 850; }
+    .icon { width: 20px; height: 20px; color: var(--blue); flex: 0 0 auto; }
+    .card-desc { color: var(--muted); font-size: 12px; margin-top: 3px; }
+    .section-body { padding: 14px; }
+    .quick-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+    .quick-item { border: 1px solid var(--line); background: #fbfdff; border-radius: var(--radius); padding: 10px 12px; }
+    .quick-label { color: var(--muted); font-size: 12px; font-weight: 750; }
+    .quick-value { margin-top: 4px; font-size: 18px; font-weight: 850; color: var(--text); word-break: break-word; }
+    .steps-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .step-card { border: 1px solid var(--line); border-radius: var(--radius); background: #fbfdff; overflow: hidden; }
+    .step-head { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--line); font-weight: 850; }
+    .step-no { width: 28px; height: 28px; border-radius: 50%; background: var(--blue); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 2px 6px rgba(31, 103, 255, 0.26); }
+    .step-body { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(260px, 0.95fr); gap: 12px; padding: 12px; align-items: start; }
+    .step-text { margin: 0; padding-left: 18px; color: var(--muted); }
+    .step-text li { margin-bottom: 7px; }
+    .photo { display: block; width: 100%; border-radius: 7px; border: 1px solid var(--line); background: #eef2f7; object-fit: cover; max-height: 320px; }
+    .photo-caption { color: var(--muted); font-size: 12px; margin-top: 6px; }
+    .notice { border: 1px solid #fdba74; background: var(--orange-soft); border-radius: 7px; color: #b45309; padding: 8px 10px; display: flex; gap: 8px; align-items: flex-start; font-size: 13px; }
+    .success { border: 1px solid #8ed4a6; background: var(--green-soft); color: var(--green); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { border: 1px solid var(--line); padding: 9px 10px; text-align: left; vertical-align: top; }
+    th { background: var(--blue-soft); color: var(--text); }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--blue-soft); color: #0b3b93; padding: 2px 5px; border-radius: 4px; }
+    .lang-en .zh, .lang-zh .en { display: none !important; }
+    .lang-en .en, .lang-zh .zh { display: inline; }
+    .lang-en .block-en, .lang-zh .block-zh { display: block; }
+    .lang-en .block-zh, .lang-zh .block-en { display: none; }
+    @media (max-width: 1100px) {
+      .quick-grid, .steps-grid { grid-template-columns: 1fr 1fr; }
+      .step-body { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 760px) {
+      .page { padding: 14px 12px 22px; }
+      .topbar { flex-direction: column; }
+      .quick-grid, .steps-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 22px; }
+    }
+    @media print {
+      body { background: #fff; }
+      .lang-box { display: none; }
+      .card { box-shadow: none; break-inside: avoid; }
+      .step-card { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <main id="guidePage" class="page lang-en">
+    <section class="topbar">
+      <div>
+        <h1><span class="en">Attendance Device Setup Guide</span><span class="zh">打卡机设置指引</span></h1>
+        <div class="subtitle">
+          <span class="en">Bilingual setup guide for network, ADMS cloud service, device time, and online verification.</span>
+          <span class="zh">网络、ADMS 云服务、设备时间和上线验证的中英文设置说明。</span>
+        </div>
+      </div>
+      <label class="lang-box">
+        <span class="en">Language</span><span class="zh">语言</span>
+        <select id="languageSelect" aria-label="Language">
+          <option value="en">English</option>
+          <option value="zh">中文</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title"><i data-lucide="badge-info" class="icon"></i><span class="en">Required Values</span><span class="zh">关键配置值</span></div>
+          <div class="card-desc"><span class="en">Use these values when configuring the device cloud service.</span><span class="zh">配置打卡机云服务时使用以下参数。</span></div>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="quick-grid">
+          <div class="quick-item"><div class="quick-label"><span class="en">Server Type</span><span class="zh">服务器类型</span></div><div class="quick-value">ADMS</div></div>
+          <div class="quick-item"><div class="quick-label"><span class="en">Server Address</span><span class="zh">服务器地址</span></div><div class="quick-value">47.110.79.69</div></div>
+          <div class="quick-item"><div class="quick-label"><span class="en">Server Port</span><span class="zh">服务器端口</span></div><div class="quick-value">4370</div></div>
+          <div class="quick-item"><div class="quick-label"><span class="en">Device Timezone</span><span class="zh">设备时区</span></div><div class="quick-value">UTC+4 Dubai</div></div>
+          <div class="quick-item"><div class="quick-label">HTTPS</div><div class="quick-value">OFF</div></div>
+          <div class="quick-item"><div class="quick-label"><span class="en">Proxy</span><span class="zh">代理</span></div><div class="quick-value">OFF</div></div>
+          <div class="quick-item"><div class="quick-label">DHCP</div><div class="quick-value">OFF</div></div>
+          <div class="quick-item"><div class="quick-label"><span class="en">TCP Communication Port</span><span class="zh">TCP 通讯端口</span></div><div class="quick-value">4370</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title"><i data-lucide="list-checks" class="icon"></i><span class="en">Setup Steps</span><span class="zh">设置步骤</span></div>
+          <div class="card-desc"><span class="en">Follow the screenshots in order. The exact local IP depends on the customer network.</span><span class="zh">按截图顺序操作。本机 IP 需要根据现场网络确定。</span></div>
+        </div>
+      </div>
+      <div class="section-body">
+        <div class="steps-grid">
+          <article class="step-card">
+            <div class="step-head"><span class="step-no">1</span><span class="en">Open the Main Menu</span><span class="zh">打开主菜单</span></div>
+            <div class="step-body">
+              <ul class="step-text">
+                <li><span class="en">On the home screen, tap the menu icon at the bottom right.</span><span class="zh">在首页点击右下角的九宫格菜单图标。</span></li>
+                <li><span class="en">If the device asks for permission, use an administrator or enrollment administrator account.</span><span class="zh">如果设备要求权限，请使用管理员或登记管理员账号进入。</span></li>
+              </ul>
+              <div>
+                <img class="photo" src="/static/help/device_setup/01-home.jpg" alt="Device home screen">
+                <div class="photo-caption"><span class="en">Home screen, menu icon at bottom right.</span><span class="zh">首页，右下角进入菜单。</span></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="step-card">
+            <div class="step-head"><span class="step-no">2</span><span class="en">Enter Communication Settings</span><span class="zh">进入通讯设置</span></div>
+            <div class="step-body">
+              <ul class="step-text">
+                <li><span class="en">In the main menu, tap <strong>Communication Settings</strong>.</span><span class="zh">在主菜单中点击 <strong>通讯设置</strong>。</span></li>
+                <li><span class="en">The communication menu contains network settings and cloud server settings.</span><span class="zh">通讯菜单中包含网络设置和云服务设置。</span></li>
+              </ul>
+              <div>
+                <img class="photo" src="/static/help/device_setup/02-main-menu.jpg" alt="Main menu communication settings">
+                <div class="photo-caption"><span class="en">Main menu: choose Communication Settings.</span><span class="zh">主菜单：选择通讯设置。</span></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="step-card">
+            <div class="step-head"><span class="step-no">3</span><span class="en">Open Network Settings</span><span class="zh">打开网络设置</span></div>
+            <div class="step-body">
+              <ul class="step-text">
+                <li><span class="en">Select <strong>Network Settings</strong>.</span><span class="zh">选择 <strong>网络设置</strong>。</span></li>
+                <li><span class="en">This section controls the local device IP, subnet mask, gateway, DNS, and TCP communication port.</span><span class="zh">这里配置打卡机本机 IP、子网掩码、网关、DNS 和 TCP 通讯端口。</span></li>
+              </ul>
+              <div>
+                <img class="photo" src="/static/help/device_setup/03-communication-menu.jpg" alt="Communication menu">
+                <div class="photo-caption"><span class="en">Communication menu.</span><span class="zh">通讯设置菜单。</span></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="step-card">
+            <div class="step-head"><span class="step-no">4</span><span class="en">Configure Local Device Network</span><span class="zh">配置本机网络</span></div>
+            <div class="step-body">
+              <ul class="step-text">
+                <li><span class="en">Set a unique device IP in the local network, for example <code>192.168.137.200</code> or <code>192.168.1.201</code>.</span><span class="zh">设置一个现场局域网内不冲突的本机 IP，例如 <code>192.168.137.200</code> 或 <code>192.168.1.201</code>。</span></li>
+                <li><span class="en">Subnet mask is usually <code>255.255.255.0</code>.</span><span class="zh">子网掩码通常为 <code>255.255.255.0</code>。</span></li>
+                <li><span class="en">Gateway should be the router or shared-network gateway, for example <code>192.168.137.1</code>.</span><span class="zh">网关填写路由器或共享网络网关，例如 <code>192.168.137.1</code>。</span></li>
+                <li><span class="en">Keep TCP communication port as <code>4370</code>. Keep DHCP OFF for a stable device IP.</span><span class="zh">TCP 通讯端口保持 <code>4370</code>。建议 DHCP 关闭，避免本机 IP 变化。</span></li>
+              </ul>
+              <div>
+                <img class="photo" src="/static/help/device_setup/05-network-router.jpg" alt="Network settings with gateway">
+                <div class="photo-caption"><span class="en">Example network configuration.</span><span class="zh">网络配置示例。</span></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="step-card">
+            <div class="step-head"><span class="step-no">5</span><span class="en">Configure ADMS Cloud Service</span><span class="zh">配置 ADMS 云服务</span></div>
+            <div class="step-body">
+              <ul class="step-text">
+                <li><span class="en">Open <strong>Cloud Server Settings</strong>.</span><span class="zh">进入 <strong>云服务设置</strong>。</span></li>
+                <li><span class="en">Server Type: <code>ADMS</code>.</span><span class="zh">服务器类型：<code>ADMS</code>。</span></li>
+                <li><span class="en">Domain mode: <code>OFF</code>. Server Address: <code>47.110.79.69</code>. Server Port: <code>4370</code>.</span><span class="zh">域名模式：<code>OFF</code>。服务器地址：<code>47.110.79.69</code>。服务器端口：<code>4370</code>。</span></li>
+                <li><span class="en">Proxy: <code>OFF</code>. HTTPS: <code>OFF</code>.</span><span class="zh">代理：<code>OFF</code>。HTTPS：<code>OFF</code>。</span></li>
+              </ul>
+              <div>
+                <img class="photo" src="/static/help/device_setup/06-cloud-service.jpg" alt="Cloud server settings">
+                <div class="photo-caption"><span class="en">ADMS cloud service configuration.</span><span class="zh">ADMS 云服务配置。</span></div>
+              </div>
+            </div>
+          </article>
+
+          <article class="step-card">
+            <div class="step-head"><span class="step-no">6</span><span class="en">Set Device Time and Verify Online</span><span class="zh">设置设备时间并验证上线</span></div>
+            <div class="step-body">
+              <ul class="step-text">
+                <li><span class="en">Set the device date and time to Dubai time, UTC+4.</span><span class="zh">将打卡机日期时间设置为迪拜时间 UTC+4。</span></li>
+                <li><span class="en">Return to the home screen and confirm the displayed time is correct.</span><span class="zh">返回首页，确认顶部显示的日期时间正确。</span></li>
+                <li><span class="en">Open ADMS Operation Monitor. The device should become ONLINE and keep sending heartbeat requests.</span><span class="zh">打开 ADMS 运行监控，设备应显示在线，并持续发送心跳请求。</span></li>
+                <li><span class="en">After online, ADMS automatically sends employees, roles, and fingerprints.</span><span class="zh">上线后，ADMS 会自动下发员工、角色和指纹。</span></li>
+              </ul>
+              <div>
+                <img class="photo" src="/static/help/device_setup/04-network-office.jpg" alt="Alternative network settings">
+                <div class="photo-caption"><span class="en">Alternative network example. Confirm final values with the site network.</span><span class="zh">另一组网络示例。最终参数按现场网络确认。</span></div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title"><i data-lucide="wrench" class="icon"></i><span class="en">Troubleshooting</span><span class="zh">常见问题排查</span></div>
+          <div class="card-desc"><span class="en">Use this section if the device does not appear online in ADMS.</span><span class="zh">如果设备没有在 ADMS 中显示在线，可按这里排查。</span></div>
+        </div>
+      </div>
+      <div class="section-body table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th><span class="en">Issue</span><span class="zh">问题</span></th>
+              <th><span class="en">What to Check</span><span class="zh">检查内容</span></th>
+              <th><span class="en">Expected Value</span><span class="zh">期望值</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="en">Device is not online</span><span class="zh">设备未上线</span></td>
+              <td><span class="en">Network cable/Wi-Fi, local IP, gateway, ADMS server address, port.</span><span class="zh">网线或网络、本机 IP、网关、ADMS 服务器地址和端口。</span></td>
+              <td><code>47.110.79.69:4370</code></td>
+            </tr>
+            <tr>
+              <td><span class="en">Wrong attendance time</span><span class="zh">考勤时间错误</span></td>
+              <td><span class="en">Device date/time and timezone before testing attendance.</span><span class="zh">测试打卡前确认设备日期时间和时区。</span></td>
+              <td><span class="en">Dubai time UTC+4</span><span class="zh">迪拜时间 UTC+4</span></td>
+            </tr>
+            <tr>
+              <td><span class="en">Users or fingerprints not synced yet</span><span class="zh">员工或指纹未同步</span></td>
+              <td><span class="en">ADMS Operation Monitor, ADMS Users sync status, device heartbeat.</span><span class="zh">ADMS 运行监控、用户列表同步状态、设备心跳。</span></td>
+              <td><span class="en">Device ONLINE and sync status SYNCED.</span><span class="zh">设备在线，同步状态为已同步。</span></td>
+            </tr>
+            <tr>
+              <td><span class="en">ADMS cloud service cannot connect</span><span class="zh">云服务无法连接</span></td>
+              <td><span class="en">HTTPS and proxy options.</span><span class="zh">HTTPS 和代理设置。</span></td>
+              <td>HTTPS OFF, Proxy OFF</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-body">
+        <div class="notice success">
+          <i data-lucide="check-circle-2" class="icon"></i>
+          <div>
+            <strong><span class="en">Final check</span><span class="zh">最终检查</span></strong><br>
+            <span class="en">When the device is online, ADMS will show the device heartbeat, latest request, and synchronization progress. No SQL, SSH, or log analysis is required for normal verification.</span>
+            <span class="zh">设备上线后，ADMS 会显示设备心跳、最后请求和同步进度。正常验收不需要查询数据库、SSH 或分析日志。</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    function detectLanguage() {
+      const stored = localStorage.getItem("admsDeviceSetupGuideLanguage");
+      if (stored === "en" || stored === "zh") return stored;
+      const languages = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ""];
+      const first = String(languages[0] || "").toLowerCase();
+      return first.startsWith("zh") ? "zh" : "en";
+    }
+
+    function applyLanguage(lang) {
+      const page = document.getElementById("guidePage");
+      const select = document.getElementById("languageSelect");
+      page.classList.toggle("lang-zh", lang === "zh");
+      page.classList.toggle("lang-en", lang !== "zh");
+      document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
+      document.title = lang === "zh" ? "打卡机设置指引 - ADMS" : "Attendance Device Setup Guide - ADMS";
+      select.value = lang;
+      localStorage.setItem("admsDeviceSetupGuideLanguage", lang);
+    }
+
+    applyLanguage(detectLanguage());
+    document.getElementById("languageSelect").addEventListener("change", (event) => {
+      applyLanguage(event.target.value);
+    });
+    lucide.createIcons();
+  </script>
+</body>
+</html>
